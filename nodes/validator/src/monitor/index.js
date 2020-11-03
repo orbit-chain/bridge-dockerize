@@ -24,6 +24,11 @@ class Monitor {
         this.blockNumber = {};
         this.ibc = {};
 
+        if(!settings.VALIDATOR_MONITOR){
+            console.log("Validator Monitor set is empty!");
+            return;
+        }
+
         for (const [key, value] of Object.entries(settings.VALIDATOR_MONITOR) ) {
             if (!value.Interval) {
                 value.Interval = 10 * 1000;

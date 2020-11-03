@@ -35,9 +35,7 @@ function initialize(_account) {
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
 
-    mainnet.ws = config.rpc.ETH_MAINNET_WS;
     mainnet.rpc = config.rpc.ETH_MAINNET_RPC;
-
     if(govInfo.chain === chainName){
         mainnet.address = govInfo.address;
         mainnet.abi = Britto.getJSONInterface('EthVault.abi');
@@ -54,7 +52,7 @@ function initialize(_account) {
 
     orbitHub.onconnect = () => { startSubscription(orbitHub) };
 
-    global.monitor.setNodeConnectStatus(chainName, mainnet.ws, "connecting");
+    global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connecting");
     new Britto(mainnet, chainName).connectWeb3();
     global.monitor.setNodeConnectStatus(chainName, orbitHub.ws, "connecting");
     new Britto(orbitHub, chainName).connectWeb3();

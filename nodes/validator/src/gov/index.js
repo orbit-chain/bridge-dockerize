@@ -32,7 +32,6 @@ function initialize(_account) {
     ochain.rpc = config.rpc.OCHAIN_RPC;
     ochain.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
 
-    ethereum.ws = config.rpc.ETH_MAINNET_WS;
     ethereum.rpc = config.rpc.ETH_MAINNET_RPC;
     ethereum.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
 
