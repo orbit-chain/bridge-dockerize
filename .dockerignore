@@ -1,0 +1,15 @@
+# git
+**/.git
+
+# vscode
+**/.vscode
+
+# node
+**/node_modules
+**/yarn.lock
+
+# log
+**/logs
+
+# etc
+**/docs

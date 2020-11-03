@@ -1,0 +1,18 @@
+version: '3'
+services:
+  validator:
+    build:
+      context: ../
+      dockerfile: ./ethvault-validator/Dockerfile
+    ports:
+      - 18985:8984
+    networks:
+      - br-ethvalidator
+
+networks:
+    br-ethvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 11.1.1.0/24

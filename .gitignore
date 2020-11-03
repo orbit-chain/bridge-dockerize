@@ -1,0 +1,9 @@
+# ignore orbit bridge developer's dev features
+**/abi/dev*
+**/config/dev*
+**/config/local
+**/pm2dev*
+**/validator*dev*
+
+# MySql data dir
+data**/*

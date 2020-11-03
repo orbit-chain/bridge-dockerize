@@ -1,0 +1,11 @@
+{
+  "eth": {
+    "src": "src/eth"
+  },
+  "terra": {
+    "src": "src/terra"
+  },
+  "klaytn": {
+    "src": "src/klaytn"
+  }
+}

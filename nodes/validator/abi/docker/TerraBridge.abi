@@ -1,0 +1,757 @@
+[
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getVersion",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"name": "selectionIndex",
+				"type": "uint256"
+			},
+			{
+				"name": "validator",
+				"type": "address"
+			},
+			{
+				"name": "v",
+				"type": "uint8"
+			},
+			{
+				"name": "sigs",
+				"type": "bytes32[]"
+			}
+		],
+		"name": "validateTransactionSelected",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			},
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "selections",
+		"outputs": [
+			{
+				"name": "seq",
+				"type": "uint256"
+			},
+			{
+				"name": "signatureHash",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"name": "uints",
+				"type": "uint256[]"
+			},
+			{
+				"name": "signatureHash",
+				"type": "bytes32"
+			}
+		],
+		"name": "suggestTransaction",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			}
+		],
+		"name": "removeBridgeInfo",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "implementation",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			},
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "swapData",
+		"outputs": [
+			{
+				"name": "fromChain",
+				"type": "string"
+			},
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "fromAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "token",
+				"type": "bytes"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "isConfirmed",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			}
+		],
+		"name": "getStepStatus",
+		"outputs": [
+			{
+				"name": "needSuggest",
+				"type": "bool"
+			},
+			{
+				"name": "needRelaySuggestion",
+				"type": "bool"
+			},
+			{
+				"name": "needRelaySelection",
+				"type": "bool"
+			},
+			{
+				"name": "dataIndex",
+				"type": "uint256"
+			},
+			{
+				"name": "suggestIndex",
+				"type": "uint256"
+			},
+			{
+				"name": "selectionIndex",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "fromChain",
+				"type": "string"
+			},
+			{
+				"name": "fromAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "token",
+				"type": "bytes"
+			},
+			{
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"name": "uints",
+				"type": "uint256[]"
+			},
+			{
+				"name": "sigs",
+				"type": "bytes32[]"
+			}
+		],
+		"name": "validateSwap",
+		"outputs": [
+			{
+				"name": "major",
+				"type": "bool"
+			},
+			{
+				"name": "vaList",
+				"type": "address[]"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			}
+		],
+		"name": "getGovInfoArray",
+		"outputs": [
+			{
+				"name": "uints",
+				"type": "uint256[]"
+			},
+			{
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"name": "selectionIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "relayTransactionSelected",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "suggestCount",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			},
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "suggestions",
+		"outputs": [
+			{
+				"name": "seq",
+				"type": "uint256"
+			},
+			{
+				"name": "signatureHash",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "types",
+				"type": "uint256"
+			},
+			{
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"name": "index",
+				"type": "uint256"
+			}
+		],
+		"name": "getSuggestion",
+		"outputs": [
+			{
+				"name": "seq",
+				"type": "uint256"
+			},
+			{
+				"name": "uints",
+				"type": "uint256[]"
+			},
+			{
+				"name": "signatureHash",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_hubContract",
+				"type": "address"
+			}
+		],
+		"name": "setHubContract",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"name": "uints",
+				"type": "uint256[]"
+			},
+			{
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"name": "comment",
+				"type": "bytes"
+			}
+		],
+		"name": "addBridgeInfo",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "fromChain",
+				"type": "string"
+			},
+			{
+				"name": "fromAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "token",
+				"type": "bytes"
+			},
+			{
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"name": "uints",
+				"type": "uint256[]"
+			}
+		],
+		"name": "relaySwap",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "hubContract",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "swapCount",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "selectionCursor",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "isValidGovId",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_newImp",
+				"type": "address"
+			}
+		],
+		"name": "_setImplementation",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "govInfo",
+		"outputs": [
+			{
+				"name": "comment",
+				"type": "bytes"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"name": "suggestIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "relayTransactionSuggested",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "chain",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"name": "dataIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "getSwapDataArray",
+		"outputs": [
+			{
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"name": "uints",
+				"type": "uint256[]"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "lastSelectionCursor",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"name": "suggestIndex",
+				"type": "uint256"
+			},
+			{
+				"name": "validator",
+				"type": "address"
+			},
+			{
+				"name": "v",
+				"type": "uint8"
+			},
+			{
+				"name": "sigs",
+				"type": "bytes32[]"
+			}
+		],
+		"name": "validateTransactionSuggested",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "fallback"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"name": "suggestIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "TransactionSuggested",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"name": "selectionIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "TransactionSelected",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"name": "selectionIndex",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "seq",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "suggestionUints",
+				"type": "uint256[]"
+			},
+			{
+				"indexed": false,
+				"name": "dataBytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"indexed": false,
+				"name": "dataUints",
+				"type": "uint256[]"
+			}
+		],
+		"name": "TransactionValidated",
+		"type": "event"
+	}
+]

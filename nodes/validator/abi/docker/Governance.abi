@@ -1,0 +1,202 @@
+[
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "owner",
+				"type": "address"
+			}
+		],
+		"name": "addOwner",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "owner",
+				"type": "address"
+			}
+		],
+		"name": "removeOwner",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "replaceOwner",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_required",
+				"type": "uint256"
+			}
+		],
+		"name": "changeRequirement",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "activate",
+				"type": "bool"
+			}
+		],
+		"name": "changeActivate",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "bytes"
+			},
+			{
+				"name": "tokenAddress",
+				"type": "address"
+			}
+		],
+		"name": "addToken",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_govId",
+				"type": "bytes32"
+			}
+		],
+		"name": "setGovId",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_chain",
+				"type": "string"
+			},
+			{
+				"name": "valid",
+				"type": "bool"
+			}
+		],
+		"name": "setValidChain",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "chain",
+				"type": "string"
+			},
+			{
+				"name": "mig",
+				"type": "address"
+			},
+			{
+				"name": "uints",
+				"type": "uint256[]"
+			},
+			{
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"name": "comment",
+				"type": "bytes"
+			}
+		],
+		"name": "addBridgeInfo",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "chain",
+				"type": "string"
+			}
+		],
+		"name": "removeBridgeInfo",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "mig",
+				"type": "address"
+			}
+		],
+		"name": "changeHubMig",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "chain",
+				"type": "string"
+			},
+			{
+				"name": "mig",
+				"type": "address"
+			}
+		],
+		"name": "changeBridgeMig",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]
