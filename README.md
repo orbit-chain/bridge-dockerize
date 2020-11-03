@@ -43,12 +43,10 @@ Validator : Checks if the transfer requests sent from various chains are valid.
 ## DETAILED GUIDE HERE
 
 * [FOR VALIDATOR](https://orbit-1.gitbook.io/orbit-bridge/validator-guide)
-* [FOR OPERTAOR](https://orbit-1.gitbook.io/orbit-bridge/operator-guide)
 
 ## Installation
 
 * Place your governance info in *[ VAULT_DIR ]/settings.js*
-* Enter the mysql password in *[ VAULT_DIR ]/mysql-secret* (if needed.)
 
 ## Run
 
