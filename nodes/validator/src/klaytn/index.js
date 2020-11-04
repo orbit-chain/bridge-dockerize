@@ -266,9 +266,6 @@ function validateSwap(data) {
             uints: uints
         }));
 
-        let hash = Britto.sha256sol(packer.packSwapData(data));
-
-
         // Orbit Bridge System에 등록되어있는 ToChain의 MultiSigWallet과 FromChain의 MultiSigWallet이 달라지는 경우 발생시 업데이트 필요
         let validators = await orbitHub.multisig.contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
