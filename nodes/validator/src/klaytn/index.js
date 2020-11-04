@@ -252,7 +252,20 @@ function validateSwap(data) {
             return;
         }
 
-        data.hubContract = orbitHub.address;
+        let bytes32s = [ data.bytes32s[0], data.bytes32s[1] ];
+        let uints = [ data.uints[0], data.uints[1], data.uints[2] ];
+
+        let hash = Britto.sha256sol(packer.packSwapData({
+            hubContract: orbitHub.address,
+            fromChain: data.fromChain,
+            toChain: data.toChain,
+            fromAddr: data.fromAddr,
+            toAddr: data.toAddr,
+            token: data.token,
+            bytes32s: bytes32s,
+            uints: uints
+        }));
+
         let hash = Britto.sha256sol(packer.packSwapData(data));
 
 
@@ -275,8 +288,8 @@ function validateSwap(data) {
             data.fromAddr,
             data.toAddr,
             data.token,
-            data.bytes32s,
-            data.uints,
+            bytes32s,
+            uints,
             sigs
         ];
 
