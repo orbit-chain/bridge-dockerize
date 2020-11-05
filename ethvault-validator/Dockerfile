@@ -1,5 +1,4 @@
 FROM node:dubnium
-ENV PROFILE=docker
 COPY nodes/validator/package.json /validator/package.json
 RUN cd /validator && yarn
 COPY nodes/validator /validator

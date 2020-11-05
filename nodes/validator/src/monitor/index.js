@@ -115,6 +115,7 @@ class Monitor {
 
     json () {
         return {
+            version: VERSION,
             validatorAddress: this.validatorAddress,
             nodeConnection: this.nodeConnect,
             orbitBlockNumber: this.blockNumber,

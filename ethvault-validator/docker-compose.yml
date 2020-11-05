@@ -4,6 +4,8 @@ services:
     build:
       context: ../
       dockerfile: ./ethvault-validator/Dockerfile
+    env_file:
+      - ../.env
     ports:
       - 18985:8984
     networks:

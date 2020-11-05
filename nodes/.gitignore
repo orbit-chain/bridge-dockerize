@@ -1,3 +1,4 @@
-#Ignore subdir's git repo informations
-**/.git
-**/docs/**/*
+#Ignore all
+**/*
+# except validator
+!validator

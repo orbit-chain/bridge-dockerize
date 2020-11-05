@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 global.ROOT = __dirname;
 global.logger = require('./logger');
+global.VERSION = process.env.VERSION || "unknown";
+
+console.log(`[DEPLOYED VERSION] ${VERSION}`);
 
 const config = require(ROOT + '/config');
 const walletUtils = require('./wallet');
@@ -32,8 +35,10 @@ let account = {
 global.monitor.validatorAddress = account.address;
 console.log('Start Orbit Chain Validator ! : ' + account.address);
 
-if(!config.chain || Object.keys(config.chain).length === 0)
+if(!config.chain || Object.keys(config.chain).length === 0) {
     console.log('No available chain.');
+    process.exit(1);
+}
 
 logger.info('Start Orbit Chain Validator!');
 
