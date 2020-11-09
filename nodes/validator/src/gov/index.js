@@ -45,23 +45,17 @@ function initialize(_account) {
         chainNode["orbit"] = ochain;
     };
 
-    ethereum.onconnect = () => {
-        initialized = true;
-        chainNode["eth"] = ethereum;
-    }
-
-    klaytn.onconnect = () => {
-        initialized = true;
-        klaytn.caver = new Caver(config.klaytn.KLAYTN_RPC);
-        chainNode["klaytn"] = klaytn;
-    }
-
     new Britto(ochain, 'GOV_OCHAIN').connectWeb3();
     new Britto(ethereum, 'GOV_ETHEREUM').connectWeb3();
     new Britto(klaytn, 'GOV_KLAYTN').connectWeb3();
 
     Britto.setAdd0x();
     Britto.setRemove0x();
+
+    klaytn.caver = new Caver(config.klaytn.KLAYTN_RPC);
+
+    chainNode["eth"] = ethereum;
+    chainNode["klaytn"] = klaytn;
 }
 
 async function getPendingTransaction(chain, multisig, transactionId) {

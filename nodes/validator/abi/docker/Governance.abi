@@ -198,5 +198,19 @@
 		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
+    },
+    {
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_newImp",
+				"type": "address"
+			}
+		],
+		"name": "_setImplementation",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
 	}
 ]
