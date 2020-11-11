@@ -47,7 +47,9 @@ class Monitor {
 
         let fullNames = {
             ETH: 'ethereum',
+            ETH_MAINNET: 'ethereum_mainnet',
             KLAYTN: 'klaytn',
+            KLAYTN_MAINNET: 'klaytn_mainnet',
             TERRA: 'terra',
         };
 

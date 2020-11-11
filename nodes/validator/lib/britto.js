@@ -105,6 +105,9 @@ class Britto {
         } else if (node.rpc) {
             provider = new Web3.providers.HttpProvider(node.rpc);
             node.isConnected = true;
+            if (node.onconnect) {
+                node.onconnect();
+            }
             global.monitor.setNodeConnectStatus(node.peggingType, node.rpc, "connected");
         }
 

@@ -152,6 +152,8 @@ async function parseEvent(blockNumber, nodeConfig, name) {
 
     let eventResults = await nodeConfig.contract.getPastEvents(name, options);
 
+    global.monitor.setBlockNumber(chainName + '_MAINNET', blockNumber);
+
     return eventResults;
 }
 
