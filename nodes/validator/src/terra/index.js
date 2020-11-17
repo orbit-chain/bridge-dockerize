@@ -138,6 +138,10 @@ function getEvent(blockNumber, nodeConfig, nameOrArray, callback) {
         let eventResults = [];
         for (let event of _eventList) {
             nodeConfig.contract.getPastEvents(event.name, options).then(events => {
+                if(event.name === "SwapRelay"){
+                    events = events.filter(e => e.returnValues.fromChain === chainName && e.returnValues.bytes32s[0] === govInfo.id);
+                }
+
                 if (events.length > 0) {
                     logger.terra.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
                 }
@@ -382,6 +386,12 @@ async function validateTransactionSuggested(data) {
         memo: JSON.stringify(memo),
         amount: swapDataArray.uints[0],
         token: bridgeUtils.hex2str(swapData.token),
+    }
+
+    const balances = (await terra.getBalance(rawTx.from)).filter(x => x.denom === rawTx.token);
+    if (balances.length <= 0 || parseInt(balances[0].amount) < parseInt(new BN(rawTx.amount).add(new BN(dataIndex.toString())).toString())) {
+        logger.terra.error(`validateTransactionSuggested error: insufficient funds. req(${balances[0].amount}), real(${new BN(rawTx.amount).add(new BN(dataIndex.toString())).toString()}))`);
+        return;
     }
 
     // Check tax

@@ -16,6 +16,26 @@ exports.getAccountInfo = (address) => {
     });
 };
 
+exports.getBalance = (address) => {
+    return new Promise((resolve, reject) => {
+        request(`${config.terra.host}/bank/balances/${address}`, {json: true}, (err, res) => {
+            if (err)
+                return reject(err);
+            if (res.statusCode !== 200)
+                return reject(new Error(res.statusMessage));
+            if (res.body.error)
+                return reject(new Error(res.error));
+
+            const balance = res.body.hasOwnProperty('result') ? res.body['result'] : null;
+            if (!balance) {
+                return reject(new Error(`balance parse error: ${res.body}`));
+            }
+
+            resolve(balance);
+        });
+    });
+}
+
 exports.getTaxInfo = (denom) => {
     if (!denom)
         throw 'denom is not defined.';

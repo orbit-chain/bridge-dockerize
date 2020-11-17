@@ -124,6 +124,8 @@ function getEvent(blockNumber, nodeConfig, nameOrArray, callback) {
         let eventResults = [];
         for (let event of _eventList) {
             nodeConfig.contract.getPastEvents(event.name, options).then(events => {
+                events = events.filter(e => e.returnValues.fromChain === chainName && e.returnValues.bytes32s[0] === govInfo.id);
+
                 if (events.length > 0) {
                     logger.eth.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
                 }
