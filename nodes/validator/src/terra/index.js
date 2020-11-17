@@ -212,9 +212,9 @@ async function validateSwap(data) {
     }
 
     // STEP 2: Check amount
-    let msgSendList = txInfo.tx.value.msg.filter(x => x.type === 'bank/MsgSend' && x.value.to_address === govInfo.address);
+    let msgSendList = txInfo.tx.value.msg.filter(x => x.type === 'bank/MsgSend' && x.value.to_address.toLowerCase() === govInfo.address.toLowerCase() && x.value.from_address.toLowerCase() === bridgeUtils.hex2str(data.fromAddr).toLowerCase());
     if (msgSendList.length === 0) {
-        logger.terra.error(`validateSwap error: Cannot find the target wallet(${govInfo.address}) in to_address.`);
+        logger.terra.error(`validateSwap error: Cannot find the target wallet(${govInfo.address}) in to_address or fromAddr(${bridgeUtils.hex2str(data.fromAddr).toLowerCase()}).`);
         return;
     }
 
@@ -267,20 +267,6 @@ async function validateSwap(data) {
         return;
     }
 
-    data.hubContract = orbitHub.address;
-    let hash = Britto.sha256sol(packer.packSwapData(data));
-
-    // Orbit Bridge System에 등록되어있는 ToChain의 MultiSigWallet과 FromChain의 MultiSigWallet이 달라지는 경우 발생시 업데이트 필요
-    let validators = await terraBridge.multisig.contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
-    for(var i = 0; i < validators.length; i++){
-        if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-            logger.terra.error(`Already signed. validated swapHash: ${hash}`);
-            return;
-        }
-    }
-
-    let signature = Britto.signMessage(hash, validator.pk);
-
     valid();
 
     async function valid() {
@@ -290,6 +276,31 @@ async function validateSwap(data) {
             return;
         }
 
+        let bytes32s = [ data.bytes32s[0], data.bytes32s[1] ];
+        let uints = [ data.uints[0], data.uints[1] ];
+
+        let hash = Britto.sha256sol(packer.packSwapData({
+            hubContract: orbitHub.address,
+            fromChain: data.fromChain,
+            toChain: data.toChain,
+            fromAddr: data.fromAddr,
+            toAddr: data.toAddr,
+            token: data.token,
+            bytes32s: bytes32s,
+            uints: uints
+        }));
+
+        // Orbit Bridge System에 등록되어있는 ToChain의 MultiSigWallet과 FromChain의 MultiSigWallet이 달라지는 경우 발생시 업데이트 필요
+        let validators = await terraBridge.multisig.contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
+        for(var i = 0; i < validators.length; i++){
+            if(validators[i].toLowerCase() === validator.address.toLowerCase()){
+                logger.terra.error(`Already signed. validated swapHash: ${hash}`);
+                return;
+            }
+        }
+
+        let signature = Britto.signMessage(hash, validator.pk);
+
         let sigs = makeSigs(validator.address, signature);
 
         let params = [
@@ -298,14 +309,14 @@ async function validateSwap(data) {
             data.fromAddr,
             data.toAddr,
             data.token,
-            data.bytes32s,
-            data.uints,
+            bytes32s,
+            uints,
             sigs
         ];
 
         let txOptions = {
             gasPrice: orbitHub.web3.utils.toHex('0'),
-            from: validator.address,
+            from: sender.address,
             to: orbitHub.address
         };
 
