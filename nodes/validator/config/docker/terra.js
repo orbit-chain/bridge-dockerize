@@ -6,4 +6,6 @@ module.exports = {
     gasPrices: settings.Endpoints.Terra && settings.Endpoints.Terra.gasPrices,
     threshold: settings.Endpoints.Terra && settings.BridgeAddress.Governance.Threshold,
     pubkeys: settings.Endpoints.Terra && settings.BridgeAddress.Governance.Pubkeys,
+    TxFee: settings.Endpoints.Terra && settings.BridgeAddress.Governance.TxFee,
+    TxFeeHolder: settings.Endpoints.Terra && settings.BridgeAddress.Governance.TxFeeHolder,
 };

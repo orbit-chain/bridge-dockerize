@@ -39,6 +39,8 @@ let bridgeEventList = [
 ];
 
 let govInfo;
+let TxFee;
+let terraFeeHolder;
 
 const chainName = 'TERRA';
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
@@ -55,6 +57,9 @@ function initialize(_account) {
     govInfo = config.governance;
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
+
+    TxFee = config.terra.TxFee;
+    terraFeeHolder = config.terra.TxFeeHolder;
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
     orbitHub.rpc = config.rpc.OCHAIN_RPC;
@@ -231,6 +236,28 @@ async function validateSwap(data) {
 
     if (data.uints[0].toString() !== tokenAmount.toString()) {
         logger.terra.error(`validateSwap error: ${data.bytes32s[1]} ${denom} amount not matched. Expect ${tokenAmount.toString()}, but got ${data.uints[0]}!`);
+        return;
+    }
+
+    let feeMsgSendList = txInfo.tx.value.msg.filter(x => x.type === 'bank/MsgSend' && x.value.to_address.toLowerCase() === terraFeeHolder.toLowerCase() && x.value.from_address.toLowerCase() === bridgeUtils.hex2str(data.fromAddr).toLowerCase());
+    if (msgSendList.length === 0) {
+        logger.terra.error(`validateSwap error: Cannot find the target wallet(${terraFeeHolder}) in to_address or fromAddr(${bridgeUtils.hex2str(data.fromAddr).toLowerCase()}).`);
+        return;
+    }
+
+    let feeTokenAmount = new BN(0);
+    for (let feeMsgSend of feeMsgSendList) {
+        for (let feeAmountObj of feeMsgSend.value.amount) {
+            if (feeAmountObj.denom !== denom){
+                continue;
+            }
+
+            feeTokenAmount = new BN(feeTokenAmount.toString()).add(new BN(feeAmountObj.amount.toString()));
+        }
+    }
+
+    if (feeTokenAmount.lt(new BN(TxFee[denom]))) {
+        logger.terra.error(`validateSwap error: Fee too small. ${denom} got ${feeTokenAmount}, required ${TxFee[denom]}`);
         return;
     }
 
