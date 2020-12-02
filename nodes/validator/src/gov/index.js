@@ -163,7 +163,7 @@ async function _confirmTransaction(node, data) {
             gasPrice = await node.web3.eth.getGasPrice().catch(e => {return;});
         }
 
-        if(!gasPrice){
+        if(!gasPrice && node.name !== 'ochain') {
             return {
                 "errm": "getGasPrice Error",
                 "data": 'confirmTransaction getGasPrice error'
@@ -179,7 +179,7 @@ async function _confirmTransaction(node, data) {
             logger.gov.error('confirmTransaction estimateGas error: ' + e.message)
         });
 
-        if (!gasLimit && node.name !== 'ochain' ) {
+        if (!gasLimit) {
             return {
                 "errm": "EstimateGas Error",
                 "data": 'confirmTransaction estimateGas error'
@@ -282,7 +282,7 @@ async function _validateSigHash(node, data) {
             gasPrice = await node.web3.eth.getGasPrice().catch(e => {return;});
         }
 
-        if(!gasPrice){
+        if(!gasPrice && node.name !== 'ochain') {
             return {
                 "errm": "getGasPrice Error",
                 "data": 'confirmTransaction getGasPrice error'
