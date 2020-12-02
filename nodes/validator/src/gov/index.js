@@ -151,7 +151,7 @@ async function _confirmTransaction(node, data) {
         };
 
         let gasPrice;
-        if (node.name === 'orbit'){
+        if (node.name === 'ochain'){
             gasPrice = 0;
         }
 
@@ -270,7 +270,7 @@ async function _validateSigHash(node, data) {
         };
 
         let gasPrice;
-        if (node.name === 'orbit'){
+        if (node.name === 'ochain'){
             gasPrice = 0;
         }
 
