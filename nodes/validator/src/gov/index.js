@@ -179,7 +179,7 @@ async function _confirmTransaction(node, data) {
             logger.gov.error('confirmTransaction estimateGas error: ' + e.message)
         });
 
-        if (!gasLimit) {
+        if (!gasLimit && node.name !== 'ochain' ) {
             return {
                 "errm": "EstimateGas Error",
                 "data": 'confirmTransaction estimateGas error'
