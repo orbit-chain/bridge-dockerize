@@ -94,7 +94,7 @@ async function _getPendingTransaction(node, data) {
         if(!config.contract[c])
             continue;
 
-        if(config.contract[c].toLowerCase() === transaction.destination){
+        if(config.contract[c].toLowerCase() === transaction.destination.toLowerCase()){
             destinationContract = c;
             break;
         }
