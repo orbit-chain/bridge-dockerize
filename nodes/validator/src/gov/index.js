@@ -3,6 +3,7 @@ global.logger.gov = require('./logger');
 const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
 const txSender = require(ROOT + '/lib/txsender');
+const api = require(ROOT + '/lib/api');
 const Caver = require('caver-js');
 const abiDecoder = require('abi-decoder');
 
@@ -149,10 +150,27 @@ async function _confirmTransaction(node, data) {
             to: data.multisig
         };
 
-        if (node.name !== 'ochain') {
-            let gasPrice = await node.web3.eth.getGasPrice().catch(e => {});
-            txOptions.gasPrice = gasPrice;
+        let gasPrice;
+        if (node.name === 'orbit'){
+            gasPrice = 0;
         }
+
+        if (node.name === 'ethereum') {
+            gasPrice = await getCurrentGas().catch(e => {return;});
+        }
+
+        if (node.name === 'klaytn') {
+            gasPrice = await node.web3.eth.getGasPrice().catch(e => {return;});
+        }
+
+        if(!gasPrice){
+            return {
+                "errm": "getGasPrice Error",
+                "data": 'confirmTransaction getGasPrice error'
+            };
+        }
+
+        txOptions.gasPrice = gasPrice;
 
         let _node = {...node};
 
@@ -251,10 +269,27 @@ async function _validateSigHash(node, data) {
             to: data.multisig
         };
 
-        if (node.name !== 'ochain') {
-            let gasPrice = await node.web3.eth.getGasPrice().catch(e => {});
-            txOptions.gasPrice = gasPrice;
+        let gasPrice;
+        if (node.name === 'orbit'){
+            gasPrice = 0;
         }
+
+        if (node.name === 'ethereum') {
+            gasPrice = await getCurrentGas().catch(e => {return;});
+        }
+
+        if (node.name === 'klaytn') {
+            gasPrice = await node.web3.eth.getGasPrice().catch(e => {return;});
+        }
+
+        if(!gasPrice){
+            return {
+                "errm": "getGasPrice Error",
+                "data": 'confirmTransaction getGasPrice error'
+            };
+        }
+
+        txOptions.gasPrice = gasPrice;
 
         let _node = {...node};
 
@@ -311,6 +346,11 @@ async function _validateSigHash(node, data) {
     }
 
     return await validate();
+}
+
+async function getCurrentGas() {
+    let gas = await api.ethGasPrice.request();
+    return currentGasPrice = parseInt(((gas.fast * 0.1 + 0.5) * 1.2) * 10 ** 9);
 }
 
 module.exports = {
