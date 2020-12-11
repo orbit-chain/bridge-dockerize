@@ -20,6 +20,7 @@ function ozysReport(url, body) {
 class Monitor {
     constructor () {
         this.validatorAddress;
+        this.address = {};
         this.nodeConnect = {};
         this.blockNumber = {};
         this.ibc = {};
@@ -119,6 +120,7 @@ class Monitor {
         return {
             version: VERSION,
             validatorAddress: this.validatorAddress,
+            address: this.address,
             nodeConnection: this.nodeConnect,
             orbitBlockNumber: this.blockNumber,
             ibc: this.ibc,
