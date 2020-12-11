@@ -31,6 +31,8 @@ function initialize(_account) {
 
     account = _account;
 
+    monitor.address[chainName] = account.address;
+
     govInfo = config.governance;
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
@@ -266,8 +268,10 @@ function validateSwap(data) {
             uints: uints
         }));
 
-        // Orbit Bridge System에 등록되어있는 ToChain의 MultiSigWallet과 FromChain의 MultiSigWallet이 달라지는 경우 발생시 업데이트 필요
-        let validators = await orbitHub.multisig.contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
+        let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
+        let contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, toChainMig);
+
+        let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
                 logger.eth.error(`Already signed. validated swapHash: ${hash}`);

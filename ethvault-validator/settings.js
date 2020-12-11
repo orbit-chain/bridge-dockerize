@@ -42,8 +42,18 @@ module.exports = {
             socket : "ws://infura",
         },
         Klaytn: {
+            isKas: false,
             rpc: "https://api.cypress.klaytn.net:8651",
             socket: "wss://api.cypress.klaytn.net:8652",
+            Kas: {
+                // KAS Default
+                rpc: "https://node-api.klaytnapi.com/v1/klaytn",
+                chainId: 8217,
+
+                // Your Credential
+                accessKeyId: "",
+                secretAccessKey: ""
+            }
         },
     },
 

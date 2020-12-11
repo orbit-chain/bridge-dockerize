@@ -26,25 +26,59 @@ const chainName = 'KLAYTN';
 const mainnet = Britto.getNodeConfigBase('mainnet');
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
-function initialize(_account) {
+async function initialize(_account) {
     if (!_account || !_account.address || !_account.pk)
         throw 'Invalid Ethereum Wallet Account';
 
     account = _account;
 
+    monitor.address[chainName] = account.address;
+
     govInfo = config.governance;
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
 
-    mainnet.rpc = config.klaytn.KLAYTN_RPC;
+    if(config.klaytn.KLAYTN_ISKAS){
+        const option = {
+            headers: [
+                {name: 'Authorization', value: 'Basic ' + Buffer.from(config.klaytn.KLAYTN_KAS.accessKeyId + ':' + config.klaytn.KLAYTN_KAS.secretAccessKey).toString('base64')},
+                {name: 'x-chain-id', value: config.klaytn.KLAYTN_KAS.chainId},
+            ]
+        }
+
+        mainnet.rpc = config.klaytn.KLAYTN_KAS.rpc;
+        mainnet.caver = new Caver(new Caver.providers.HttpProvider(config.klaytn.KLAYTN_KAS.rpc, option));
+    }
+    else{
+        mainnet.rpc = config.klaytn.KLAYTN_RPC;
+        mainnet.caver = new Caver(config.klaytn.KLAYTN_RPC);
+    }
+
+    global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connecting");
+
+    let isListening = await mainnet.caver.klay.net.isListening().catch(e => {
+        logger.klaytn.error(e);
+        return;
+    });
+
+    if(!isListening){
+        global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connectionFail");
+        return;
+    }
+    else{
+        logger.info(`[KLAYTN] klaytn caver connected to ${mainnet.rpc}`);
+        global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connected");
+    }
 
     if(govInfo.chain === chainName){
         mainnet.address = govInfo.address;
         mainnet.abi = Britto.getJSONInterface('KlaytnVault.abi');
+        mainnet.contract = new mainnet.caver.klay.Contract(mainnet.abi, mainnet.address);
     }
     else{
         mainnet.address = config.contract.KLAYTN_MAINNET_MINTER;
         mainnet.abi = Britto.getJSONInterface('KlaytnMinter.abi');
+        mainnet.contract = new mainnet.caver.klay.Contract(mainnet.abi, mainnet.address);
     }
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
@@ -54,12 +88,8 @@ function initialize(_account) {
 
     orbitHub.onconnect = () => { startSubscription(orbitHub) };
 
-    global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connecting");
-    new Britto(mainnet, chainName).connectWeb3();
     global.monitor.setNodeConnectStatus(chainName, orbitHub.ws, "connecting");
     new Britto(orbitHub, chainName).connectWeb3();
-
-    mainnet.caver = new Caver(config.klaytn.KLAYTN_RPC);
 
     Britto.setAdd0x();
     Britto.setRemove0x();
@@ -270,8 +300,10 @@ function validateSwap(data) {
             uints: uints
         }));
 
-        // Orbit Bridge System에 등록되어있는 ToChain의 MultiSigWallet과 FromChain의 MultiSigWallet이 달라지는 경우 발생시 업데이트 필요
-        let validators = await orbitHub.multisig.contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
+        let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
+        let contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, toChainMig);
+
+        let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
                 logger.klaytn.error(`Already signed. validated swapHash: ${hash}`);
