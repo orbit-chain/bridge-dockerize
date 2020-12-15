@@ -12,13 +12,11 @@ let chainNode = {
     "eth": null,
     "orbit": null,
     "klaytn": null,
-    "icon": null
 };
 
 const orbit = Britto.getNodeConfigBase('orbit');
 const eth = Britto.getNodeConfigBase('eth');
 const klaytn = Britto.getNodeConfigBase('klaytn');
-const icon = require('./utils/icon.api');
 
 const errmBeforeInitialize = {
     "errm": "Before Initialized",
@@ -85,9 +83,6 @@ async function initialize(_account) {
         chainNode["orbit"] = orbit;
         chainNode["eth"] = eth;
         chainNode["klaytn"] = klaytn;
-
-        icon.method = require('./lib/icon');
-        chainNode["icon"] = icon;
     };
 
     new Britto(orbit, 'GOV_ORBIT').connectWeb3();
