@@ -51,6 +51,8 @@ class Monitor {
             ETH_MAINNET: 'ethereum_mainnet',
             KLAYTN: 'klaytn',
             KLAYTN_MAINNET: 'klaytn_mainnet',
+            ICON: 'icon',
+            ICON_MAINNET: 'icon_mainnet',
             TERRA: 'terra',
         };
 

@@ -40,8 +40,8 @@
 		],
 		"name": "depositToken",
 		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
+		"payable": true,
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -308,6 +308,20 @@
 	},
 	{
 		"constant": true,
+		"inputs": [],
+		"name": "bridgingFee",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
 		"inputs": [
 			{
 				"name": "transactionId",
@@ -436,6 +450,20 @@
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "feeGovernance",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -608,6 +636,20 @@
 		"constant": false,
 		"inputs": [
 			{
+				"name": "_bridgingFee",
+				"type": "uint256"
+			}
+		],
+		"name": "setBridgingFee",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
 				"name": "toChain",
 				"type": "string"
 			},
@@ -648,6 +690,20 @@
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_feeGovernance",
+				"type": "address"
+			}
+		],
+		"name": "setFeeGovernance",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
