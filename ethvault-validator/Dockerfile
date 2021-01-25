@@ -1,7 +1,7 @@
-FROM node:dubnium
-ENV PROFILE=docker
+FROM node:fermium
 COPY nodes/validator/package.json /validator/package.json
 RUN cd /validator && yarn
 COPY nodes/validator /validator
-COPY ethvault-validator/settings.js /validator/config/docker/
+ARG SETTINGS_FILEPATH
+COPY $SETTINGS_FILEPATH /validator/config/docker/settings.js
 CMD cd validator && node validator_docker.js
