@@ -1,6 +1,7 @@
 global.logger.terra = require('./logger');
 
 const terrajs = require('@terra-money/core');
+const secp256k1 = require('secp256k1');
 const BN = require('bn.js');
 const _ = require('lodash');
 
@@ -53,6 +54,9 @@ function initialize(_account) {
         throw 'Invalid Ethereum Wallet Account';
 
     account = _account;
+
+    let pub = Buffer.from(secp256k1.publicKeyCreate(Buffer.from(account.pk, 'hex')));
+    monitor.address[chainName] = terrajs.getAccAddress(pub);
 
     govInfo = config.governance;
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
@@ -317,8 +321,10 @@ async function validateSwap(data) {
             uints: uints
         }));
 
-        // Orbit Bridge System에 등록되어있는 ToChain의 MultiSigWallet과 FromChain의 MultiSigWallet이 달라지는 경우 발생시 업데이트 필요
-        let validators = await terraBridge.multisig.contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
+        let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
+        let contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, toChainMig);
+
+        let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
                 logger.terra.error(`Already signed. validated swapHash: ${hash}`);

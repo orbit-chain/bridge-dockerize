@@ -2,8 +2,6 @@ global.logger.gov = require('./logger');
 
 const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
-const txSender = require(ROOT + '/lib/txsender');
-const api = require(ROOT + '/lib/api');
 const Caver = require('caver-js');
 const abiDecoder = require('abi-decoder');
 
@@ -13,14 +11,26 @@ let initialized;
 let chainNode = {
     "eth": null,
     "orbit": null,
-    "klaytn": null
+    "klaytn": null,
+    "icon": null
 };
 
-const ochain = Britto.getNodeConfigBase('ochain');
-const ethereum = Britto.getNodeConfigBase('ethereum');
+const orbit = Britto.getNodeConfigBase('orbit');
+const eth = Britto.getNodeConfigBase('eth');
 const klaytn = Britto.getNodeConfigBase('klaytn');
+const icon = require('./utils/icon.api');
 
-function initialize(_account) {
+const errmBeforeInitialize = {
+    "errm": "Before Initialized",
+    "data": "Error: Before Initialized"
+};
+
+const errmInvalidChain = {
+    "errm": "Invalid Chain",
+    "data": "NotFoundError: Invalid Chain"
+};
+
+async function initialize(_account) {
     if (initialized)
         throw "Already Intialized";
 
@@ -29,333 +39,151 @@ function initialize(_account) {
 
     account = _account;
 
-    ochain.ws = config.rpc.OCHAIN_WS;
-    ochain.rpc = config.rpc.OCHAIN_RPC;
-    ochain.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
+    monitor.address["ORBIT"] = account.address;
 
-    ethereum.rpc = config.rpc.ETH_MAINNET_RPC;
-    ethereum.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
+    orbit.ws = config.rpc.OCHAIN_WS;
+    orbit.rpc = config.rpc.OCHAIN_RPC;
+    orbit.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
+    orbit.method = require('./lib/orbit');
 
-    klaytn.rpc = config.klaytn.KLAYTN_RPC;
-    klaytn.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
+    eth.rpc = config.rpc.ETH_MAINNET_RPC;
+    eth.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
+    eth.method = require('./lib/eth');
 
-    abiDecoder.addABI(Britto.getJSONInterface('Governance.abi'));
+    if(config.klaytn.KLAYTN_ISKAS){
+        const option = {
+            headers: [
+                {name: 'Authorization', value: 'Basic ' + Buffer.from(config.klaytn.KLAYTN_KAS.accessKeyId + ':' + config.klaytn.KLAYTN_KAS.secretAccessKey).toString('base64')},
+                {name: 'x-chain-id', value: config.klaytn.KLAYTN_KAS.chainId},
+            ]
+        }
 
-    ochain.onconnect = () => {
+        klaytn.rpc = config.klaytn.KLAYTN_KAS.rpc;
+        klaytn.caver = new Caver(new Caver.providers.HttpProvider(config.klaytn.KLAYTN_KAS.rpc, option));
+    }
+    else{
+        klaytn.rpc = config.klaytn.KLAYTN_RPC;
+        klaytn.caver = new Caver(config.klaytn.KLAYTN_RPC);
+    }
+    klaytn.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
+    klaytn.method = require('./lib/klaytn');
+
+    let isListening = await klaytn.caver.klay.net.isListening().catch(e => {
+        logger.error(e);
+        return;
+    });
+
+    if(isListening){
+        logger.info(`[GOV_KLAYTN] klaytn caver connected to ${klaytn.rpc}`);
+    }
+
+    abiDecoder.addABI(Britto.getJSONInterface({filename: 'Governance.abi'}));
+
+    orbit.onconnect = () => {
         initialized = true;
-        chainNode["orbit"] = ochain;
+
+        chainNode["orbit"] = orbit;
+        chainNode["eth"] = eth;
+        chainNode["klaytn"] = klaytn;
+
+        icon.method = require('./lib/icon');
+        chainNode["icon"] = icon;
     };
 
-    new Britto(ochain, 'GOV_OCHAIN').connectWeb3();
-    new Britto(ethereum, 'GOV_ETHEREUM').connectWeb3();
-    new Britto(klaytn, 'GOV_KLAYTN').connectWeb3();
+    new Britto(orbit, 'GOV_ORBIT').connectWeb3();
+    new Britto(eth, 'GOV_ETH').connectWeb3();
 
     Britto.setAdd0x();
     Britto.setRemove0x();
-
-    klaytn.caver = new Caver(config.klaytn.KLAYTN_RPC);
-
-    chainNode["eth"] = ethereum;
-    chainNode["klaytn"] = klaytn;
 }
 
-async function getPendingTransaction(chain, multisig, transactionId) {
-    if(!chainNode[chain.toLowerCase()]){
-        return {
-            "errm": "Invalid Chain",
-            "data": "NotFoundError: Invalid Chain"
-        }
-    }
-
-    return await _getPendingTransaction(chainNode[chain.toLowerCase()], {
-        multisig,
-        transactionId,
-    })
-}
-
-async function _getPendingTransaction(node, data) {
+async function getAddress(chain) {
     if (!initialized) {
-        return;
+        return errmBeforeInitialize;
     }
 
-    let _node = {...node};
-    let mig = new node.web3.eth.Contract(_node.abi, data.multisig);
+    return monitor.address[chain.toUpperCase()];
+}
 
-    let transaction = await mig.methods.transactions(data.transactionId).call();
-    if(transaction.destination === "0x0000000000000000000000000000000000000000"){
-        return {
-            "errm": "Invalid Transaction Id",
-            "data": "NotFoundError: Can't find transaction"
-        }
+async function getTransaction(chain, multisig, transactionId) {
+    if (!initialized) {
+        return errmBeforeInitialize;
     }
 
-    let destinationContract = "Unknown Contract";
-    for (var c in config.contract){
-        if(!config.contract[c])
-            continue;
-
-        if(config.contract[c].toLowerCase() === transaction.destination.toLowerCase()){
-            destinationContract = c;
-            break;
-        }
+    let _node = chainNode[chain.toLowerCase()];
+    if(!_node || !_node.method){
+        return errmInvalidChain;
     }
 
-    if(transaction.destination.toLowerCase() === config.governance.address.toLowerCase()){
-        destinationContract = config.governance.chain + " Vault";
-    }
-
-    transaction.destinationContract = destinationContract;
-
-    let decodedData = abiDecoder.decodeMethod(transaction.data);
-    if(!decodedData){
-        decodedData = "Unknown Transaction Call Data";
-    }
-
-    transaction.decodedData = decodedData;
-
-    return transaction;
+    return await _node.method._getTransaction(_node, { multisig, transactionId}, abiDecoder);
 }
 
 async function confirmTransaction(chain, multisig, transactionId) {
-    if(!chainNode[chain.toLowerCase()]){
-        return {
-            "errm": "Invalid Chain",
-            "data": "NotFoundError: Invalid Chain"
-        }
+    if (!initialized) {
+        return errmBeforeInitialize;
     }
 
-    return await _confirmTransaction(chainNode[chain.toLowerCase()], {
+    let _node = chainNode[chain.toLowerCase()];
+    if(!_node || !_node.method){
+        return errmInvalidChain;
+    }
+
+    return await _node.method._confirmTransaction(_node, {
         multisig,
         transactionId,
         validator: {address: account.address, pk: account.pk},
-    })
+    });
 }
 
-async function _confirmTransaction(node, data) {
+async function confirmTransactionByRange(chain, multisig, start, end) {
     if (!initialized) {
-        return;
+        return errmBeforeInitialize;
     }
 
-    let validator = {...data.validator} || {};
-    delete data.validator;
-
-    async function confirm() {
-        let params = [
-            data.transactionId
-        ];
-
-        let txOptions = {
-            from: validator.address,
-            gasPrice: node.web3.utils.toHex('0'),
-            to: data.multisig
-        };
-
-        let gasPrice;
-        if (node.name === 'ochain'){
-            gasPrice = 0;
-        }
-
-        if (node.name === 'ethereum') {
-            gasPrice = await getCurrentGas().catch(e => {return;});
-        }
-
-        if (node.name === 'klaytn') {
-            gasPrice = await node.web3.eth.getGasPrice().catch(e => {return;});
-        }
-
-        if(!gasPrice && node.name !== 'ochain') {
-            return {
-                "errm": "getGasPrice Error",
-                "data": 'confirmTransaction getGasPrice error'
-            };
-        }
-
-        txOptions.gasPrice = gasPrice;
-
-        let _node = {...node};
-
-        let contract = new node.web3.eth.Contract(_node.abi, data.multisig);
-        let gasLimit = await contract.methods.confirmTransaction(data.transactionId).estimateGas(txOptions).catch(e => {
-            logger.gov.error('confirmTransaction estimateGas error: ' + e.message)
-        });
-
-        if (!gasLimit) {
-            return {
-                "errm": "EstimateGas Error",
-                "data": 'confirmTransaction estimateGas error'
-            };
-        }
-
-        txOptions.gasLimit = node.web3.utils.toHex(gasLimit);
-
-        if (node.name === 'klaytn') {
-            txOptions.type = 'SMART_CONTRACT_EXECUTION';
-            txOptions.data = contract.methods.confirmTransaction(data.transactionId).encodeABI();
-            txOptions.gas = '7000000';
-            txOptions.value = 0;
-            delete txOptions.gasLimit;
-            delete txOptions.gasPrice;
-
-            let signedTx = await klaytn.caver.klay.accounts.signTransaction(txOptions, '0x' + validator.pk.replace('0x', '')).catch(e => {
-                logger.gov.error('Cannot sign klaytn transaction: ' + e.message);
-            });
-
-            if (!signedTx){
-                return {
-                    "errm": "Klaytn Transaction Sign Error",
-                    "data": 'Cannot sign klaytn transaction'
-                };
-            }
-
-            const ret = await klaytn.caver.klay.sendSignedTransaction(signedTx.rawTransaction)
-                .on('transactionHash', (thash) => {
-                    logger.gov.info('Klaytn Governance confirm Transaction sent: ' + thash);
-                });
-            global.monitor && global.monitor.setProgress('GOV', 'confirmTransaction');
-            return ret;
-        }
-
-        let txData = {
-            method: 'confirmTransaction',
-            args: params,
-            options: txOptions
-        };
-
-        const ret = await txSender.sendTransaction(_node, txData, {address: validator.address, pk: validator.pk});
-        global.monitor && global.monitor.setProgress('GOV', 'confirmTransaction');
-        return ret;
+    let _node = chainNode[chain.toLowerCase()];
+    if(!_node || !_node.method || chain.toLowerCase() === "icon"){
+        return errmInvalidChain;
     }
 
-    return await confirm();
+    let res = [];
+    for(let i = parseInt(start); i <= parseInt(end); i++){
+        let txHash = await _node.method._confirmTransaction(_node, {
+            multisig: multisig,
+            transactionId: i,
+            validator: {address: account.address, pk: account.pk},
+        })
+
+        res.push({
+            transactionId: i,
+            res: txHash
+        })
+    }
+
+    return res;
 }
 
-async function validateSigHash(chain, multisig, sigHash) {
-    if(!chainNode[chain.toLowerCase()]){
-        return {
-            "errm": "Invalid Chain",
-            "data": "NotFoundError: Invalid Chain"
-        }
+async function validateSigHash(multisig, sigHash) {
+    if (!initialized) {
+        return errmBeforeInitialize;
     }
 
-    return await _validateSigHash(chainNode[chain.toLowerCase()], {
+    let _node = chainNode["orbit"];
+    if(!_node || !_node.method){
+        return errmInvalidChain;
+    }
+
+    return await _node.method._validateSigHash(_node, {
         multisig,
         sigHash,
         validator: {address: account.address, pk: account.pk},
     })
 }
 
-async function _validateSigHash(node, data) {
-    if (!initialized) {
-        return;
-    }
-
-    let validator = {...data.validator} || {};
-    delete data.validator;
-
-    async function validate() {
-        let signature = Britto.signMessage(data.sigHash, validator.pk);
-
-        let params = [
-            validator.address,
-            data.sigHash,
-            signature.v,
-            signature.r,
-            signature.s
-        ];
-
-        let txOptions = {
-            from: validator.address,
-            gasPrice: node.web3.utils.toHex('0'),
-            to: data.multisig
-        };
-
-        let gasPrice;
-        if (node.name === 'ochain'){
-            gasPrice = 0;
-        }
-
-        if (node.name === 'ethereum') {
-            gasPrice = await getCurrentGas().catch(e => {return;});
-        }
-
-        if (node.name === 'klaytn') {
-            gasPrice = await node.web3.eth.getGasPrice().catch(e => {return;});
-        }
-
-        if(!gasPrice && node.name !== 'ochain') {
-            return {
-                "errm": "getGasPrice Error",
-                "data": 'confirmTransaction getGasPrice error'
-            };
-        }
-
-        txOptions.gasPrice = gasPrice;
-
-        let _node = {...node};
-
-        let contract = new node.web3.eth.Contract(_node.abi, data.multisig);
-        let gasLimit = await contract.methods.validate(...params).estimateGas(txOptions).catch(e => {
-            logger.gov.error('validateSigHash estimateGas error: ' + e.message)
-        });
-
-        if (!gasLimit) {
-            return {
-                "errm": "EstimateGas Error",
-                "data": 'validateSigHash estimateGas error'
-            };
-        }
-
-        txOptions.gasLimit = node.web3.utils.toHex(gasLimit);
-
-        if (node.name === 'klaytn') {
-            txOptions.type = 'SMART_CONTRACT_EXECUTION';
-            txOptions.data = contract.methods.validate(...params).encodeABI();
-            txOptions.gas = '7000000';
-            txOptions.value = 0;
-            delete txOptions.gasLimit;
-            delete txOptions.gasPrice;
-
-            let signedTx = await klaytn.caver.klay.accounts.signTransaction(txOptions, '0x' + validator.pk.replace('0x', '')).catch(e => {
-                logger.gov.error('Cannot sign klaytn transaction: ' + e.message);
-            });
-
-            if (!signedTx){
-                return {
-                    "errm": "Klaytn Transaction Sign Error",
-                    "data": 'Cannot sign klaytn transaction'
-                };
-            }
-
-            const ret = await klaytn.caver.klay.sendSignedTransaction(signedTx.rawTransaction)
-                .on('transactionHash', (thash) => {
-                    logger.gov.info('Klaytn Governance validateSigHash Transaction sent: ' + thash);
-                });
-            global.monitor && global.monitor.setProgress('GOV', 'validateSigHash');
-            return ret;
-        }
-
-        let txData = {
-            method: 'validate',
-            args: params,
-            options: txOptions
-        };
-
-        const ret = await txSender.sendTransaction(_node, txData, {address: validator.address, pk: validator.pk});
-        global.monitor && global.monitor.setProgress('GOV', 'validateSigHash');
-        return ret;
-    }
-
-    return await validate();
-}
-
-async function getCurrentGas() {
-    let gas = await api.ethGasPrice.request();
-    return currentGasPrice = parseInt(((gas.fast * 0.1 + 0.5) * 1.2) * 10 ** 9);
-}
-
 module.exports = {
     initialize,
-    getPendingTransaction,
+    getAddress,
+    getTransaction,
     confirmTransaction,
+    confirmTransactionByRange,
     validateSigHash
 }

@@ -54,7 +54,10 @@ class Txsender {
                         logger.info('Transaction nonce: ' +  (Number(sender.nonce || nonce)));
                         logger.info('-------------------------------------');
                     })
-                    .once('error', e => logger.error(`Fail to send ${txData.method} transaction(${Number(sender.nonce || nonce)}): ${e.message}`));
+                    .once('error', e => {
+                        logger.error(`Fail to send ${txData.method} transaction(${Number(sender.nonce || nonce)}): ${e.message}`);
+                        resolve(e.message);
+                    });
             }, timeout)
         });
     }

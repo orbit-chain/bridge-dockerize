@@ -1,11 +1,12 @@
-global.logger.eth = require('./logger');
+global.logger.klaytn_v1 = require('./logger');
 
 const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
 const txSender = require(ROOT + '/lib/txsender');
 const packer = require('./utils/packer');
+const Caver = require('caver-js');
 
-const BridgeUtils = require('./utils/eth.bridgeutils');
+const BridgeUtils = require('./utils/klaytn.bridgeutils');
 const bridgeUtils = new BridgeUtils();
 
 const FIX_GAS = 99999999;
@@ -21,53 +22,86 @@ let eventList = [
 
 let govInfo;
 
-const chainName = 'ETH';
+const chainName = 'KLAYTN';
 const mainnet = Britto.getNodeConfigBase('mainnet');
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
-function initialize(_account) {
+async function initialize(_account) {
     if (!_account || !_account.address || !_account.pk)
         throw 'Invalid Ethereum Wallet Account';
 
     account = _account;
 
+    monitor.address[chainName] = account.address;
+
     govInfo = config.governance;
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
 
-    mainnet.rpc = config.rpc.ETH_MAINNET_RPC;
-    if(govInfo.chain === chainName){
-        mainnet.address = govInfo.address;
-        mainnet.abi = Britto.getJSONInterface('EthVault.abi');
+    if(config.klaytn.KLAYTN_ISKAS){
+        const option = {
+            headers: [
+                {name: 'Authorization', value: 'Basic ' + Buffer.from(config.klaytn.KLAYTN_KAS.accessKeyId + ':' + config.klaytn.KLAYTN_KAS.secretAccessKey).toString('base64')},
+                {name: 'x-chain-id', value: config.klaytn.KLAYTN_KAS.chainId},
+            ]
+        }
+
+        mainnet.rpc = config.klaytn.KLAYTN_KAS.rpc;
+        mainnet.caver = new Caver(new Caver.providers.HttpProvider(config.klaytn.KLAYTN_KAS.rpc, option));
     }
     else{
-        mainnet.address = config.contract.ETH_MAINNET_MINTER;
-        mainnet.abi = Britto.getJSONInterface('EthMinter.abi');
+        mainnet.rpc = config.klaytn.KLAYTN_RPC;
+        mainnet.caver = new Caver(config.klaytn.KLAYTN_RPC);
+    }
+
+    global.monitor.setNodeConnectStatus(chainName + "_v1", mainnet.rpc, "connecting");
+
+    let isListening = await mainnet.caver.klay.net.isListening().catch(e => {
+        logger.klaytn_v1.error(e);
+        return;
+    });
+
+    if(!isListening){
+        global.monitor.setNodeConnectStatus(chainName + "_v1", mainnet.rpc, "connectionFail");
+        return;
+    }
+    else{
+        logger.info(`[KLAYTN] klaytn caver connected to ${mainnet.rpc}`);
+        global.monitor.setNodeConnectStatus(chainName + "_v1", mainnet.rpc, "connected");
+    }
+
+    if(govInfo.chain === chainName){
+        mainnet.address = govInfo.address;
+        mainnet.abi = Britto.getJSONInterface({filename: 'KlaytnVault.abi', version: 'v1'});
+        mainnet.contract = new mainnet.caver.klay.Contract(mainnet.abi, mainnet.address);
+    }
+    else{
+        mainnet.address = config.contract.KLAYTN_MAINNET_MINTER;
+        mainnet.abi = Britto.getJSONInterface({filename: 'KlaytnMinter.abi', version: 'v1'});
+        mainnet.contract = new mainnet.caver.klay.Contract(mainnet.abi, mainnet.address);
     }
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
     orbitHub.rpc = config.rpc.OCHAIN_RPC;
     orbitHub.address = config.contract.ORBIT_HUB_CONTRACT;
-    orbitHub.abi = Britto.getJSONInterface('OrbitHub.abi');
+    orbitHub.abi = Britto.getJSONInterface({filename: 'OrbitHub.abi', version: 'v1'});
 
     orbitHub.onconnect = () => { startSubscription(orbitHub) };
 
-    global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connecting");
-    new Britto(mainnet, chainName).connectWeb3();
-    global.monitor.setNodeConnectStatus(chainName, orbitHub.ws, "connecting");
-    new Britto(orbitHub, chainName).connectWeb3();
+    global.monitor.setNodeConnectStatus(chainName + "_v1", orbitHub.ws, "connecting");
+    new Britto(orbitHub, chainName + "_v1").connectWeb3();
 
     Britto.setAdd0x();
     Britto.setRemove0x();
 
-    orbitHub.multisig.wallet = config.contract.ETH_BRIDGE_MULTISIG;
-    orbitHub.multisig.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
+    orbitHub.multisig.wallet = config.contract.KLAYTN_BRIDGE_MULTISIG;
+    orbitHub.multisig.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi', version: 'v1'});
     orbitHub.multisig.contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, orbitHub.multisig.wallet);
 }
 
 function startSubscription(node) {
     subscribeNewBlock(node.web3, blockNumber => {
-        global.monitor.setBlockNumber(chainName, blockNumber);
+        global.monitor.setBlockNumber(chainName + "_v1", blockNumber);
         getEvent(blockNumber, node);
     });
 }
@@ -75,7 +109,7 @@ function startSubscription(node) {
 function subscribeNewBlock(web3, callback) {
     web3.eth.subscribe('newBlockHeaders', (err, res) => {
         if (err)
-            return logger.eth.error('subscribeNewBlock subscribe error: ' + err.message);
+            return logger.klaytn_v1.error('subscribeNewBlock subscribe error: ' + err.message);
 
         if (!res.number) {
             return;
@@ -127,7 +161,7 @@ function getEvent(blockNumber, nodeConfig, nameOrArray, callback) {
                 events = events.filter(e => e.returnValues.fromChain === chainName && e.returnValues.bytes32s[0] === govInfo.id);
 
                 if (events.length > 0) {
-                    logger.eth.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
+                    logger.klaytn_v1.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
                 }
 
                 if (event.callback)
@@ -187,20 +221,20 @@ function validateSwap(data) {
     let validator = {...data.validator} || {};
     delete data.validator;
 
-    mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
+    mainnet.caver.klay.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
-            logger.eth.error('No Transaction Receipt.');
+            logger.klaytn_v1.error('No Transaction Receipt.');
             return;
         }
 
         if(!bridgeUtils.isValidAddress(data.toChain, data.toAddr)){
-            logger.eth.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
+            logger.klaytn_v1.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
             return;
         }
 
-        let events = await parseEvent(receipt.blockNumber, mainnet, (govInfo.chain === chainName)? "Deposit" : "SwapRequest");
+        let events = await parseEvent(receipt.blockNumber, mainnet,  (govInfo.chain === chainName)? "Deposit" : "SwapRequest");
         if (events.length == 0){
-            logger.eth.error('Invalid Transaction.');
+            logger.klaytn_v1.error('Invalid Transaction.');
             return;
         }
 
@@ -226,8 +260,8 @@ function validateSwap(data) {
                 && data.uints[1] === params.decimal
         });
 
-        let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
-            logger.eth.error('getBlockNumber() execute error: ' + e.message);
+        let currentBlock = await mainnet.caver.klay.getBlockNumber().catch(e => {
+            logger.klaytn_v1.error('getBlockNumber() execute error: ' + e.message);
         });
 
         if (!currentBlock)
@@ -242,13 +276,13 @@ function validateSwap(data) {
         else
             console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed, 'isSame: ' + isSame);
     }).catch(e => {
-        logger.eth.error('validateSwap error: ' + e.message);
+        logger.klaytn_v1.error('validateSwap error: ' + e.message);
     });
 
     async function valid(data) {
         let sender = Britto.getRandomPkAddress();
         if(!sender || !sender.pk || !sender.address){
-            logger.eth.error("Cannot Generate account");
+            logger.klaytn_v1.error("Cannot Generate account");
             return;
         }
 
@@ -266,11 +300,13 @@ function validateSwap(data) {
             uints: uints
         }));
 
-        // Orbit Bridge System에 등록되어있는 ToChain의 MultiSigWallet과 FromChain의 MultiSigWallet이 달라지는 경우 발생시 업데이트 필요
-        let validators = await orbitHub.multisig.contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
+        let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
+        let contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, toChainMig);
+
+        let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                logger.eth.error(`Already signed. validated swapHash: ${hash}`);
+                logger.klaytn_v1.error(`Already signed. validated swapHash: ${hash}`);
                 return;
             }
         }
@@ -297,7 +333,7 @@ function validateSwap(data) {
         };
 
         let gasLimit = await orbitHub.contract.methods.validateSwap(...params).estimateGas(txOptions).catch(e => {
-            logger.eth.error('validateSwap estimateGas error: ' + e.message)
+            logger.klaytn_v1.error('validateSwap estimateGas error: ' + e.message)
         });
 
         if (!gasLimit)
@@ -312,7 +348,7 @@ function validateSwap(data) {
         };
 
         await txSender.sendTransaction(orbitHub, txData, {address: sender.address, pk: sender.pk, timeout: 1});
-        global.monitor && global.monitor.setProgress(chainName, 'validateSwap', data.block);
+        global.monitor && global.monitor.setProgress(chainName + "_v1", 'validateSwap', data.block);
     }
 }
 

@@ -20,6 +20,7 @@ function ozysReport(url, body) {
 class Monitor {
     constructor () {
         this.validatorAddress;
+        this.address = {};
         this.nodeConnect = {};
         this.blockNumber = {};
         this.ibc = {};
@@ -47,9 +48,18 @@ class Monitor {
 
         let fullNames = {
             ETH: 'ethereum',
+            ETH_V1: 'ethereum-v1',
+            ETH_V2: 'ethereum-v2',
             ETH_MAINNET: 'ethereum_mainnet',
             KLAYTN: 'klaytn',
+            KLAYTN_V1: 'klaytn-v1',
+            KLAYTN_V2: 'klaytn-v2',
             KLAYTN_MAINNET: 'klaytn_mainnet',
+            ICON: 'icon',
+            ICON_V1: 'icon-v1',
+            ICON_V2: 'icon-v2',
+            ICON_MAINNET: 'icon_mainnet',
+            ORBIT: 'orbit',
             TERRA: 'terra',
         };
 
@@ -119,6 +129,7 @@ class Monitor {
         return {
             version: VERSION,
             validatorAddress: this.validatorAddress,
+            address: this.address,
             nodeConnection: this.nodeConnect,
             orbitBlockNumber: this.blockNumber,
             ibc: this.ibc,

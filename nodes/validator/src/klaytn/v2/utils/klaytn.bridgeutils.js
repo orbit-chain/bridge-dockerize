@@ -1,6 +1,6 @@
 const bech32 = require('bech32');
 
-class EthBridgeUtils {
+class KlaytnBridgeUtils {
     str2hex(input){
         if (typeof(input) !== 'string'){
             return "";
@@ -44,6 +44,14 @@ class EthBridgeUtils {
             return address.slice(0,2) === '0x' && address.length == 42;
         }
 
+        if(toChain === "ICON"){
+            return (address.slice(0,4) === '0x00' || address.slice(0,4) === '0x01') && address.length == 44;
+        }
+
+        if(toChain === "ORBIT"){
+            return address.slice(0,2) === '0x' && address.length == 42;
+        }
+
         return false;
     }
 
@@ -52,4 +60,4 @@ class EthBridgeUtils {
     }
 }
 
-module.exports = EthBridgeUtils;
+module.exports = KlaytnBridgeUtils;

@@ -19,32 +19,6 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "token",
-				"type": "address"
-			},
-			{
-				"name": "toChain",
-				"type": "string"
-			},
-			{
-				"name": "toAddr",
-				"type": "bytes"
-			},
-			{
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "depositToken",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"constant": true,
 		"inputs": [],
 		"name": "getVersion",
@@ -134,6 +108,24 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "valid",
+				"type": "bool"
+			}
+		],
+		"name": "setSilentToken",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [
 			{
@@ -179,6 +171,36 @@
 		"constant": false,
 		"inputs": [
 			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "depositNFT",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
 				"name": "activate",
 				"type": "bool"
 			}
@@ -204,9 +226,119 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "hubContract",
+				"type": "address"
+			},
+			{
+				"name": "fromChain",
+				"type": "string"
+			},
+			{
+				"name": "fromAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "token",
+				"type": "bytes"
+			},
+			{
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"name": "uints",
+				"type": "uint256[]"
+			},
+			{
+				"name": "data",
+				"type": "bytes"
+			},
+			{
+				"name": "v",
+				"type": "uint8[]"
+			},
+			{
+				"name": "r",
+				"type": "bytes32[]"
+			},
+			{
+				"name": "s",
+				"type": "bytes32[]"
+			}
+		],
+		"name": "withdrawNFT",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "farms",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [],
 		"name": "isActivated",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "proxy",
+				"type": "address"
+			}
+		],
+		"name": "addFarm",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "silentTokenList",
 		"outputs": [
 			{
 				"name": "",
@@ -289,6 +421,20 @@
 	},
 	{
 		"constant": true,
+		"inputs": [],
+		"name": "taxRate",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
 		"inputs": [
 			{
 				"name": "transactionId",
@@ -300,6 +446,38 @@
 			{
 				"name": "",
 				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "newProxy",
+				"type": "address"
+			}
+		],
+		"name": "removeFarm",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "bridgingFee",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"payable": false,
@@ -376,6 +554,28 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "deposit",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [],
 		"name": "getOwners",
@@ -439,6 +639,20 @@
 		"type": "function"
 	},
 	{
+		"constant": true,
+		"inputs": [],
+		"name": "feeGovernance",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"constant": false,
 		"inputs": [
 			{
@@ -468,6 +682,10 @@
 			{
 				"name": "uints",
 				"type": "uint256[]"
+			},
+			{
+				"name": "data",
+				"type": "bytes"
 			},
 			{
 				"name": "v",
@@ -591,6 +809,20 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_taxRate",
+				"type": "uint256"
+			}
+		],
+		"name": "setTaxRate",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [],
 		"name": "chain",
@@ -608,18 +840,14 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "toChain",
-				"type": "string"
-			},
-			{
-				"name": "toAddr",
-				"type": "bytes"
+				"name": "_taxReceiver",
+				"type": "address"
 			}
 		],
-		"name": "deposit",
+		"name": "setTaxReceiver",
 		"outputs": [],
-		"payable": true,
-		"stateMutability": "payable",
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -688,6 +916,20 @@
 		"type": "function"
 	},
 	{
+		"constant": true,
+		"inputs": [],
+		"name": "taxReceiver",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"constant": false,
 		"inputs": [
 			{
@@ -748,6 +990,36 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "depositToken",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"name": "_owner",
@@ -766,11 +1038,6 @@
 	{
 		"anonymous": false,
 		"inputs": [
-			{
-				"indexed": false,
-				"name": "fromChain",
-				"type": "string"
-			},
 			{
 				"indexed": false,
 				"name": "toChain",
@@ -808,8 +1075,8 @@
 			},
 			{
 				"indexed": false,
-				"name": "block",
-				"type": "uint256"
+				"name": "data",
+				"type": "bytes"
 			}
 		],
 		"name": "Deposit",
@@ -820,17 +1087,54 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"name": "hubContract",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"name": "fromChain",
+				"name": "toChain",
 				"type": "string"
 			},
 			{
 				"indexed": false,
-				"name": "toChain",
+				"name": "fromAddr",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"indexed": false,
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "depositId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "DepositNFT",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "fromChain",
 				"type": "string"
 			},
 			{
@@ -857,9 +1161,56 @@
 				"indexed": false,
 				"name": "uints",
 				"type": "uint256[]"
+			},
+			{
+				"indexed": false,
+				"name": "data",
+				"type": "bytes"
 			}
 		],
 		"name": "Withdraw",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "fromChain",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"name": "fromAddr",
+				"type": "bytes"
+			},
+			{
+				"indexed": false,
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"indexed": false,
+				"name": "token",
+				"type": "bytes"
+			},
+			{
+				"indexed": false,
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"indexed": false,
+				"name": "uints",
+				"type": "uint256[]"
+			},
+			{
+				"indexed": false,
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "WithdrawNFT",
 		"type": "event"
 	},
 	{
