@@ -373,7 +373,7 @@ function validateSwapNFT(data) {
             params = _event.returnValues;
         });
 
-        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.tokenId || !params.data){
+        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.tokenId){
             logger.eth_v2.error("Invalid Transaction (event params)");
             return;
         }
@@ -385,7 +385,7 @@ function validateSwapNFT(data) {
 
         params.fromChain = chainName;
         params.uints = [params.amount, params.tokenId, params.depositId];
-        params.bytes32s = [govInfo.id, bytes32s[1]];
+        params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
         let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
             logger.eth_v2.error('getBlockNumber() execute error: ' + e.message);
@@ -411,6 +411,10 @@ function validateSwapNFT(data) {
         if(!sender || !sender.pk || !sender.address){
             logger.eth_v2.error("Cannot Generate account");
             return;
+        }
+
+        if (!data.data) {
+            data.data = "0x";
         }
 
         let hash = Britto.sha256sol(packer.packSwapNFTData({
