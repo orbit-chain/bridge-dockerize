@@ -215,7 +215,7 @@ function validateSwap(data) {
             params = _event.returnValues;
         });
 
-        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.decimal || !params.data){
+        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.decimal){
             logger.eth_v2.error("Invalid Transaction (event params)");
             return;
         }
@@ -255,6 +255,10 @@ function validateSwap(data) {
             return;
         }
 
+        if (!data.data) {
+            data.data = "0x";
+        }
+
         let hash = Britto.sha256sol(packer.packSwapData({
             hubContract: orbitHub.address,
             fromChain: data.fromChain,
@@ -264,7 +268,7 @@ function validateSwap(data) {
             token: data.token,
             bytes32s: data.bytes32s,
             uints: data.uints,
-            data: data.data
+            data: data.data,
         }));
 
         let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
