@@ -345,7 +345,7 @@ function validateSwap(data) {
         txOptions.gasLimit = orbitHub.web3.utils.toHex(FIX_GAS);
 
         let txData = {
-            methtnod: 'validateSwap',
+            method: 'validateSwap',
             args: params,
             options: txOptions
         };
