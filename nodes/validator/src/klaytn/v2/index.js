@@ -246,7 +246,11 @@ function validateSwap(data) {
             params = _event.returnValues;
         });
 
-        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.decimal || !params.data){
+        if (!params.data) {
+            params.data = "0x";
+        }
+
+        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.decimal){
             logger.klaytn_v2.error("Invalid Transaction (event params)");
             return;
         }
@@ -258,7 +262,7 @@ function validateSwap(data) {
 
         params.fromChain = chainName;
         params.uints = [params.amount, params.decimal, params.depositId];
-        params.bytes32s = [govInfo.id, bytes32s[1]];
+        params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
         let currentBlock = await mainnet.caver.klay.getBlockNumber().catch(e => {
             logger.klaytn_v2.error('getBlockNumber() execute error: ' + e.message);
