@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "ethvault",
+            "runtimeVersion": "14.15.4",
+            "preLaunchTask": "copy-ethvault-setting",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "PROFILE": "docker",
+                "NODE_ENV": "development",
+            },
+            "program": "${workspaceFolder}/validator_docker.js",
+            "outputCapture": "std",
+        }
+    ]
+}
