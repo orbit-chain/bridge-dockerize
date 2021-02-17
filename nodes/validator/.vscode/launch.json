@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "ethvault",
             "runtimeVersion": "14.15.4",
-            "preLaunchTask": "copy-ethvault-setting",
+            "preLaunchTask": "run-all-pretasks",
             "skipFiles": [
                 "<node_internals>/**"
             ],
