@@ -508,7 +508,7 @@ function validateSwapNFT(data) {
         txOptions.gasLimit = orbitHub.web3.utils.toHex(FIX_GAS);
 
         let txData = {
-            methtnod: 'validateSwapNFT',
+            method: 'validateSwapNFT',
             args: params,
             options: txOptions
         };
