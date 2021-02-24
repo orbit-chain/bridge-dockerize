@@ -19,5 +19,8 @@
   },
   "terra": {
     "src": "src/terra"
+  },
+  "orbit": {
+    "src": "src/orbit"
   }
 }
