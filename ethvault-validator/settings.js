@@ -1,8 +1,12 @@
 module.exports = {
     // operating chain list
     chainList: [
-        'eth',
-        'klaytn',
+        'eth-v1',
+        'klaytn-v1',
+        'icon-v1',
+        'eth-v2',
+        'klaytn-v2',
+        'orbit',
     ],
 
     // Bridge Addresses
