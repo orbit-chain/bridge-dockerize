@@ -1,26 +1,36 @@
 module.exports = {
     // operating chain list
     chainList: [
-        'eth',
-        'klaytn',
+        'eth-v1',
+        'klaytn-v1',
+        'icon-v1',
+        'eth-v2',
+        'klaytn-v2',
+        'orbit',
     ],
 
     // Bridge Addresses
     BridgeAddress: {
         OrbitHubContract: "0x0000000000000000000000000000000000000000",
-        OrbitBridgeHubContract: "0x0000000000000000000000000000000000000000",
         EthBridgeContract: "0x0000000000000000000000000000000000000000",
         KlaytnBridgeContract: "0x0000000000000000000000000000000000000000",
+        OrbitBridgeContract: "0x0000000000000000000000000000000000000000",
         MessageMultiSigWallet: {
             Hub: "0x0000000000000000000000000000000000000000",
             Eth: "0x0000000000000000000000000000000000000000",
             Klaytn: "0x0000000000000000000000000000000000000000",
+            Icon: "0x0000000000000000000000000000000000000000",
+            Orbit: "0x0000000000000000000000000000000000000000",
         },
         Eth: {
             EthVaultContract: "0x0000000000000000000000000000000000000000",
         },
         Klay: {
             KlaytnMinterContract: "0x0000000000000000000000000000000000000000",
+            MessageMultiSigWallet: "0x0000000000000000000000000000000000000000",
+        },
+        Orbit: {
+            OrbitMinterContract: "0x0000000000000000000000000000000000000000",
             MessageMultiSigWallet: "0x0000000000000000000000000000000000000000",
         },
         Governance: {

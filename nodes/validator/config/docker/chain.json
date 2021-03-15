@@ -1,14 +1,26 @@
 {
-  "eth": {
-    "src": "src/eth"
+  "eth-v1": {
+    "src": "src/eth/v1"
+  },
+  "eth-v2": {
+    "src": "src/eth/v2"
+  },
+  "klaytn-v1": {
+    "src": "src/klaytn/v1"
+  },
+  "klaytn-v2": {
+    "src": "src/klaytn/v2"
+  },
+  "icon-v1": {
+    "src": "src/icon/v1"
+  },
+  "icon-v2": {
+    "src": "src/icon/v2"
   },
   "terra": {
     "src": "src/terra"
   },
-  "klaytn": {
-    "src": "src/klaytn"
-  },
-  "icon": {
-    "src": "src/icon"
+  "orbit": {
+    "src": "src/orbit"
   }
 }

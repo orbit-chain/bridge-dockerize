@@ -1,11 +1,12 @@
-global.logger.eth = require('./logger');
+global.logger.icon_v1 = require('./logger');
 
 const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
 const txSender = require(ROOT + '/lib/txsender');
 const packer = require('./utils/packer');
 
-const BridgeUtils = require('./utils/eth.bridgeutils');
+const icon = require('./utils/icon.api');
+const BridgeUtils = require('./utils/icon.bridgeutils');
 const bridgeUtils = new BridgeUtils();
 
 const FIX_GAS = 99999999;
@@ -21,8 +22,7 @@ let eventList = [
 
 let govInfo;
 
-const chainName = 'ETH';
-const mainnet = Britto.getNodeConfigBase('mainnet');
+const chainName = 'ICON';
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
 function initialize(_account) {
@@ -31,45 +31,34 @@ function initialize(_account) {
 
     account = _account;
 
-    monitor.address[chainName] = account.address;
-
     govInfo = config.governance;
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
 
-    mainnet.rpc = config.rpc.ETH_MAINNET_RPC;
-    if(govInfo.chain === chainName){
-        mainnet.address = govInfo.address;
-        mainnet.abi = Britto.getJSONInterface('EthVault.abi');
-    }
-    else{
-        mainnet.address = config.contract.ETH_MAINNET_MINTER;
-        mainnet.abi = Britto.getJSONInterface('EthMinter.abi');
-    }
-
     orbitHub.ws = config.rpc.OCHAIN_WS;
     orbitHub.rpc = config.rpc.OCHAIN_RPC;
     orbitHub.address = config.contract.ORBIT_HUB_CONTRACT;
-    orbitHub.abi = Britto.getJSONInterface('OrbitHub.abi');
+    orbitHub.abi = Britto.getJSONInterface({filename: 'OrbitHub.abi', version: 'v1'});
 
-    orbitHub.onconnect = () => { startSubscription(orbitHub) };
+    orbitHub.onconnect = async () => {
+        startSubscription(orbitHub);
+        monitor.address[chainName] = await icon.getAddressByPK(account.pk);
+    };
 
-    global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connecting");
-    new Britto(mainnet, chainName).connectWeb3();
-    global.monitor.setNodeConnectStatus(chainName, orbitHub.ws, "connecting");
-    new Britto(orbitHub, chainName).connectWeb3();
+    global.monitor.setNodeConnectStatus(chainName + '_v1', orbitHub.ws, "connecting");
+    new Britto(orbitHub, chainName + '_v1').connectWeb3();
 
     Britto.setAdd0x();
     Britto.setRemove0x();
 
-    orbitHub.multisig.wallet = config.contract.ETH_BRIDGE_MULTISIG;
-    orbitHub.multisig.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
+    orbitHub.multisig.wallet = config.contract.ICON_BRIDGE_MULTISIG;
+    orbitHub.multisig.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi', version: 'v1'});
     orbitHub.multisig.contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, orbitHub.multisig.wallet);
 }
 
 function startSubscription(node) {
     subscribeNewBlock(node.web3, blockNumber => {
-        global.monitor.setBlockNumber(chainName, blockNumber);
+        global.monitor.setBlockNumber(chainName + '_v1', blockNumber);
         getEvent(blockNumber, node);
     });
 }
@@ -77,7 +66,7 @@ function startSubscription(node) {
 function subscribeNewBlock(web3, callback) {
     web3.eth.subscribe('newBlockHeaders', (err, res) => {
         if (err)
-            return logger.eth.error('subscribeNewBlock subscribe error: ' + err.message);
+            return logger.icon_v1.error('subscribeNewBlock subscribe error: ' + err.message);
 
         if (!res.number) {
             return;
@@ -129,7 +118,7 @@ function getEvent(blockNumber, nodeConfig, nameOrArray, callback) {
                 events = events.filter(e => e.returnValues.fromChain === chainName && e.returnValues.bytes32s[0] === govInfo.id);
 
                 if (events.length > 0) {
-                    logger.eth.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
+                    logger.icon_v1.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
                 }
 
                 if (event.callback)
@@ -141,20 +130,6 @@ function getEvent(blockNumber, nodeConfig, nameOrArray, callback) {
 
         resolve(eventResults);
     });
-}
-
-async function parseEvent(blockNumber, nodeConfig, name) {
-    let options = {
-        filter: {},
-        fromBlock: blockNumber,
-        toBlock: blockNumber
-    };
-
-    let eventResults = await nodeConfig.contract.getPastEvents(name, options);
-
-    global.monitor.setBlockNumber(chainName + '_MAINNET', blockNumber);
-
-    return eventResults;
 }
 
 function receiveSwapRelay(events) {
@@ -189,68 +164,88 @@ function validateSwap(data) {
     let validator = {...data.validator} || {};
     delete data.validator;
 
-    mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
+    icon.getTransactionResult(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
-            logger.eth.error('No Transaction Receipt.');
+            logger.icon_v1.error('No transaction receipt.');
+            return;
+        }
+
+        if (receipt.eventLogs.length === 0){
+            logger.icon_v1.error('No transaction event log.');
             return;
         }
 
         if(!bridgeUtils.isValidAddress(data.toChain, data.toAddr)){
-            logger.eth.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
+            logger.icon_v1.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
             return;
         }
 
-        let events = await parseEvent(receipt.blockNumber, mainnet, (govInfo.chain === chainName)? "Deposit" : "SwapRequest");
-        if (events.length == 0){
-            logger.eth.error('Invalid Transaction.');
-            return;
-        }
-
-        let isSame = false;
-        events.forEach(async _event => {
-            if(_event.address.toLowerCase() !== mainnet.address.toLowerCase()){
-                return;
-            }
-
-            if(_event.returnValues.depositId !== data.uints[2]){
-                return;
-            }
-
-            let params = _event.returnValues;
-
-            // 이벤트에서 받은 데이터와 컨트랙트에 기록된 deposit data가 모두 일치하는지 확인
-            isSame = data.fromChain === params.fromChain
-                && data.toChain === params.toChain
-                && data.fromAddr.toLowerCase() === params.fromAddr.toLowerCase()
-                && data.toAddr.toLowerCase() === params.toAddr.toLowerCase()
-                && data.token.toLowerCase() === params.token.toLowerCase()
-                && data.uints[0] === params.amount
-                && data.uints[1] === params.decimal
+        let currentBlock = await icon.getLastBlock().catch(e => {
+            logger.icon_v1.error('getLastBlock() execute error: ' + e.message);
         });
-
-        let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
-            logger.eth.error('getBlockNumber() execute error: ' + e.message);
-        });
-
         if (!currentBlock)
             return console.error('No current block data.');
 
+        global.monitor.setBlockNumber(chainName + '_MAINNET', currentBlock.height);
+
         // Check deposit block confirmed
-        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.ethConfirmCount;
+        let isConfirmed = currentBlock.height - Number(receipt.blockHeight) >= config.system.iconConfirmCount;
+
+        let fromChain;
+        let toChain;
+        let fromAddr;
+        let toAddr;
+        let token;
+        let decimal;
+        let amount;
+
+        let log;
+        for(log of receipt.eventLogs){
+            if(log.scoreAddress.toLowerCase() !== icon.contract.address.toLowerCase())
+                continue;
+
+            if(log.indexed[0] !== "SwapRequest(str,str,bytes,bytes,bytes,bytes,int,int,int)")
+                continue;
+
+            // depositId check
+            if(icon.toHex(log.data[8]) !== icon.toHex(data.uints[2]))
+                continue;
+
+            fromChain = log.data[0];
+            toChain = log.data[1];
+            fromAddr = log.data[2];
+            toAddr = log.data[3];
+            token = log.data[4];
+            decimal = log.data[6];
+            amount = log.data[7]
+        }
+
+        if(!fromChain || !toChain || !fromAddr || !toAddr || !token || !decimal || !amount){
+            logger.icon_v1.error("Can't find event data");
+            return;
+        }
+
+        let isSame = data.fromChain === fromChain
+            && data.toChain === toChain
+            && data.fromAddr.toLowerCase() === fromAddr.toLowerCase()
+            && data.toAddr.toLowerCase() === toAddr.toLowerCase()
+            && data.token.toLowerCase() === token.toLowerCase()
+            && icon.toHex(data.uints[0]) === icon.toHex(amount)
+            && icon.toHex(data.uints[1]) === icon.toHex(decimal)
 
         // 두 조건을 만족하면 valid
         if (isConfirmed && isSame)
             await valid(data);
         else
-            console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed, 'isSame: ' + isSame);
+            console.log('Icon Swap Validated fromThash(' + data.bytes32s[1] + ') is invalid.', 'isConfirmed: ' + isConfirmed, 'isSame: ' + isSame);
     }).catch(e => {
-        logger.eth.error('validateSwap error: ' + e.message);
+        logger.icon_v1.error('validateSwap getReceipt call error: ' + e.message);
     });
 
     async function valid(data) {
         let sender = Britto.getRandomPkAddress();
         if(!sender || !sender.pk || !sender.address){
-            logger.eth.error("Cannot Generate account");
+            logger.icon_v1.error("Cannot Generate account");
             return;
         }
 
@@ -274,7 +269,7 @@ function validateSwap(data) {
         let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                logger.eth.error(`Already signed. validated swapHash: ${hash}`);
+                logger.icon_v1.error(`Already signed. validated swapHash: ${hash}`);
                 return;
             }
         }
@@ -301,7 +296,7 @@ function validateSwap(data) {
         };
 
         let gasLimit = await orbitHub.contract.methods.validateSwap(...params).estimateGas(txOptions).catch(e => {
-            logger.eth.error('validateSwap estimateGas error: ' + e.message)
+            logger.icon_v1.error('validateSwap estimateGas error: ' + e.message)
         });
 
         if (!gasLimit)
@@ -316,7 +311,7 @@ function validateSwap(data) {
         };
 
         await txSender.sendTransaction(orbitHub, txData, {address: sender.address, pk: sender.pk, timeout: 1});
-        global.monitor && global.monitor.setProgress(chainName, 'validateSwap', data.block);
+        global.monitor && global.monitor.setProgress(chainName + '_v1', 'validateSwap', data.block);
     }
 }
 

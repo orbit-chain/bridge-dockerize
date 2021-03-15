@@ -10,7 +10,7 @@ const tsFormat = function () {
 
 //////////////////////////////////////////////////////////////////////////////////////////
 const myFormat = winston.format.printf(info => {
-    return '[ETH] ' + tsFormat() + ' ' + info.message;
+    return '[ETH-v2] ' + tsFormat() + ' ' + info.message;
 });
 
 // Normal Logger: Winston
@@ -26,13 +26,13 @@ let logger = winston.createLogger({
         }),
 
         new(require('winston-daily-rotate-file'))({
-            filename: './logs/eth/general.log',
+            filename: './logs/eth/v2/general.log',
             json: false
         }),
     ],
     exceptionHandlers: [
         new(require('winston-daily-rotate-file'))({
-            filename: './logs/eth/exception.log',
+            filename: './logs/eth/v2/exception.log',
             humanReadableUnhandledException: true,
             handleExceptions: true,
             json: false

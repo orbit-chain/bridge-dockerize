@@ -37,7 +37,8 @@ class Britto {
                 contract: null,
                 abi: null
             },
-            isConnected: false
+            isConnected: false,
+            pingInterval: null
         }
     }
 
@@ -68,7 +69,7 @@ class Britto {
         node.contract = new node.web3.eth.Contract(node.abi, node.address);
 
         if (node.ws)
-            setInterval(this.ping.bind(this), 1000); // connection check
+            this.node.pingInterval = setInterval(this.ping.bind(this), 5000); // connection check
     }
 
     getProvider() {
@@ -120,6 +121,11 @@ class Britto {
 
         const context = this;
 
+        if(this.node.pingInterval){
+            clearInterval(this.node.pingInterval);
+            this.node.pingInterval = null;
+        }
+
         let isListening;
         try {
             isListening = await this.node.web3.eth.net.isListening();
@@ -130,6 +136,10 @@ class Britto {
 
         if (!isListening)
             context.reconnectWeb3();
+
+        if(!this.node.pingInterval){
+            this.node.pingInterval = setInterval(this.ping.bind(this), 5000);
+        }
     }
 
     reconnectWeb3() {
@@ -151,7 +161,7 @@ class Britto {
         node.web3.setProvider(this.getProvider());
     }
 
-    static getJSONInterface(filename, path) {
+    static getJSONInterface({filename, path, version}) {
         if (!filename)
             throw 'Invalid JSON Interface filename.';
 
@@ -161,7 +171,7 @@ class Britto {
         const RUNNING_LEVEL = process.env.RUNNING_LEVEL || 'dev';
         const defaultPath = process.cwd() + '/abi/' + RUNNING_LEVEL;
 
-        return JSON.parse(fs.readFileSync(`${path ? path : defaultPath}/${filename}`, 'utf8'));
+        return JSON.parse(fs.readFileSync(`${path ? path : defaultPath}/${version ? version : 'v1'}/${filename}`, 'utf8'));
     }
 
     static sha256sol(arr) {

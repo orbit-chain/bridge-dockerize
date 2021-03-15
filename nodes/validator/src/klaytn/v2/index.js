@@ -1,4 +1,4 @@
-global.logger.klaytn = require('./logger');
+global.logger.klaytn_v2 = require('./logger');
 
 const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
@@ -17,6 +17,10 @@ let eventList = [
     {
         name: 'SwapRelay',
         callback: receiveSwapRelay
+    },
+    {
+        name: 'SwapNFTRelay',
+        callback: receiveSwapNFTRelay
     }
 ];
 
@@ -28,7 +32,7 @@ const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
 async function initialize(_account) {
     if (!_account || !_account.address || !_account.pk)
-        throw 'Invalid Ethereum Wallet Account';
+        throw 'Invalid klaytnereum Wallet Account';
 
     account = _account;
 
@@ -54,54 +58,54 @@ async function initialize(_account) {
         mainnet.caver = new Caver(config.klaytn.KLAYTN_RPC);
     }
 
-    global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connecting");
+    global.monitor.setNodeConnectStatus(chainName + "_v2", mainnet.rpc, "connecting");
 
     let isListening = await mainnet.caver.klay.net.isListening().catch(e => {
-        logger.klaytn.error(e);
+        logger.klaytn_v2.error(e);
         return;
     });
 
     if(!isListening){
-        global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connectionFail");
+        global.monitor.setNodeConnectStatus(chainName + "_v2", mainnet.rpc, "connectionFail");
         return;
     }
     else{
         logger.info(`[KLAYTN] klaytn caver connected to ${mainnet.rpc}`);
-        global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connected");
+        global.monitor.setNodeConnectStatus(chainName + "_v2", mainnet.rpc, "connected");
     }
 
     if(govInfo.chain === chainName){
         mainnet.address = govInfo.address;
-        mainnet.abi = Britto.getJSONInterface('KlaytnVault.abi');
+        mainnet.abi = Britto.getJSONInterface({filename: 'KlaytnVault.abi', version: 'v2'});
         mainnet.contract = new mainnet.caver.klay.Contract(mainnet.abi, mainnet.address);
     }
     else{
         mainnet.address = config.contract.KLAYTN_MAINNET_MINTER;
-        mainnet.abi = Britto.getJSONInterface('KlaytnMinter.abi');
+        mainnet.abi = Britto.getJSONInterface({filename: 'KlaytnMinter.abi', version: 'v2'});
         mainnet.contract = new mainnet.caver.klay.Contract(mainnet.abi, mainnet.address);
     }
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
     orbitHub.rpc = config.rpc.OCHAIN_RPC;
     orbitHub.address = config.contract.ORBIT_HUB_CONTRACT;
-    orbitHub.abi = Britto.getJSONInterface('OrbitHub.abi');
+    orbitHub.abi = Britto.getJSONInterface({filename: 'OrbitHub.abi', version: 'v2'});
 
     orbitHub.onconnect = () => { startSubscription(orbitHub) };
 
-    global.monitor.setNodeConnectStatus(chainName, orbitHub.ws, "connecting");
-    new Britto(orbitHub, chainName).connectWeb3();
+    global.monitor.setNodeConnectStatus(chainName + "_v2", orbitHub.ws, "connecting");
+    new Britto(orbitHub, chainName + "_v2").connectWeb3();
 
     Britto.setAdd0x();
     Britto.setRemove0x();
 
     orbitHub.multisig.wallet = config.contract.KLAYTN_BRIDGE_MULTISIG;
-    orbitHub.multisig.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
+    orbitHub.multisig.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi', version: 'v2'});
     orbitHub.multisig.contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, orbitHub.multisig.wallet);
 }
 
 function startSubscription(node) {
     subscribeNewBlock(node.web3, blockNumber => {
-        global.monitor.setBlockNumber(chainName, blockNumber);
+        global.monitor.setBlockNumber(chainName + "_v2", blockNumber);
         getEvent(blockNumber, node);
     });
 }
@@ -109,7 +113,7 @@ function startSubscription(node) {
 function subscribeNewBlock(web3, callback) {
     web3.eth.subscribe('newBlockHeaders', (err, res) => {
         if (err)
-            return logger.klaytn.error('subscribeNewBlock subscribe error: ' + err.message);
+            return logger.klaytn_v2.error('subscribeNewBlock subscribe error: ' + err.message);
 
         if (!res.number) {
             return;
@@ -161,7 +165,7 @@ function getEvent(blockNumber, nodeConfig, nameOrArray, callback) {
                 events = events.filter(e => e.returnValues.fromChain === chainName && e.returnValues.bytes32s[0] === govInfo.id);
 
                 if (events.length > 0) {
-                    logger.klaytn.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
+                    logger.klaytn_v2.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
                 }
 
                 if (event.callback)
@@ -201,10 +205,6 @@ function receiveSwapRelay(events) {
 
         let returnValues = {
             fromChain: event.returnValues.fromChain,
-            toChain: event.returnValues.toChain,
-            fromAddr: event.returnValues.fromAddr,
-            toAddr: event.returnValues.toAddr,
-            token: event.returnValues.token,
             bytes32s: event.returnValues.bytes32s,
             uints: event.returnValues.uints
         };
@@ -223,22 +223,17 @@ function validateSwap(data) {
 
     mainnet.caver.klay.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
-            logger.klaytn.error('No Transaction Receipt.');
+            logger.klaytn_v2.error('No Transaction Receipt.');
             return;
         }
 
-        if(!bridgeUtils.isValidAddress(data.toChain, data.toAddr)){
-            logger.klaytn.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
-            return;
-        }
-
-        let events = await parseEvent(receipt.blockNumber, mainnet,  (govInfo.chain === chainName)? "Deposit" : "SwapRequest");
+        let events = await parseEvent(receipt.blockNumber, mainnet, (govInfo.chain === chainName)? "Deposit" : "SwapRequest");
         if (events.length == 0){
-            logger.klaytn.error('Invalid Transaction.');
+            logger.klaytn_v2.error('Invalid Transaction.');
             return;
         }
 
-        let isSame = false;
+        let params;
         events.forEach(async _event => {
             if(_event.address.toLowerCase() !== mainnet.address.toLowerCase()){
                 return;
@@ -248,46 +243,52 @@ function validateSwap(data) {
                 return;
             }
 
-            let params = _event.returnValues;
-
-            // 이벤트에서 받은 데이터와 컨트랙트에 기록된 deposit data가 모두 일치하는지 확인
-            isSame = data.fromChain === params.fromChain
-                && data.toChain === params.toChain
-                && data.fromAddr.toLowerCase() === params.fromAddr.toLowerCase()
-                && data.toAddr.toLowerCase() === params.toAddr.toLowerCase()
-                && data.token.toLowerCase() === params.token.toLowerCase()
-                && data.uints[0] === params.amount
-                && data.uints[1] === params.decimal
+            params = _event.returnValues;
         });
 
+        if (!params.data) {
+            params.data = "0x";
+        }
+
+        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.decimal){
+            logger.klaytn_v2.error("Invalid Transaction (event params)");
+            return;
+        }
+
+        if(!bridgeUtils.isValidAddress(params.toChain, params.toAddr)){
+            logger.klaytn_v2.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
+            return;
+        }
+
+        params.fromChain = chainName;
+        params.uints = [params.amount, params.decimal, params.depositId];
+        params.bytes32s = [govInfo.id, data.bytes32s[1]];
+
         let currentBlock = await mainnet.caver.klay.getBlockNumber().catch(e => {
-            logger.klaytn.error('getBlockNumber() execute error: ' + e.message);
+            logger.klaytn_v2.error('getBlockNumber() execute error: ' + e.message);
         });
 
         if (!currentBlock)
             return console.error('No current block data.');
 
         // Check deposit block confirmed
-        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.ethConfirmCount;
+        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.klaytnConfirmCount;
 
         // 두 조건을 만족하면 valid
-        if (isConfirmed && isSame)
-            await valid(data);
+        if (isConfirmed)
+            await valid(params);
         else
-            console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed, 'isSame: ' + isSame);
+            console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed);
     }).catch(e => {
-        logger.klaytn.error('validateSwap error: ' + e.message);
+        logger.klaytn_v2.error('validateSwap error: ' + e.message);
     });
 
     async function valid(data) {
         let sender = Britto.getRandomPkAddress();
         if(!sender || !sender.pk || !sender.address){
-            logger.klaytn.error("Cannot Generate account");
+            logger.klaytn_v2.error("Cannot Generate account");
             return;
         }
-
-        let bytes32s = [ data.bytes32s[0], data.bytes32s[1] ];
-        let uints = [ data.uints[0], data.uints[1], data.uints[2] ];
 
         let hash = Britto.sha256sol(packer.packSwapData({
             hubContract: orbitHub.address,
@@ -296,8 +297,9 @@ function validateSwap(data) {
             fromAddr: data.fromAddr,
             toAddr: data.toAddr,
             token: data.token,
-            bytes32s: bytes32s,
-            uints: uints
+            bytes32s: data.bytes32s,
+            uints: data.uints,
+            data: data.data
         }));
 
         let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
@@ -306,7 +308,7 @@ function validateSwap(data) {
         let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                logger.klaytn.error(`Already signed. validated swapHash: ${hash}`);
+                logger.klaytn_v2.error(`Already signed. validated swapHash: ${hash}`);
                 return;
             }
         }
@@ -321,8 +323,9 @@ function validateSwap(data) {
             data.fromAddr,
             data.toAddr,
             data.token,
-            bytes32s,
-            uints,
+            data.bytes32s,
+            data.uints,
+            data.data,
             sigs
         ];
 
@@ -333,7 +336,7 @@ function validateSwap(data) {
         };
 
         let gasLimit = await orbitHub.contract.methods.validateSwap(...params).estimateGas(txOptions).catch(e => {
-            logger.klaytn.error('validateSwap estimateGas error: ' + e.message)
+            logger.klaytn_v2.error('validateSwap estimateGas error: ' + e.message)
         });
 
         if (!gasLimit)
@@ -348,7 +351,170 @@ function validateSwap(data) {
         };
 
         await txSender.sendTransaction(orbitHub, txData, {address: sender.address, pk: sender.pk, timeout: 1});
-        global.monitor && global.monitor.setProgress(chainName, 'validateSwap', data.block);
+        global.monitor && global.monitor.setProgress(chainName + "_v2", 'validateSwap', data.block);
+    }
+}
+
+
+function receiveSwapNFTRelay(events) {
+    for (let event of events) {
+        if(event.returnValues.bytes32s[0] !== govInfo.id){
+            continue;
+        }
+
+        if(event.returnValues.fromChain !== chainName){
+            continue;
+        }
+
+        let returnValues = {
+            fromChain: event.returnValues.fromChain,
+            bytes32s: event.returnValues.bytes32s,
+            uints: event.returnValues.uints
+        };
+
+        validateSwapNFT({
+            block: event.blockNumber,
+            validator: {address: account.address, pk: account.pk},
+            ...returnValues
+        })
+    }
+}
+
+function validateSwapNFT(data) {
+    let validator = {...data.validator} || {};
+    delete data.validator;
+
+    mainnet.caver.klay.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
+        if (!receipt){
+            logger.klaytn_v2.error('No Transaction Receipt.');
+            return;
+        }
+
+        let events = await parseEvent(receipt.blockNumber, mainnet, (govInfo.chain === chainName)? "DepositNFT" : "SwapRequestNFT");
+        if (events.length == 0){
+            logger.klaytn_v2.error('Invalid Transaction.');
+            return;
+        }
+
+        let params;
+        events.forEach(async _event => {
+            if(_event.address.toLowerCase() !== mainnet.address.toLowerCase()){
+                return;
+            }
+
+            if(_event.returnValues.depositId !== data.uints[2]){
+                return;
+            }
+
+            params = _event.returnValues;
+        });
+
+        if (!params.data) {
+            params.data = "0x";
+        }
+
+        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.tokenId){
+            logger.klaytn_v2.error("Invalid Transaction (event params)");
+            return;
+        }
+
+        if(!bridgeUtils.isValidAddress(params.toChain, params.toAddr)){
+            logger.klaytn_v2.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
+            return;
+        }
+
+        params.fromChain = chainName;
+        params.uints = [params.amount, params.tokenId, params.depositId];
+        params.bytes32s = [govInfo.id, data.bytes32s[1]];
+
+        let currentBlock = await mainnet.caver.klay.getBlockNumber().catch(e => {
+            logger.klaytn_v2.error('getBlockNumber() execute error: ' + e.message);
+        });
+
+        if (!currentBlock)
+            return console.error('No current block data.');
+
+        // Check deposit block confirmed
+        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.klaytnConfirmCount;
+
+        // 두 조건을 만족하면 valid
+        if (isConfirmed)
+            await valid(params);
+        else
+            console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed);
+    }).catch(e => {
+        logger.klaytn_v2.error('validateSwapNFT error: ' + e.message);
+    });
+
+    async function valid(data) {
+        let sender = Britto.getRandomPkAddress();
+        if(!sender || !sender.pk || !sender.address){
+            logger.klaytn_v2.error("Cannot Generate account");
+            return;
+        }
+
+        let hash = Britto.sha256sol(packer.packSwapNFTData({
+            hubContract: orbitHub.address,
+            fromChain: data.fromChain,
+            toChain: data.toChain,
+            fromAddr: data.fromAddr,
+            toAddr: data.toAddr,
+            token: data.token,
+            bytes32s: data.bytes32s,
+            uints: data.uints,
+            data: data.data
+        }));
+
+        let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
+        let contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, toChainMig);
+
+        let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
+        for(var i = 0; i < validators.length; i++){
+            if(validators[i].toLowerCase() === validator.address.toLowerCase()){
+                logger.klaytn_v2.error(`Already signed. validated swapHash: ${hash}`);
+                return;
+            }
+        }
+
+        let signature = Britto.signMessage(hash, validator.pk);
+
+        let sigs = makeSigs(validator.address, signature);
+
+        let params = [
+            data.fromChain,
+            data.toChain,
+            data.fromAddr,
+            data.toAddr,
+            data.token,
+            data.bytes32s,
+            data.uints,
+            data.data,
+            sigs
+        ];
+
+        let txOptions = {
+            gasPrice: orbitHub.web3.utils.toHex('0'),
+            from: sender.address,
+            to: orbitHub.address
+        };
+
+        let gasLimit = await orbitHub.contract.methods.validateSwapNFT(...params).estimateGas(txOptions).catch(e => {
+            logger.klaytn_v2.error('validateSwapNFT estimateGas error: ' + e.message)
+        });
+
+        if (!gasLimit)
+            return;
+
+        txOptions.gasLimit = orbitHub.web3.utils.toHex(FIX_GAS);
+
+        let txData = {
+            method: 'validateSwapNFT',
+            args: params,
+            options: txOptions
+        };
+
+        await txSender.sendTransaction(orbitHub, txData, {address: sender.address, pk: sender.pk, timeout: 1});
+        global.monitor && global.monitor.setProgress(chainName + "_v2", 'validateSwapNFT', data.block);
     }
 }
 

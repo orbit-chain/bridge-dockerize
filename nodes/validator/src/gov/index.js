@@ -43,11 +43,11 @@ async function initialize(_account) {
 
     orbit.ws = config.rpc.OCHAIN_WS;
     orbit.rpc = config.rpc.OCHAIN_RPC;
-    orbit.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
+    orbit.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
     orbit.method = require('./lib/orbit');
 
     eth.rpc = config.rpc.ETH_MAINNET_RPC;
-    eth.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
+    eth.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
     eth.method = require('./lib/eth');
 
     if(config.klaytn.KLAYTN_ISKAS){
@@ -65,7 +65,7 @@ async function initialize(_account) {
         klaytn.rpc = config.klaytn.KLAYTN_RPC;
         klaytn.caver = new Caver(config.klaytn.KLAYTN_RPC);
     }
-    klaytn.abi = Britto.getJSONInterface('MessageMultiSigWallet.abi');
+    klaytn.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
     klaytn.method = require('./lib/klaytn');
 
     let isListening = await klaytn.caver.klay.net.isListening().catch(e => {
@@ -77,7 +77,7 @@ async function initialize(_account) {
         logger.info(`[GOV_KLAYTN] klaytn caver connected to ${klaytn.rpc}`);
     }
 
-    abiDecoder.addABI(Britto.getJSONInterface('Governance.abi'));
+    abiDecoder.addABI(Britto.getJSONInterface({filename: 'Governance.abi'}));
 
     orbit.onconnect = () => {
         initialized = true;
