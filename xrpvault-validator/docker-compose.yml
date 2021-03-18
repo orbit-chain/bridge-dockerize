@@ -1,0 +1,22 @@
+version: '3'
+services:
+  validator:
+    extends:
+      file: common.yml
+      service: app
+    build:
+      args:
+        SETTINGS_FILEPATH: xrpvault-validator/settings.js
+        PM2_ECOSYSTEM_FILEPATH: xrpvault-validator/pm2.yaml
+    ports:
+      - 17000:8984
+    networks:
+      - br-xrpvalidator
+
+networks:
+    br-xrpvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.129.0/24
