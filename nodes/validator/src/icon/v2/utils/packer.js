@@ -9,7 +9,7 @@ exports.packSwapData = function(data) {
     result.push({t: 'bytes', v: toHexBuffer(data.token)});
     result.push({t: 'bytes32[]', v: data.bytes32s});
     result.push({t: 'uint[]', v: data.uints});
-    result.push({t: 'bytes', v: data.data});
+    result.push({t: 'bytes', v: toHexBuffer(data.data)});
 
     return result;
 };
@@ -26,7 +26,7 @@ exports.packSwapNFTData = function(data) {
     result.push({t: 'bytes', v: toHexBuffer(data.token)});
     result.push({t: 'bytes32[]', v: data.bytes32s});
     result.push({t: 'uint[]', v: data.uints});
-    result.push({t: 'bytes', v: data.data});
+    result.push({t: 'bytes', v: toHexBuffer(data.data)});
 
     return result;
 };
