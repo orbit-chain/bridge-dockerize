@@ -240,5 +240,159 @@
 		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "valid",
+				"type": "bool"
+			}
+		],
+		"name": "setSilentToken",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+    {
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_taxRate",
+				"type": "uint256"
+			},
+			{
+				"name": "_taxReceiver",
+				"type": "address"
+			},
+			{
+				"name": "_gasLimitForBridgeReceiver",
+				"type": "uint256"
+			}
+		],
+		"name": "setParams",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "proxy",
+				"type": "address"
+			}
+		],
+		"name": "addFarm",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "newProxy",
+				"type": "address"
+			}
+		],
+		"name": "removeFarm",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+    {
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_bridgingFee",
+				"type": "uint256"
+			},
+			{
+				"name": "_bridgingFeeWithData",
+				"type": "uint256"
+			},
+			{
+				"name": "_gasLimitForBridgeReceiver",
+				"type": "uint256"
+			}
+		],
+		"name": "setBridgingParams",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_taxRate",
+				"type": "uint256"
+			}
+		],
+		"name": "setTaxRate",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_taxReceiver",
+				"type": "address"
+			}
+		],
+		"name": "setTaxReceiver",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_deployer",
+				"type": "address"
+			}
+		],
+		"name": "setTokenDeployer",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_feeTokenAddress",
+				"type": "address"
+			}
+		],
+		"name": "setFeeTokenAddress",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
 	}
 ]

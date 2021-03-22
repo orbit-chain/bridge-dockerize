@@ -19,6 +19,32 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "depositToken",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [],
 		"name": "getVersion",
@@ -30,6 +56,28 @@
 		],
 		"payable": false,
 		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_taxRate",
+				"type": "uint256"
+			},
+			{
+				"name": "_taxReceiver",
+				"type": "address"
+			},
+			{
+				"name": "_gasLimitForBridgeReceiver",
+				"type": "uint256"
+			}
+		],
+		"name": "setParams",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -300,6 +348,25 @@
 	},
 	{
 		"constant": true,
+		"inputs": [
+			{
+				"name": "bys",
+				"type": "bytes"
+			}
+		],
+		"name": "bytesToAddress",
+		"outputs": [
+			{
+				"name": "addr",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": true,
 		"inputs": [],
 		"name": "isActivated",
 		"outputs": [
@@ -384,6 +451,46 @@
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "gasLimitForBridgeReceiver",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "depositNFT",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -809,20 +916,6 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_taxRate",
-				"type": "uint256"
-			}
-		],
-		"name": "setTaxRate",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"constant": true,
 		"inputs": [],
 		"name": "chain",
@@ -840,14 +933,18 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_taxReceiver",
-				"type": "address"
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
 			}
 		],
-		"name": "setTaxReceiver",
+		"name": "deposit",
 		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
+		"payable": true,
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -1211,6 +1308,33 @@
 			}
 		],
 		"name": "WithdrawNFT",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "success",
+				"type": "bool"
+			},
+			{
+				"indexed": false,
+				"name": "fromAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "tokenAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "BridgeReceiverResult",
 		"type": "event"
 	},
 	{

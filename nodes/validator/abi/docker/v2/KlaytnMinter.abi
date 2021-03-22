@@ -2,6 +2,20 @@
 	{
 		"constant": true,
 		"inputs": [],
+		"name": "bridgingFeeWithData",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
 		"name": "getVersion",
 		"outputs": [
 			{
@@ -11,6 +25,32 @@
 		],
 		"payable": false,
 		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "nftAddress",
+				"type": "address"
+			},
+			{
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			}
+		],
+		"name": "requestSwapNFT",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -196,6 +236,20 @@
 			{
 				"name": "",
 				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "gasLimitForBridgeReceiver",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"payable": false,
@@ -442,20 +496,6 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_bridgingFee",
-				"type": "uint256"
-			}
-		],
-		"name": "setBridgingFee",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
 				"name": "_taxReceiver",
 				"type": "address"
 			}
@@ -598,6 +638,28 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_bridgingFee",
+				"type": "uint256"
+			},
+			{
+				"name": "_bridgingFeeWithData",
+				"type": "uint256"
+			},
+			{
+				"name": "_gasLimitForBridgeReceiver",
+				"type": "uint256"
+			}
+		],
+		"name": "setBridgingParams",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [
 			{
@@ -628,6 +690,32 @@
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "tokenAddress",
+				"type": "address"
+			},
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "requestSwap",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -827,6 +915,33 @@
 			}
 		],
 		"name": "SwapRequestNFT",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "success",
+				"type": "bool"
+			},
+			{
+				"indexed": false,
+				"name": "fromAddr",
+				"type": "bytes"
+			},
+			{
+				"indexed": false,
+				"name": "tokenAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "BridgeReceiverResult",
 		"type": "event"
 	}
 ]
