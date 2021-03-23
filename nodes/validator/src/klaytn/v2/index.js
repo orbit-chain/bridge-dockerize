@@ -32,7 +32,7 @@ const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
 async function initialize(_account) {
     if (!_account || !_account.address || !_account.pk)
-        throw 'Invalid klaytnereum Wallet Account';
+        throw 'Invalid klaytn Wallet Account';
 
     account = _account;
 
