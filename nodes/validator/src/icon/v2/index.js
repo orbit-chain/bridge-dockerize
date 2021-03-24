@@ -218,6 +218,9 @@ function validateSwap(data) {
             depositId = log.data[8];
             executionData = log.data[9];
         }
+        if (!executionData) {
+            executionData = '0x';
+        }
 
         if(!fromChain || !toChain || !fromAddr || !toAddr || !token || !decimal || !amount || !depositId || !executionData){
             logger.icon_v2.error("Can't find event data");
@@ -402,6 +405,9 @@ function validateSwapNFT(data) {
             amount = log.data[7];
             depositId = log.data[8];
             executionData = log.data[9];
+        }
+        if (!executionData) {
+            executionData = '0x';
         }
 
         if(!fromChain || !toChain || !fromAddr || !toAddr || !token || !decimal || !amount || !depositId || !executionData){
