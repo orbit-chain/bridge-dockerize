@@ -6,6 +6,7 @@ module.exports = {
         'icon-v1',
         'eth-v2',
         'klaytn-v2',
+        'icon-v2',
         'orbit',
     ],
 
@@ -52,9 +53,7 @@ module.exports = {
             socket : "ws://infura",
         },
         Klaytn: {
-            isKas: false,
-            rpc: "https://api.cypress.klaytn.net:8651",
-            socket: "wss://api.cypress.klaytn.net:8652",
+            isKas: true,
             Kas: {
                 // KAS Default
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
