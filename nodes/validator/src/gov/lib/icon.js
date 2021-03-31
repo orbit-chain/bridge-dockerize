@@ -4,6 +4,10 @@ const errmInvalidTransaction = {
     "data": "NotFoundError: Can't find transaction"
 }
 
+async function init() {
+    return require('../utils/icon.api');
+}
+
 async function _getTransaction(node, data) {
     let iconNode = {...node};
     let mig = await iconNode.getCallBuilder(data.multisig);
@@ -15,12 +19,17 @@ async function _getTransaction(node, data) {
 
     let myAddress = monitor.address["ICON"];
 
+    let ownerCount = await iconNode.call(mig, "getWalletOwnerCount", {}).catch(e=>{return;});
+    if(!ownerCount){
+        return errmInvalidTransaction;
+    }
+
     let confirmationCount = await iconNode.call(mig, "getConfirmationCount", {"_transactionId": data.transactionId}).catch(e=>{return;});
     if(!confirmationCount){
         return errmInvalidTransaction;
     }
 
-    let confirmedValidatorList = await iconNode.call(mig, "getConfirmations", {"_offset": "0", "_count": confirmationCount, "_transactionId": data.transactionId}).catch(e=>{return;});
+    let confirmedValidatorList = await iconNode.call(mig, "getConfirmations", {"_offset": "0", "_count": ownerCount, "_transactionId": data.transactionId}).catch(e=>{return;});
     if(!confirmedValidatorList){
         return errmInvalidTransaction;
     }
@@ -39,6 +48,7 @@ async function _getTransaction(node, data) {
     transaction.myAddress = myAddress;
     transaction.myConfirmation = myConfirmation;
     transaction.multisig_requirement = required;
+    transaction.confirmationCount = confirmationCount;
     transaction.confirmedValidatorList = confirmedValidatorList;
 
     let destinationContract = "Unknown Contract";
@@ -100,6 +110,7 @@ async function _confirmTransaction(node, data) {
 }
 
 module.exports = {
+    init,
     _getTransaction,
     _confirmTransaction
 }

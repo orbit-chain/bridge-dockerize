@@ -20,5 +20,9 @@ module.exports = {
     ICON_BRIDGE_CONTRACT: settings.BridgeAddress.IconBridgeContract,
     ICON_BRIDGE_MULTISIG: settings.BridgeAddress.MessageMultiSigWallet.Icon,
     ORBIT_BRIDGE_CONTRACT: settings.BridgeAddress.OrbitBridgeContract,
-    ORBIT_BRIDGE_MULTISIG: settings.BridgeAddress.MessageMultiSigWallet.Orbit
+    ORBIT_BRIDGE_MULTISIG: settings.BridgeAddress.MessageMultiSigWallet.Orbit,
+    XRP_BRIDGE_CONTRACT: settings.BridgeAddress.XrpBridgeContract,
+    XRP_BRIDGE_MULTISIG: settings.BridgeAddress.MessageMultiSigWallet.Xrp,
+    XRP_ADDRESS_BOOK: settings.BridgeAddress.XrpAddressBook,
 };
+

@@ -1,6 +1,7 @@
 const bech32 = require('bech32');
+const rippleAddr = require('ripple-address-codec');
 
-class EthBridgeUtils {
+class OrbitBridgeUtils {
     str2hex(input){
         if (typeof(input) !== 'string'){
             return "";
@@ -52,6 +53,17 @@ class EthBridgeUtils {
             return address.slice(0,2) === '0x' && address.length == 42;
         }
 
+        if(toChain === "XRP"){
+            try{
+                let buf = Buffer.from(address.replace('0x', ''), 'hex');
+                address = rippleAddr.codec.codec.encode(buf);
+            }catch(e) {
+                return false;
+            }
+
+            return rippleAddr.isValidClassicAddress(address) || rippleAddr.isValidXAddress(address);
+        }
+
         return false;
     }
 
@@ -60,4 +72,4 @@ class EthBridgeUtils {
     }
 }
 
-module.exports = EthBridgeUtils;
+module.exports = OrbitBridgeUtils;

@@ -1,9 +1,43 @@
 const config = require(ROOT + '/config');
 const txSender = require(ROOT + '/lib/txsender');
+const Britto = require(ROOT + '/lib/britto');
+const Caver = require('caver-js');
 
 const errmInvalidTransaction =  {
     "errm": "[KLAYTN] Invalid Transaction Id",
     "data": "NotFoundError: Can't find data"
+}
+
+async function init(){
+    const klaytn = Britto.getNodeConfigBase('klaytn');
+
+    if(config.klaytn.KLAYTN_ISKAS){
+        const option = {
+            headers: [
+                {name: 'Authorization', value: 'Basic ' + Buffer.from(config.klaytn.KLAYTN_KAS.accessKeyId + ':' + config.klaytn.KLAYTN_KAS.secretAccessKey).toString('base64')},
+                {name: 'x-chain-id', value: config.klaytn.KLAYTN_KAS.chainId},
+            ]
+        }
+
+        klaytn.rpc = config.klaytn.KLAYTN_KAS.rpc;
+        klaytn.caver = new Caver(new Caver.providers.HttpProvider(config.klaytn.KLAYTN_KAS.rpc, option));
+    }
+    else{
+        klaytn.rpc = config.klaytn.KLAYTN_RPC;
+        klaytn.caver = new Caver(config.klaytn.KLAYTN_RPC);
+    }
+    klaytn.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
+
+    let isListening = await klaytn.caver.klay.net.isListening().catch(e => {
+        logger.error(e);
+        return;
+    });
+
+    if(isListening){
+        logger.info(`[GOV_KLAYTN] klaytn caver connected to ${klaytn.rpc}`);
+    }
+
+    return klaytn;
 }
 
 async function _getTransaction(node, data, abiDecoder) {
@@ -149,6 +183,7 @@ async function _confirmTransaction(node, data) {
 }
 
 module.exports = {
+    init,
     _getTransaction,
     _confirmTransaction
 }

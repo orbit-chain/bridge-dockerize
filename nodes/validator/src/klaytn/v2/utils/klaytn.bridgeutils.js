@@ -1,4 +1,5 @@
 const bech32 = require('bech32');
+const rippleAddr = require('ripple-address-codec');
 
 class KlaytnBridgeUtils {
     str2hex(input){
@@ -50,6 +51,17 @@ class KlaytnBridgeUtils {
 
         if(toChain === "ORBIT"){
             return address.slice(0,2) === '0x' && address.length == 42;
+        }
+
+        if(toChain === "XRP"){
+            try{
+                let buf = Buffer.from(address.replace('0x', ''), 'hex');
+                address = rippleAddr.codec.codec.encode(buf);
+            }catch(e) {
+                return false;
+            }
+
+            return rippleAddr.isValidClassicAddress(address) || rippleAddr.isValidXAddress(address);
         }
 
         return false;
