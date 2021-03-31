@@ -39,7 +39,7 @@ async function initialize(_account) {
     orbit.method = require('./lib/orbit');
 
     for(let chain of settings.chainList){
-        let name = chain.replace('-v2', '').toLowerCase();
+        let name = chain.replace(/-v[1-9]$/, '').toLowerCase();
 
         if(chainNode[name] || name === 'orbit' || name === 'xrp'){
             continue;
