@@ -1,24 +1,16 @@
 global.logger.gov = require('./logger');
 
 const config = require(ROOT + '/config');
+const settings = config.requireEnv("./settings");
 const Britto = require(ROOT + '/lib/britto');
-const Caver = require('caver-js');
 const abiDecoder = require('abi-decoder');
 
 let account = {};
 let initialized;
 
-let chainNode = {
-    "eth": null,
-    "orbit": null,
-    "klaytn": null,
-    "icon": null
-};
+let chainNode = {};
 
 const orbit = Britto.getNodeConfigBase('orbit');
-const eth = Britto.getNodeConfigBase('eth');
-const klaytn = Britto.getNodeConfigBase('klaytn');
-const icon = require('./utils/icon.api');
 
 const errmBeforeInitialize = {
     "errm": "Before Initialized",
@@ -46,35 +38,19 @@ async function initialize(_account) {
     orbit.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
     orbit.method = require('./lib/orbit');
 
-    eth.rpc = config.rpc.ETH_MAINNET_RPC;
-    eth.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
-    eth.method = require('./lib/eth');
+    for(let chain of settings.chainList){
+        let name = chain.replace('-v2', '').toLowerCase();
 
-    if(config.klaytn.KLAYTN_ISKAS){
-        const option = {
-            headers: [
-                {name: 'Authorization', value: 'Basic ' + Buffer.from(config.klaytn.KLAYTN_KAS.accessKeyId + ':' + config.klaytn.KLAYTN_KAS.secretAccessKey).toString('base64')},
-                {name: 'x-chain-id', value: config.klaytn.KLAYTN_KAS.chainId},
-            ]
+        if(chainNode[name] || name === 'orbit' || name === 'xrp'){
+            continue;
         }
 
-        klaytn.rpc = config.klaytn.KLAYTN_KAS.rpc;
-        klaytn.caver = new Caver(new Caver.providers.HttpProvider(config.klaytn.KLAYTN_KAS.rpc, option));
-    }
-    else{
-        klaytn.rpc = config.klaytn.KLAYTN_RPC;
-        klaytn.caver = new Caver(config.klaytn.KLAYTN_RPC);
-    }
-    klaytn.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
-    klaytn.method = require('./lib/klaytn');
+        let method = require(`./lib/${name}`);
 
-    let isListening = await klaytn.caver.klay.net.isListening().catch(e => {
-        logger.error(e);
-        return;
-    });
+        let node = await method.init();
+        node.method = method
 
-    if(isListening){
-        logger.info(`[GOV_KLAYTN] klaytn caver connected to ${klaytn.rpc}`);
+        chainNode[name] = node;
     }
 
     abiDecoder.addABI(Britto.getJSONInterface({filename: 'Governance.abi'}));
@@ -83,15 +59,9 @@ async function initialize(_account) {
         initialized = true;
 
         chainNode["orbit"] = orbit;
-        chainNode["eth"] = eth;
-        chainNode["klaytn"] = klaytn;
-
-        icon.method = require('./lib/icon');
-        chainNode["icon"] = icon;
     };
 
     new Britto(orbit, 'GOV_ORBIT').connectWeb3();
-    new Britto(eth, 'GOV_ETH').connectWeb3();
 
     Britto.setAdd0x();
     Britto.setRemove0x();

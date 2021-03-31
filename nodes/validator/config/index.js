@@ -15,3 +15,4 @@ exports.terra = require(`./${RUNNING_LEVEL}/terra.js`);
 exports.klaytn = require(`./${RUNNING_LEVEL}/klaytn.js`);
 exports.governance = require(`./${RUNNING_LEVEL}/governance.js`);
 exports.icon = require(`./${RUNNING_LEVEL}/icon.js`);
+exports.ripple = require(`./${RUNNING_LEVEL}/ripple.js`);

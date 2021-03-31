@@ -1,10 +1,22 @@
 const api = require(ROOT + '/lib/api');
 const txSender = require(ROOT + '/lib/txsender');
 const config = require(ROOT + '/config');
+const Britto = require(ROOT + '/lib/britto');
 
 const errmInvalidTransaction =  {
     "errm": "[ETH] Invalid Transaction Id",
     "data": "NotFoundError: Can't find data"
+}
+
+async function init(){
+    const eth = Britto.getNodeConfigBase('eth');
+
+    eth.rpc = config.rpc.ETH_MAINNET_RPC;
+    eth.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
+
+    new Britto(eth, 'GOV_ETH').connectWeb3();
+
+    return eth;
 }
 
 async function _getTransaction(node, data, abiDecoder) {
@@ -155,6 +167,7 @@ async function getCurrentGas() {
 }
 
 module.exports = {
+    init,
     _getTransaction,
     _confirmTransaction
 }
