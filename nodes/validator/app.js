@@ -30,9 +30,11 @@ if (!v3)
 let account = {
     address: v3.address,
     pk: v3.pk,
+    publicKey: v3.publicKey,
     name: "validatorDocker"
 };
 global.monitor.validatorAddress = account.address;
+global.monitor.publicKey = account.publicKey;
 console.log('Start Orbit Chain Validator ! : ' + account.address);
 
 if(!config.chain || Object.keys(config.chain).length === 0) {
