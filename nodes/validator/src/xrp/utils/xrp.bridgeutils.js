@@ -121,7 +121,7 @@ class XrpBridge {
         let keyPair = {privateKey: pk};
         pk = null;
 
-        keyPair.publicKey = secp256k1.keyFromPrivate(pk);
+        keyPair.publicKey = Buffer.from(secp256k1.keyFromPrivate(keyPair.privateKey).getPublic().encodeCompressed()).toString('hex');
         keyPair.address = this.getAddress(keyPair.publicKey);
 
         return keyPair;
@@ -298,7 +298,7 @@ class XrpBridge {
                 return false;
             }
 
-            return addressCodec.isValidClassicAddress(address) || addressCodec.isValidXAddress(address);
+            return addressCodec.isValidClassicAddress(address);
         }
 
         return false;

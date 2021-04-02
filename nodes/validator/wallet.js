@@ -51,7 +51,8 @@ class WalletUtil {
             address: wallet.getAddressString(),
             addressBuffer: wallet.getAddress(),
             pk: wallet.getPrivateKey().toString('hex'),
-            pkBuffer: wallet.getPrivateKey()
+            pkBuffer: wallet.getPrivateKey(),
+            publicKey: wallet.getPublicKeyString()
         }
     }
     static makeWallet(seed, password, encryptCount) {

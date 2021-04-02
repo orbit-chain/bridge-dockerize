@@ -61,7 +61,7 @@ class KlaytnBridgeUtils {
                 return false;
             }
 
-            return rippleAddr.isValidClassicAddress(address) || rippleAddr.isValidXAddress(address);
+            return rippleAddr.isValidClassicAddress(address);
         }
 
         return false;

@@ -62,6 +62,8 @@ function initialize(_account) {
         throw 'Empty Governance Info';
 
     ripple.on("connected", () => {
+        monitor.address[chainName] = bridgeUtils.getKeyPair(account.pk).address;
+
         orbitHub.ws = config.rpc.OCHAIN_WS;
         orbitHub.rpc = config.rpc.OCHAIN_RPC;
         orbitHub.address = config.contract.ORBIT_HUB_CONTRACT;
@@ -305,19 +307,20 @@ async function validateSwap(data) {
         return;
     }
 
+    let addressObj = [];
+    vaultInfo.SignerEntries.forEach(entry => {
+        addressObj[entry.SignerEntry.Account] = true;
+    })
     let cnt = 0;
     for (let i=0; i < validateCount; i++) {
         const v = await addressBook.multisig.contract.methods.vSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
         const r = await addressBook.multisig.contract.methods.rSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
         const s = await addressBook.multisig.contract.methods.sSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
         const xrpAddr = bridgeUtils.getAddress(bridgeUtils.recoverPubKey(tagHash, v, r, s));
-        for (let j=0; j < vaultInfo.SignerEntries.length; j++) {
-            const e = vaultInfo.SignerEntries[j];
-            if (e.SignerEntry && e.SignerEntry.Account && e.SignerEntry.Account === xrpAddr) {
-                cnt++;
-                break;
-            }
+        if (addressObj[xrpAddr]) {
+            cnt++;
         }
+        delete addressObj[xrpAddr];
     }
     if (cnt < quorumCnt) {
         logger.xrp.error(`validateSwap error: validated address not matched in vault signer addresses`);
