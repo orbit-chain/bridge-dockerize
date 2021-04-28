@@ -51,6 +51,25 @@ const addressBook = Britto.getNodeConfigBase('xrpAddressBook');
 
 let govInfo;
 
+let reconnectHandle;
+let tryReconnect = () =>{
+    if (ripple.isConnected()) {
+        logger.info("Web4 recovered : " + config.ripple.ws);
+        if (reconnectHandle)
+            clearInterval(reconnectHandle);
+        reconnectHandle = null;
+        return;
+    }
+    if (ripple.__tryreconnect >= 100) {
+        logger.error("program exit cause ripple connection lost to " + config.ripple.ws);
+        process.exit(2);
+    } else {
+        ripple.__tryreconnect++;
+        logger.warn("try reconnect to " + config.ripple.ws + "(" + ripple.__tryreconnect + ")");
+        ripple.connect();
+    }
+}
+
 function initialize(_account) {
     if (!_account || !_account.address || !_account.pk)
         throw 'Invalid Ethereum Wallet Account';
@@ -61,7 +80,26 @@ function initialize(_account) {
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
 
+    ripple.__tryreconnect = 0;
+
+    ripple.on('disconnected', (code) => {
+        global.monitor.setNodeConnectStatus(chainName, config.ripple.ws, "disconnected");
+        if (code !== 1000) {
+            if (reconnectHandle)
+                clearInterval(reconnectHandle);
+            reconnectHandle = setInterval(() => {
+                tryReconnect();
+            }, 5000);
+            tryReconnect();
+        }
+    });
+
     ripple.on("connected", () => {
+        ripple.__tryreconnect = 0;
+        global.monitor.setNodeConnectStatus(chainName, config.ripple.ws, "connected");
+        logger.info(`[${chainName}] web4 connected to ${config.ripple.ws}`);
+
+        if(monitor.address[chainName]) return;
         monitor.address[chainName] = bridgeUtils.getKeyPair(account.pk).address;
 
         orbitHub.ws = config.rpc.OCHAIN_WS;
@@ -109,9 +147,19 @@ function initialize(_account) {
         addressBook.multisig.contract = new addressBook.web3.eth.Contract(addressBook.multisig.abi, addressBook.multisig.wallet);
     });
 
+    logger.info(`[${chainName}] web4 connecting to ${config.ripple.ws}`);
+    global.monitor.setNodeConnectStatus(chainName, config.ripple.ws, "connecting");
+
     ripple.connect().catch(e => {
         logger.error('Ripple API connection error: ' + e.message);
-        ripple.connect();
+        global.monitor.setNodeConnectStatus(chainName, config.ripple.ws, "disconnected");
+
+        if (reconnectHandle)
+            clearInterval(reconnectHandle);
+        reconnectHandle = setInterval(() => {
+            tryReconnect();
+        }, 5000);
+        tryReconnect();
     });
 }
 
