@@ -394,5 +394,46 @@
 		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract TransparentUpgradeableProxy",
+				"name": "proxy",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "implementation",
+				"type": "address"
+			}
+		],
+		"name": "upgrade",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract TransparentUpgradeableProxy",
+				"name": "proxy",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "implementation",
+				"type": "address"
+			},
+			{
+				"internalType": "bytes",
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "upgradeAndCall",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
 	}
 ]

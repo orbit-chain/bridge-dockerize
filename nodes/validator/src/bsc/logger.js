@@ -10,7 +10,7 @@ const tsFormat = function () {
 
 //////////////////////////////////////////////////////////////////////////////////////////
 const myFormat = winston.format.printf(info => {
-    return '[KLAYTN-v1] ' + tsFormat() + ' ' + info.message;
+    return '[BSC] ' + tsFormat() + ' ' + info.message;
 });
 
 // Normal Logger: Winston
@@ -26,13 +26,13 @@ let logger = winston.createLogger({
         }),
 
         new(require('winston-daily-rotate-file'))({
-            filename: './logs/klaytn/v1/general.log',
+            filename: './logs/bsc/general.log',
             json: false
         }),
     ],
     exceptionHandlers: [
         new(require('winston-daily-rotate-file'))({
-            filename: './logs/klaytn/v1/exception.log',
+            filename: './logs/bsc/exception.log',
             humanReadableUnhandledException: true,
             handleExceptions: true,
             json: false

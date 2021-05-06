@@ -1,18 +1,9 @@
 {
-  "eth-v1": {
-    "src": "src/eth/v1"
-  },
   "eth-v2": {
     "src": "src/eth/v2"
   },
-  "klaytn-v1": {
-    "src": "src/klaytn/v1"
-  },
   "klaytn-v2": {
     "src": "src/klaytn/v2"
-  },
-  "icon-v1": {
-    "src": "src/icon/v1"
   },
   "icon-v2": {
     "src": "src/icon/v2"
@@ -25,6 +16,14 @@
   },
   "xrp": {
     "src": "src/xrp"
+  },
+  "bsc": {
+    "src": "src/bsc"
+  },
+  "heco": {
+    "src": "src/heco"
+  },
+  "matic": {
+    "src": "src/matic"
   }
 }
-

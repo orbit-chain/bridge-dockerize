@@ -1,7 +1,7 @@
 const bech32 = require('bech32');
 const rippleAddr = require('ripple-address-codec');
 
-class KlaytnBridgeUtils {
+class BridgeUtils {
     str2hex(input){
         if (typeof(input) !== 'string'){
             return "";
@@ -17,6 +17,20 @@ class KlaytnBridgeUtils {
     hex2str(input){
         input = input || ''
         return Buffer.from(input.replace('0x', ''), 'hex').toString('utf8');
+    }
+
+    isValidData(toChain, data) {
+        if (!toChain)
+            return false;
+
+        if (!data)
+            return false;
+
+        if (toChain === "XRP"){
+            return parseInt(data) <= 4294967295;
+        }
+
+        return true;
     }
 
     isValidAddress(toChain, address) {
@@ -42,6 +56,18 @@ class KlaytnBridgeUtils {
         }
 
         if(toChain === "KLAYTN"){
+            return address.slice(0,2) === '0x' && address.length == 42;
+        }
+
+        if(toChain === "BSC"){
+            return address.slice(0,2) === '0x' && address.length == 42;
+        }
+
+        if(toChain === "HECO"){
+            return address.slice(0,2) === '0x' && address.length == 42;
+        }
+
+        if(toChain === "MATIC"){
             return address.slice(0,2) === '0x' && address.length == 42;
         }
 
@@ -72,4 +98,4 @@ class KlaytnBridgeUtils {
     }
 }
 
-module.exports = KlaytnBridgeUtils;
+module.exports = BridgeUtils;

@@ -6,7 +6,7 @@ const txSender = require(ROOT + '/lib/txsender');
 const packer = require('./utils/packer');
 
 const icon = require('./utils/icon.api');
-const BridgeUtils = require('./utils/icon.bridgeutils');
+const BridgeUtils = require(ROOT + '/lib/bridgeutils');
 const bridgeUtils = new BridgeUtils();
 
 const FIX_GAS = 99999999;
@@ -229,6 +229,11 @@ function validateSwap(data) {
 
         if(!bridgeUtils.isValidAddress(toChain, toAddr)){
             logger.icon_v2.error(`Invalid toAddress ( ${toChain}, ${toAddr} )`);
+            return;
+        }
+
+        if(executionData && executionData !== '0x' && !bridgeUtils.isValidData(params.toChain, params.data)){
+            logger.icon_v2.error(`Invalid data ( ${params.toChain}, ${params.data} )`);
             return;
         }
 

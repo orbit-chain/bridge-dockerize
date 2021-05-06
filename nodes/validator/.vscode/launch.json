@@ -17,7 +17,7 @@
                 "PROFILE": "docker",
                 "NODE_ENV": "development",
             },
-            "program": "${workspaceFolder}/validator_docker.js",
+            "program": "${workspaceFolder}/app.js",
             "outputCapture": "std",
         }
     ]

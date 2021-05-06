@@ -5,6 +5,30 @@ let ethAbi = require('ethereumjs-abi');
 const EC = require('elliptic').ec;
 const ethers = require('ethers');
 
+let STORED_PROVIDERS = {};
+
+function getStoredProvider(britto) {
+    const node = britto.node;
+    let isWebSocket = node.ws !== null && node.ws !== undefined;
+    let host = node.ws || node.rpc;
+    let stored_provider;
+    if (isWebSocket) {
+        host = host.includes("wss://") ? host : `ws://${host.replace("ws://", "")}`;
+        stored_provider = STORED_PROVIDERS[host];
+        if (stored_provider) {
+            britto.setWeb3ProviderConnectionCallback(stored_provider);
+        }
+    }
+    if (!isWebSocket) {
+        host = host.includes("https://")? host : `http://${host.replace("http://", "")}`;
+        stored_provider = STORED_PROVIDERS[host];
+        if (stored_provider && node.onconnect) {
+            node.onconnect();
+        }
+    }
+    return stored_provider;
+}
+
 // Britto the Pegging Utils with Ethereum web3 and utils.
 class Britto {
     static Error() {
@@ -68,8 +92,36 @@ class Britto {
         node.__tryreconnect = 0;
         node.contract = new node.web3.eth.Contract(node.abi, node.address);
 
-        if (node.ws)
+        if (node.ws) {
             this.node.pingInterval = setInterval(this.ping.bind(this), 5000); // connection check
+            // call immediately if connection already opened.
+            if (provider.connection.readyState === provider.connection.OPEN) {
+                node.__tryreconnect = 0;
+                node.isConnected = true;
+                logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.ws}`);
+                if (node.onconnect) {
+                    node.onconnect();
+                }
+            }
+        }
+    }
+
+    setWeb3ProviderConnectionCallback(provider) {
+        const node = this.node;
+        function callback() {
+            node.__tryreconnect = 0;
+            node.isConnected = true;
+
+            logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.ws}`);
+
+            if (node.onconnect) {
+                node.onconnect();
+            }
+        }
+        provider.on('connect', callback);
+        provider.on('end', () => {
+            if (node.isConnected && node.ondisconnect) node.ondisconnect();
+        });
     }
 
     getProvider() {
@@ -78,7 +130,10 @@ class Britto {
 
         const node = this.node;
 
-        let provider;
+        let provider = getStoredProvider(this);
+        if (provider) {
+            return provider;
+        }
         if (node.ws) {
             if (!node.ws.includes("wss://")) {
                 node.ws = `ws://${node.ws.replace("ws://", "")}`;
@@ -91,20 +146,15 @@ class Britto {
                 timeout: 20000
             });
 
-            provider.on('connect', () => {
-                node.__tryreconnect = 0;
-                node.isConnected = true;
+            STORED_PROVIDERS[node.ws] = provider;
 
-                logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.ws}`);
-
-                if (node.onconnect) node.onconnect()
-            });
-
-            provider.on('end', () => {
-                if (node.isConnected && node.ondisconnect) node.ondisconnect();
-            });
+            this.setWeb3ProviderConnectionCallback(provider);
         } else if (node.rpc) {
+            if (!node.rpc.includes("https://")) {
+                node.rpc = `http://${node.rpc.replace("http://", "")}`;
+            }
             provider = new Web3.providers.HttpProvider(node.rpc);
+            STORED_PROVIDERS[node.rpc] = provider;
             node.isConnected = true;
             if (node.onconnect) {
                 node.onconnect();
@@ -134,8 +184,10 @@ class Britto {
         }
         global.monitor.setNodeConnectStatus(this.node.peggingType, this.node.ws, isListening ? "connected" : "reconnecting");
 
-        if (!isListening)
+        if (!isListening) {
+            STORED_PROVIDERS[this.node.web3._provider.url] = undefined;
             context.reconnectWeb3();
+        }
 
         if(!this.node.pingInterval){
             this.node.pingInterval = setInterval(this.ping.bind(this), 5000);
@@ -171,7 +223,7 @@ class Britto {
         const RUNNING_LEVEL = process.env.RUNNING_LEVEL || 'dev';
         const defaultPath = process.cwd() + '/abi/' + RUNNING_LEVEL;
 
-        return JSON.parse(fs.readFileSync(`${path ? path : defaultPath}/${version ? version : 'v1'}/${filename}`, 'utf8'));
+        return JSON.parse(fs.readFileSync(`${path ? path : defaultPath}/${version ? version : 'v2'}/${filename}`, 'utf8'));
     }
 
     static sha256sol(arr) {
