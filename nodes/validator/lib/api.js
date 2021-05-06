@@ -13,6 +13,18 @@ module.exports = {
                 sendGetGasPrice(options, resolve, reject);
             })
         }
+    },
+    maticGasPrice: {
+        request() {
+            return new Promise((resolve, reject) => {
+                let options = {
+                    method: 'GET',
+                    url: config.system.maticGasPriceApi
+                };
+
+                sendGetGasPrice(options, resolve, reject);
+            })
+        }
     }
 };
 

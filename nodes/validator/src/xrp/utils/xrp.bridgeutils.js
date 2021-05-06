@@ -1,3 +1,4 @@
+const BridgeUtils = require(ROOT + '/lib/bridgeutils');
 const crypto = require('crypto');
 const addressCodec = require('ripple-address-codec');
 const bs58 = require('bs58');
@@ -11,8 +12,9 @@ const secp256k1 = new EC('secp256k1');
 
 let context = null;
 
-class XrpBridge {
+class XrpBridge extends BridgeUtils {
     constructor(network) {
+        super();
         context = this;
     }
 
@@ -254,58 +256,6 @@ class XrpBridge {
         }
 
         return hex;
-    }
-
-    isValidAddress(toChain, address) {
-        if (!address)
-            return false;
-
-        if (!toChain)
-            return false;
-
-        if(toChain === "TERRA"){
-            address = this.hex2str(address);
-            let bech32Addr;
-            try{
-                bech32Addr = bech32.decode(address);
-            }catch(e) {
-                return false;
-            }
-            return (bech32Addr.prefix === 'terra' || bech32Addr.prefix === 'terravaloper') && bech32Addr.words.length === 32;
-        }
-
-        if(toChain === "ETH"){
-            return address.slice(0,2) === '0x' && address.length == 42;
-        }
-
-        if(toChain === "KLAYTN"){
-            return address.slice(0,2) === '0x' && address.length == 42;
-        }
-
-        if(toChain === "ICON"){
-            return (address.slice(0,4) === '0x00' || address.slice(0,4) === '0x01') && address.length == 44;
-        }
-
-        if(toChain === "ORBIT"){
-            return address.slice(0,2) === '0x' && address.length == 42;
-        }
-
-        if(toChain === "XRP"){
-            try{
-                let buf = Buffer.from(address.replace('0x', ''), 'hex');
-                address = addressCodec.codec.codec.encode(buf);
-            }catch(e) {
-                return false;
-            }
-
-            return addressCodec.isValidClassicAddress(address);
-        }
-
-        return false;
-    }
-
-    padLeft(data, length) {
-        return '0x' + data.replace('0x','').padStart(length,'0');
     }
 }
 

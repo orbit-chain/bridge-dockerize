@@ -5,7 +5,7 @@ const Britto = require(ROOT + '/lib/britto');
 const txSender = require(ROOT + '/lib/txsender');
 const packer = require('./utils/packer');
 
-const BridgeUtils = require('./utils/eth.bridgeutils');
+const BridgeUtils = require(ROOT + '/lib/bridgeutils');
 const bridgeUtils = new BridgeUtils();
 
 const FIX_GAS = 99999999;
@@ -222,6 +222,11 @@ function validateSwap(data) {
 
         if(!bridgeUtils.isValidAddress(params.toChain, params.toAddr)){
             logger.eth_v2.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
+            return;
+        }
+
+        if(params.data && !bridgeUtils.isValidData(params.toChain, params.data)){
+            logger.eth_v2.error(`Invalid data ( ${params.toChain}, ${params.data} )`);
             return;
         }
 

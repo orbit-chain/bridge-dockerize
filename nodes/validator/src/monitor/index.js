@@ -63,6 +63,9 @@ class Monitor {
             ORBIT: 'orbit',
             TERRA: 'terra',
             XRP: 'xrp',
+            BSC: 'bsc',
+            HECO: 'heco',
+            MATIC: 'matic',
         };
 
         return fullNames[chain] || '';

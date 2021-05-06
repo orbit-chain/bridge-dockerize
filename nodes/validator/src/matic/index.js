@@ -1,4 +1,4 @@
-global.logger.orbit = require('./logger');
+global.logger.matic = require('./logger');
 
 const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
@@ -25,7 +25,7 @@ let eventList = [
 
 let govInfo;
 
-const chainName = 'ORBIT';
+const chainName = 'MATIC';
 const mainnet = Britto.getNodeConfigBase('mainnet');
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
@@ -41,9 +41,16 @@ function initialize(_account) {
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
 
-    mainnet.rpc = config.rpc.OCHAIN_RPC;
-    mainnet.address = config.contract.ORBIT_MAINNET_MINTER;
-    mainnet.abi = Britto.getJSONInterface({filename: 'OrbitMinter.abi', version: 'v2'});
+    mainnet.rpc = config.matic.MATIC_RPC;
+    if(govInfo.chain === chainName){
+        //TODO: implement vault
+        //mainnet.address = govInfo.address;
+        //mainnet.abi = Britto.getJSONInterface({filename: 'MaticVault.abi', version: 'v2'});
+    }
+    else{
+        mainnet.address = config.contract.MATIC_MAINNET_MINTER;
+        mainnet.abi = Britto.getJSONInterface({filename: 'MaticMinter.abi', version: 'v2'});
+    }
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
     orbitHub.rpc = config.rpc.OCHAIN_RPC;
@@ -60,14 +67,14 @@ function initialize(_account) {
     Britto.setAdd0x();
     Britto.setRemove0x();
 
-    orbitHub.multisig.wallet = config.contract.ORBIT_BRIDGE_MULTISIG;
+    orbitHub.multisig.wallet = config.contract.Matic_BRIDGE_MULTISIG;
     orbitHub.multisig.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi', version: 'v2'});
     orbitHub.multisig.contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, orbitHub.multisig.wallet);
 }
 
 function startSubscription(node) {
     subscribeNewBlock(node.web3, blockNumber => {
-        global.monitor.setBlockNumber(chainName + "_v2", blockNumber);
+        global.monitor.setBlockNumber(chainName, blockNumber);
         getEvent(blockNumber, node);
     });
 }
@@ -75,7 +82,7 @@ function startSubscription(node) {
 function subscribeNewBlock(web3, callback) {
     web3.eth.subscribe('newBlockHeaders', (err, res) => {
         if (err)
-            return logger.orbit.error('subscribeNewBlock subscribe error: ' + err.message);
+            return logger.matic.error('subscribeNewBlock subscribe error: ' + err.message);
 
         if (!res.number) {
             return;
@@ -127,7 +134,7 @@ function getEvent(blockNumber, nodeConfig, nameOrArray, callback) {
                 events = events.filter(e => e.returnValues.fromChain === chainName && e.returnValues.bytes32s[0] === govInfo.id);
 
                 if (events.length > 0) {
-                    logger.orbit.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
+                    logger.matic.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
                 }
 
                 if (event.callback)
@@ -185,13 +192,14 @@ function validateSwap(data) {
 
     mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
-            logger.orbit.error('No Transaction Receipt.');
+            logger.matic.error('No Transaction Receipt.');
             return;
         }
 
+
         let events = await parseEvent(receipt.blockNumber, mainnet, (govInfo.chain === chainName)? "Deposit" : "SwapRequest");
         if (events.length == 0){
-            logger.orbit.error('Invalid Transaction.');
+            logger.matic.error('Invalid Transaction.');
             return;
         }
 
@@ -208,17 +216,18 @@ function validateSwap(data) {
             params = _event.returnValues;
         });
 
-        if(params.data && !bridgeUtils.isValidData(params.toChain, params.data)){
-            logger.orbit.error(`Invalid data ( ${params.toChain}, ${params.data} )`);
+        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.decimal){
+            logger.matic.error("Invalid Transaction (event params)");
             return;
         }
 
-        if (!params.data) {
-            params.data = "0x";
+        if(!bridgeUtils.isValidAddress(params.toChain, params.toAddr)){
+            logger.matic.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
+            return;
         }
 
-        if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.decimal){
-            logger.orbit.error("Invalid Transaction (event params)");
+        if(params.data && !bridgeUtils.isValidData(params.toChain, params.data)){
+            logger.matic.error(`Invalid data ( ${params.toChain}, ${params.data} )`);
             return;
         }
 
@@ -226,20 +235,15 @@ function validateSwap(data) {
         params.uints = [params.amount, params.decimal, params.depositId];
         params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
-        if(!bridgeUtils.isValidAddress(params.toChain, params.toAddr)){
-            logger.orbit.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
-            return;
-        }
-
         let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
-            logger.orbit.error('getBlockNumber() execute error: ' + e.message);
+            logger.matic.error('getBlockNumber() execute error: ' + e.message);
         });
 
         if (!currentBlock)
             return console.error('No current block data.');
 
         // Check deposit block confirmed
-        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.ethConfirmCount;
+        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.maticConfirmCount;
 
         // 두 조건을 만족하면 valid
         if (isConfirmed)
@@ -247,14 +251,18 @@ function validateSwap(data) {
         else
             console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed);
     }).catch(e => {
-        logger.orbit.error('validateSwap error: ' + e.message);
+        logger.matic.error('validateSwap error: ' + e.message);
     });
 
     async function valid(data) {
         let sender = Britto.getRandomPkAddress();
         if(!sender || !sender.pk || !sender.address){
-            logger.orbit.error("Cannot Generate account");
+            logger.matic.error("Cannot Generate account");
             return;
+        }
+
+        if (!data.data) {
+            data.data = "0x";
         }
 
         let hash = Britto.sha256sol(packer.packSwapData({
@@ -266,7 +274,7 @@ function validateSwap(data) {
             token: data.token,
             bytes32s: data.bytes32s,
             uints: data.uints,
-            data: data.data
+            data: data.data,
         }));
 
         let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
@@ -275,7 +283,7 @@ function validateSwap(data) {
         let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                logger.orbit.error(`Already signed. validated swapHash: ${hash}`);
+                logger.matic.error(`Already signed. validated swapHash: ${hash}`);
                 return;
             }
         }
@@ -303,7 +311,7 @@ function validateSwap(data) {
         };
 
         let gasLimit = await orbitHub.contract.methods.validateSwap(...params).estimateGas(txOptions).catch(e => {
-            logger.orbit.error('validateSwap estimateGas error: ' + e.message)
+            logger.matic.error('validateSwap estimateGas error: ' + e.message)
         });
 
         if (!gasLimit)
@@ -352,13 +360,13 @@ function validateSwapNFT(data) {
 
     mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
-            logger.orbit.error('No Transaction Receipt.');
+            logger.matic.error('No Transaction Receipt.');
             return;
         }
 
         let events = await parseEvent(receipt.blockNumber, mainnet, (govInfo.chain === chainName)? "DepositNFT" : "SwapRequestNFT");
         if (events.length == 0){
-            logger.orbit.error('Invalid Transaction.');
+            logger.matic.error('Invalid Transaction.');
             return;
         }
 
@@ -375,17 +383,13 @@ function validateSwapNFT(data) {
             params = _event.returnValues;
         });
 
-        if (!params.data) {
-            params.data = "0x";
-        }
-
         if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.tokenId){
-            logger.orbit.error("Invalid Transaction (event params)");
+            logger.matic.error("Invalid Transaction (event params)");
             return;
         }
 
         if(!bridgeUtils.isValidAddress(params.toChain, params.toAddr)){
-            logger.orbit.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
+            logger.matic.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
             return;
         }
 
@@ -394,14 +398,14 @@ function validateSwapNFT(data) {
         params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
         let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
-            logger.orbit.error('getBlockNumber() execute error: ' + e.message);
+            logger.matic.error('getBlockNumber() execute error: ' + e.message);
         });
 
         if (!currentBlock)
             return console.error('No current block data.');
 
         // Check deposit block confirmed
-        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.ethConfirmCount;
+        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.maticConfirmCount;
 
         // 두 조건을 만족하면 valid
         if (isConfirmed)
@@ -409,14 +413,18 @@ function validateSwapNFT(data) {
         else
             console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed);
     }).catch(e => {
-        logger.orbit.error('validateSwapNFT error: ' + e.message);
+        logger.matic.error('validateSwapNFT error: ' + e.message);
     });
 
     async function valid(data) {
         let sender = Britto.getRandomPkAddress();
         if(!sender || !sender.pk || !sender.address){
-            logger.orbit.error("Cannot Generate account");
+            logger.matic.error("Cannot Generate account");
             return;
+        }
+
+        if (!data.data) {
+            data.data = "0x";
         }
 
         let hash = Britto.sha256sol(packer.packSwapNFTData({
@@ -437,7 +445,7 @@ function validateSwapNFT(data) {
         let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                logger.orbit.error(`Already signed. validated swapHash: ${hash}`);
+                logger.matic.error(`Already signed. validated swapHash: ${hash}`);
                 return;
             }
         }
@@ -465,7 +473,7 @@ function validateSwapNFT(data) {
         };
 
         let gasLimit = await orbitHub.contract.methods.validateSwapNFT(...params).estimateGas(txOptions).catch(e => {
-            logger.orbit.error('validateSwapNFT estimateGas error: ' + e.message)
+            logger.matic.error('validateSwapNFT estimateGas error: ' + e.message)
         });
 
         if (!gasLimit)
@@ -483,6 +491,7 @@ function validateSwapNFT(data) {
         global.monitor && global.monitor.setProgress(chainName, 'validateSwapNFT', data.block);
     }
 }
+
 
 function makeSigs(validator, signature){
     let va = bridgeUtils.padLeft(validator, 64);

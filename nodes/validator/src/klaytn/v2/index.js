@@ -6,7 +6,7 @@ const txSender = require(ROOT + '/lib/txsender');
 const packer = require('./utils/packer');
 const Caver = require('caver-js');
 
-const BridgeUtils = require('./utils/klaytn.bridgeutils');
+const BridgeUtils = require(ROOT + '/lib/bridgeutils');
 const bridgeUtils = new BridgeUtils();
 
 const FIX_GAS = 99999999;
@@ -257,6 +257,11 @@ function validateSwap(data) {
 
         if(!bridgeUtils.isValidAddress(params.toChain, params.toAddr)){
             logger.klaytn_v2.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
+            return;
+        }
+
+        if(params.data && !bridgeUtils.isValidData(params.toChain, params.data)){
+            logger.klaytn_v2.error(`Invalid data ( ${params.toChain}, ${params.data} )`);
             return;
         }
 

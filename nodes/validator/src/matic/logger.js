@@ -10,7 +10,7 @@ const tsFormat = function () {
 
 //////////////////////////////////////////////////////////////////////////////////////////
 const myFormat = winston.format.printf(info => {
-    return '[ICON] ' + tsFormat() + ' ' + info.message;
+    return '[MATIC] ' + tsFormat() + ' ' + info.message;
 });
 
 // Normal Logger: Winston
@@ -26,13 +26,13 @@ let logger = winston.createLogger({
         }),
 
         new(require('winston-daily-rotate-file'))({
-            filename: './logs/icon/general.log',
+            filename: './logs/matic/general.log',
             json: false
         }),
     ],
     exceptionHandlers: [
         new(require('winston-daily-rotate-file'))({
-            filename: './logs/icon/exception.log',
+            filename: './logs/matic/exception.log',
             humanReadableUnhandledException: true,
             handleExceptions: true,
             json: false
