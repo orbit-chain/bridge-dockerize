@@ -1,5 +1,6 @@
 const bech32 = require('bech32');
 const rippleAddr = require('ripple-address-codec');
+const config = require(ROOT + '/config');
 
 class BridgeUtils {
     str2hex(input){
@@ -80,6 +81,8 @@ class BridgeUtils {
         }
 
         if(toChain === "XRP"){
+            let govInfo = config.governance;
+
             try{
                 let buf = Buffer.from(address.replace('0x', ''), 'hex');
                 address = rippleAddr.codec.codec.encode(buf);
@@ -87,7 +90,7 @@ class BridgeUtils {
                 return false;
             }
 
-            return rippleAddr.isValidClassicAddress(address);
+            return rippleAddr.isValidClassicAddress(address) && govInfo.chain === "XRP" && address.toLowerCase() !== govInfo.address.toLowerCase();
         }
 
         return false;
