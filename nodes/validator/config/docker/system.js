@@ -6,6 +6,6 @@ module.exports = {
     iconConfirmCount: 4,
     bscConfirmCount: 15,
     hecoConfirmCount: 20,
-    maticConfirmCount: 256,
+    maticConfirmCount: 300,
     logLevel: 'debug'
 };
