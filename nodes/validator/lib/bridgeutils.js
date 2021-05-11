@@ -28,7 +28,7 @@ class BridgeUtils {
             return false;
 
         if (toChain === "XRP"){
-            return parseInt(data) <= 4294967295;
+            return data === "0x" || parseInt(data) <= 4294967295;
         }
 
         return true;
