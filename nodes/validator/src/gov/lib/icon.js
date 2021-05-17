@@ -56,7 +56,7 @@ async function _getTransaction(node, data) {
         if(!config.contract[c])
             continue;
 
-        if(config.contract[c].toLowerCase() === transaction._destination.toLowerCase()){
+        if(config.contract[c].toLowerCase() === transaction._destination.toLowerCase() && c.includes("ICON")){
             destinationContract = c;
             break;
         }

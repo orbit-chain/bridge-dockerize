@@ -80,7 +80,7 @@ async function _getTransaction(node, data, abiDecoder) {
         if(!config.contract[c])
             continue;
 
-        if(config.contract[c].toLowerCase() === transaction.destination.toLowerCase()){
+        if(config.contract[c].toLowerCase() === transaction.destination.toLowerCase() && c.includes("KLAYTN")){
             destinationContract = c;
             break;
         }
