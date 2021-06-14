@@ -9,6 +9,21 @@
             "command": "cp ../../ethvault-validator/settings.localhost.js config/docker/settings.js"
         },
         {
+            "label": "copy-bscvault-setting",
+            "type": "shell",
+            "command": "cp ../../bscvault-validator/settings.localhost.js config/docker/settings.js"
+        },
+        {
+            "label": "copy-iconvault-setting",
+            "type": "shell",
+            "command": "cp ../../iconvault-validator/settings.localhost.js config/docker/settings.js"
+        },
+        {
+            "label": "copy-xrpvault-setting",
+            "type": "shell",
+            "command": "cp ../../xrpvault-validator/settings.localhost.js config/docker/settings.js"
+        },
+        {
             "label": "install-modules",
             "type": "shell",
             "command": "yarn"
@@ -18,6 +33,30 @@
             "dependsOrder": "sequence",
             "dependsOn": [
                 "copy-ethvault-setting",
+                "install-modules"
+            ]
+        },
+        {
+            "label": "run-all-bsc-pretasks",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "copy-bscvault-setting",
+                "install-modules"
+            ]
+        },
+        {
+            "label": "run-all-icon-pretasks",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "copy-iconvault-setting",
+                "install-modules"
+            ]
+        },
+        {
+            "label": "run-all-xrp-pretasks",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "copy-xrpvault-setting",
                 "install-modules"
             ]
         }

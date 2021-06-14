@@ -2,6 +2,7 @@ const config = require(ROOT + '/config');
 const txSender = require(ROOT + '/lib/txsender');
 const Britto = require(ROOT + '/lib/britto');
 const Caver = require('caver-js');
+const settings = config.requireEnv("./settings");
 
 const errmInvalidTransaction =  {
     "errm": "[KLAYTN] Invalid Transaction Id",
@@ -115,6 +116,9 @@ async function _confirmTransaction(node, data) {
             from: validator.address,
             to: data.multisig
         };
+        if (settings.KLAYTN_CHAIN_ID) {
+            txOptions.chainId = settings.KLAYTN_CHAIN_ID;
+        }
 
         let _node = {...node};
 

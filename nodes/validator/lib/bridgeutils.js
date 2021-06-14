@@ -73,6 +73,11 @@ class BridgeUtils {
         }
 
         if(toChain === "ICON"){
+            let govInfo = config.governance;
+            if(govInfo.chain === "ICON" && address.toLowerCase() === govInfo.bytes.toLowerCase()){
+                return false;
+            }
+
             return (address.slice(0,4) === '0x00' || address.slice(0,4) === '0x01') && address.length == 44;
         }
 

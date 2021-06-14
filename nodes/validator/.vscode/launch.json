@@ -19,6 +19,54 @@
             },
             "program": "${workspaceFolder}/app.js",
             "outputCapture": "std",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "bscvault",
+            "runtimeVersion": "14.15.4",
+            "preLaunchTask": "run-all-bsc-pretasks",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "PROFILE": "docker",
+                "NODE_ENV": "development",
+            },
+            "program": "${workspaceFolder}/app.js",
+            "outputCapture": "std",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "iconvault",
+            "runtimeVersion": "14.15.4",
+            "preLaunchTask": "run-all-icon-pretasks",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "PROFILE": "docker",
+                "NODE_ENV": "development",
+            },
+            "program": "${workspaceFolder}/app.js",
+            "outputCapture": "std",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "xrpvault",
+            "runtimeVersion": "14.15.4",
+            "preLaunchTask": "run-all-xrp-pretasks",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "PROFILE": "docker",
+                "NODE_ENV": "development",
+            },
+            "program": "${workspaceFolder}/app.js",
+            "outputCapture": "std",
         }
     ]
 }

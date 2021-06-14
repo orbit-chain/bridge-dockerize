@@ -2,6 +2,7 @@ const api = require(ROOT + '/lib/api');
 const txSender = require(ROOT + '/lib/txsender');
 const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
+const settings = config.requireEnv("./settings");
 
 const errmInvalidTransaction =  {
     "errm": "[BinanceSmartChain] Invalid Transaction Id",
@@ -94,6 +95,9 @@ async function _confirmTransaction(node, data) {
             from: validator.address,
             to: data.multisig
         };
+        if (settings.BSC_CHAIN_ID) {
+            txOptions.chainId = settings.BSC_CHAIN_ID;
+        }
 
         let gasPrice = await getCurrentGas().catch(e => {return;});
         if(!gasPrice){
