@@ -197,26 +197,39 @@ function validateSwap(data) {
         let executionData;
 
         let log;
+        //SwapRequest(self, fromChain: str, toChain: str, fromAddr: bytes, toAddr: bytes, token: bytes, tokenAddress: bytes, decimal: int, amount: int, depositId: int, data: bytes):
+        const MINTER_EVENT = "SwapRequest(str,str,bytes,bytes,bytes,bytes,int,int,int,bytes)";
+        //Deposit(self, fromChain: str, toChain: str, fromAddr: bytes, toAddr: bytes, token: bytes, decimal: int, amount: int, depositId: int, data: bytes)
+        const VAULT_EVENT = "Deposit(str,str,bytes,bytes,bytes,int,int,int,bytes)";
         for(log of receipt.eventLogs){
             if(log.scoreAddress.toLowerCase() !== icon.contract.address.toLowerCase())
                 continue;
 
-            if(log.indexed[0] !== "SwapRequest(str,str,bytes,bytes,bytes,bytes,int,int,int,bytes)")
-                continue;
+            if(log.indexed[0] !== MINTER_EVENT && log.indexed[0] !== VAULT_EVENT) continue;
 
-            // depositId check
-            if(icon.toHex(log.data[8]) !== icon.toHex(data.uints[2]))
-                continue;
+            if(log.indexed[0] === MINTER_EVENT && icon.toHex(log.data[8]) === icon.toHex(data.uints[2])){
+                fromChain = log.data[0];
+                toChain = log.data[1];
+                fromAddr = log.data[2];
+                toAddr = log.data[3];
+                token = log.data[4];
+                decimal = log.data[6];
+                amount = log.data[7];
+                depositId = log.data[8];
+                executionData = log.data[9];
+            }
 
-            fromChain = log.data[0];
-            toChain = log.data[1];
-            fromAddr = log.data[2];
-            toAddr = log.data[3];
-            token = log.data[4];
-            decimal = log.data[6];
-            amount = log.data[7];
-            depositId = log.data[8];
-            executionData = log.data[9];
+            if(log.indexed[0] === VAULT_EVENT && icon.toHex(log.data[7]) === icon.toHex(data.uints[2])){
+                fromChain = log.data[0];
+                toChain = log.data[1];
+                fromAddr = log.data[2];
+                toAddr = log.data[3];
+                token = log.data[4];
+                decimal = log.data[5];
+                amount = log.data[6];
+                depositId = log.data[7];
+                executionData = log.data[8];
+            }
         }
         if (!executionData) {
             executionData = '0x';
@@ -384,38 +397,51 @@ function validateSwapNFT(data) {
         let fromAddr;
         let toAddr;
         let token;
-        let decimal;
+        let tokenId;
         let amount;
         let depositId;
         let executionData;
 
         let log;
+        //SwapNFTRequest(self, fromChain: str, toChain: str, fromAddr: bytes, toAddr: bytes, token: bytes, tokenAddress: bytes, tokenId: int, amount: int, depositId: int, data: bytes)
+        const MINTER_EVENT = "SwapNFTRequest(str,str,bytes,bytes,bytes,bytes,int,int,int,bytes)"
+        //DepositNFT(self, fromChain: str, toChain: str, fromAddr: bytes, toAddr: bytes, token: bytes, tokenId: int, amount: int, depositId: int, data: bytes):
+        const VAULT_EVENT = "DepositNFT(str,str,bytes,bytes,bytes,int,int,int,bytes)";
         for(log of receipt.eventLogs){
             if(log.scoreAddress.toLowerCase() !== icon.contract.address.toLowerCase())
                 continue;
 
-            if(log.indexed[0] !== "SwapNFTRequest(str,str,bytes,bytes,bytes,bytes,int,int,int,bytes)")
-                continue;
+            if(log.indexed[0] !== MINTER_EVENT && log.indexed[0] !== VAULT_EVENT) continue;
 
-            // depositId check
-            if(icon.toHex(log.data[8]) !== icon.toHex(data.uints[2]))
-                continue;
+            if(log.indexed[0] === MINTER_EVENT && icon.toHex(log.data[8]) === icon.toHex(data.uints[2])){
+                fromChain = log.data[0];
+                toChain = log.data[1];
+                fromAddr = log.data[2];
+                toAddr = log.data[3];
+                token = log.data[4];
+                tokenId = log.data[6];
+                amount = log.data[7];
+                depositId = log.data[8];
+                executionData = log.data[9];
+            }
 
-            fromChain = log.data[0];
-            toChain = log.data[1];
-            fromAddr = log.data[2];
-            toAddr = log.data[3];
-            token = log.data[4];
-            tokenId = log.data[6];
-            amount = log.data[7];
-            depositId = log.data[8];
-            executionData = log.data[9];
+            if(log.indexed[0] === VAULT_EVENT && icon.toHex(log.data[7]) === icon.toHex(data.uints[2])){
+                fromChain = log.data[0];
+                toChain = log.data[1];
+                fromAddr = log.data[2];
+                toAddr = log.data[3];
+                token = log.data[4];
+                tokenId = log.data[5];
+                amount = log.data[6];
+                depositId = log.data[7];
+                executionData = log.data[8];
+            }
         }
         if (!executionData) {
             executionData = '0x';
         }
 
-        if(!fromChain || !toChain || !fromAddr || !toAddr || !token || !decimal || !amount || !depositId || !executionData){
+        if(!fromChain || !toChain || !fromAddr || !toAddr || !token || !amount || !depositId || !executionData || !tokenId){
             logger.icon_v2.error("Can't find event data");
             return;
         }

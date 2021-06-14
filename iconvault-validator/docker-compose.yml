@@ -1,0 +1,21 @@
+version: '3'
+services:
+  validator:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    build:
+      args:
+        SETTINGS_FILEPATH: iconvault-validator/settings.js
+    ports:
+      - 17050:8984
+    networks:
+      - br-iconvalidator
+
+networks:
+    br-iconvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.133.0/24

@@ -30,6 +30,8 @@ class Txsender {
 
                 let tx = new Tx(rawTx);
                 tx['nonce'] = sender.nonce || nonce;
+                // for EIP 155 compute
+                tx._chainId = txData.options.chainId || 0;
                 try {
                     tx.sign(sender.pk);
                 } catch (e) {
