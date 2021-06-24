@@ -47,8 +47,10 @@ function initialize(_account) {
     orbitHub.onconnect = async () => {
         startSubscription(orbitHub);
         monitor.address[chainName] = await icon.getAddressByPK(account.pk);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'connected');
     };
 
+    global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'connecting');
     global.monitor.setNodeConnectStatus(chainName + '_v2', orbitHub.ws, "connecting");
     new Britto(orbitHub, chainName + '_v2').connectWeb3();
 

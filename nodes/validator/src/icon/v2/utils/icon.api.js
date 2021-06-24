@@ -5,6 +5,7 @@ const config = require(ROOT + '/config');
 
 const httpProvider = new IconService.HttpProvider(config.icon.api);
 const icon = new IconService(httpProvider);
+const chainName = 'ICON';
 
 let contractAddress;
 let migAddress;
@@ -42,10 +43,13 @@ module.exports.getAddressByPK = async (_pk) => {
 module.exports.getLastBlock = async () => {
     let block = await icon.getLastBlock().execute().catch(e => {
         logger.icon_v2.error("getLastBlock error: " + e.message);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'disconnected');
     });
 
     if(!block)
         return;
+
+    global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'connected');
 
     return block;
 }
@@ -53,7 +57,13 @@ module.exports.getLastBlock = async () => {
 module.exports.getBalance = async (addr) => {
     let balance = await icon.getBalance(addr).execute().catch(e => {
         logger.icon_v2.error("getBalance error: " + e.message);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'disconnected');
     })
+
+    if(!balance)
+        return;
+
+    global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'connected');
 
     return balance;
 }
@@ -61,10 +71,13 @@ module.exports.getBalance = async (addr) => {
 module.exports.getTransactionResult = async (txHash) => {
     let receipt = await icon.getTransactionResult(txHash).execute().catch(e => {
         logger.icon_v2.error("getTransactionResult error: " + e.message);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'disconnected');
     });
 
     if(!receipt)
         return;
+
+    global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'connected');
 
     return receipt
 }
@@ -78,6 +91,7 @@ module.exports.getStepPrice = async () => {
     }
     catch (e) {
         logger.icon_v2.error("callTransaction build error: " + e.message);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'disconnected');
     }
 
     if(!transaction)
@@ -85,10 +99,13 @@ module.exports.getStepPrice = async () => {
 
     let res = await icon.call(transaction).execute().catch(e => {
         logger.icon_v2.error("call error: " + e.message);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'disconnected');
     });
 
     if(!res)
         return;
+
+    global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'connected');
 
     return res;
 }
@@ -101,6 +118,7 @@ module.exports.call = async (contract, method, params) => {
     }
     catch (e) {
         logger.icon_v2.error("callTransaction build error: " + e.message);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'disconnected');
     }
 
     if(!transaction)
@@ -108,10 +126,13 @@ module.exports.call = async (contract, method, params) => {
 
     let res = await icon.call(transaction).execute().catch(e => {
         logger.icon_v2.error("call error: " + e.message);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'disconnected');
     });
 
     if(!res)
         return;
+
+    global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'connected');
 
     return res;
 }
