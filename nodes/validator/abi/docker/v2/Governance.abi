@@ -435,5 +435,18 @@
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_policyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "setPolicyAdmin",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	}
 ]

@@ -15,6 +15,25 @@
 	},
 	{
 		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "chainFeeWithData",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
 		"inputs": [],
 		"name": "getVersion",
 		"outputs": [
@@ -66,6 +85,36 @@
 			}
 		],
 		"name": "addToken",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "isFungible",
+				"type": "bool"
+			},
+			{
+				"name": "token",
+				"type": "bytes"
+			},
+			{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "symbol",
+				"type": "string"
+			},
+			{
+				"name": "decimals",
+				"type": "uint8"
+			}
+		],
+		"name": "addTokenWithDeploy",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -217,6 +266,20 @@
 	{
 		"constant": true,
 		"inputs": [],
+		"name": "policyAdmin",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
 		"name": "governance",
 		"outputs": [
 			{
@@ -306,6 +369,24 @@
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_token",
+				"type": "address"
+			},
+			{
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "setMinRequestSwapAmount",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -408,6 +489,20 @@
 		"constant": false,
 		"inputs": [
 			{
+				"name": "_policyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "setPolicyAdmin",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
 				"name": "_chain",
 				"type": "string"
 			},
@@ -465,6 +560,25 @@
 		"type": "function"
 	},
 	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "chainFee",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"constant": false,
 		"inputs": [
 			{
@@ -486,6 +600,25 @@
 			{
 				"name": "",
 				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "minRequestAmount",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"payable": false,
@@ -555,6 +688,20 @@
 			}
 		],
 		"name": "swapNFT",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_gasLimitForBridgeReceiver",
+				"type": "uint256"
+			}
+		],
+		"name": "setGasLimitForBridgeReceiver",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -638,28 +785,6 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_bridgingFee",
-				"type": "uint256"
-			},
-			{
-				"name": "_bridgingFeeWithData",
-				"type": "uint256"
-			},
-			{
-				"name": "_gasLimitForBridgeReceiver",
-				"type": "uint256"
-			}
-		],
-		"name": "setBridgingParams",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"constant": true,
 		"inputs": [
 			{
@@ -687,6 +812,28 @@
 			}
 		],
 		"name": "transferOwnership",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "chainSymbol",
+				"type": "string"
+			},
+			{
+				"name": "_fee",
+				"type": "uint256"
+			},
+			{
+				"name": "_feeWithData",
+				"type": "uint256"
+			}
+		],
+		"name": "setChainFee",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",

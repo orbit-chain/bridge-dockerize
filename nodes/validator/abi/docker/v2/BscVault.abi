@@ -15,9 +15,9 @@
 			},
 			{
 				"indexed": false,
-				"internalType": "address",
+				"internalType": "bytes",
 				"name": "fromAddress",
-				"type": "address"
+				"type": "bytes"
 			},
 			{
 				"indexed": false,
@@ -326,6 +326,44 @@
 	{
 		"inputs": [
 			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "chainFee",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "chainFeeWithData",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "bool",
 				"name": "activate",
 				"type": "bool"
@@ -476,7 +514,7 @@
 		],
 		"name": "depositToken",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -509,7 +547,7 @@
 		],
 		"name": "depositToken",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -654,6 +692,19 @@
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "policyAdmin",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -675,11 +726,73 @@
 		"inputs": [
 			{
 				"internalType": "string",
+				"name": "chainSymbol",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_fee",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_feeWithData",
+				"type": "uint256"
+			}
+		],
+		"name": "setChainFee",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
 				"name": "_chain",
 				"type": "string"
 			}
 		],
 		"name": "setChainSymbol",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address payable",
+				"name": "_feeGovernance",
+				"type": "address"
+			}
+		],
+		"name": "setFeeGovernance",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_gasLimitForBridgeReceiver",
+				"type": "uint256"
+			}
+		],
+		"name": "setGasLimitForBridgeReceiver",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_policyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "setPolicyAdmin",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -695,14 +808,9 @@
 				"internalType": "address",
 				"name": "_taxReceiver",
 				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_gasLimitForBridgeReceiver",
-				"type": "uint256"
 			}
 		],
-		"name": "setParams",
+		"name": "setTaxParams",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -726,6 +834,25 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "silentTokenList",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "taxRate",
 		"outputs": [
@@ -746,44 +873,6 @@
 				"internalType": "address",
 				"name": "",
 				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"name": "tokenAddr",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "tokenSummaries",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
 			}
 		],
 		"stateMutability": "view",

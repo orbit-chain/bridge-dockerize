@@ -23,3 +23,14 @@ module.exports.getVaultInfos = async address => {
   }
   return obj.account_objects[0];
 }
+
+module.exports.getBalance = async address => {
+    let accountInfo = await api.getAccountInfo(address).catch(e => {
+        logger.xrp.error('getSequence error: ' + e.message);
+    });
+
+    if(!accountInfo)
+        return;
+
+    return accountInfo.xrpBalance * 10 ** 6;
+};

@@ -166,7 +166,7 @@ async function _confirmTransaction(node, data) {
 }
 
 async function getCurrentGas() {
-    return parseInt(5 * 10 ** 9);
+    return settings.MATIC_GAS_PRICE || 5 * 10 ** 9;
 }
 
 module.exports = {

@@ -30,6 +30,8 @@ const chainName = 'KLAYTN';
 const mainnet = Britto.getNodeConfigBase('mainnet');
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
+const tokenABI = [ { "constant": true, "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" } ];
+
 async function initialize(_account) {
     if (!_account || !_account.address || !_account.pk)
         throw 'Invalid klaytn Wallet Account';
@@ -279,11 +281,19 @@ function validateSwap(data) {
         // Check deposit block confirmed
         let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.klaytnConfirmCount;
 
+        let curBalance = await monitor.getBalance(params.token);
+        if(!curBalance || curBalance === 0 || Number.isNaN(curBalance)){
+            logger.klaytn_v2.error(`getBalance error ( ${params.token})`);
+            return;
+        }
+
+        let isValidAmount = curBalance >= parseInt(params.amount);
+
         // 두 조건을 만족하면 valid
-        if (isConfirmed)
+        if (isConfirmed && isValidAmount)
             await valid(params);
         else
-            console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed);
+            console.log(`depositId(${data.uints[2]}) is invalid. isConfirmed: ${isConfirmed}, isValidAmount: ${isValidAmount}`);
     }).catch(e => {
         logger.klaytn_v2.error('validateSwap error: ' + e.message);
     });
@@ -537,4 +547,23 @@ function makeSigs(validator, signature){
     return sigs;
 }
 
-module.exports.initialize = initialize;
+async function getBalance(tokenAddr) {
+    let amount = 0;
+    if(tokenAddr === "0x0000000000000000000000000000000000000000"){
+        amount = await mainnet.caver.klay.getBalance(govInfo.address).catch(e => {
+            logger.klaytn_v2.error(`${tokenAddr} getBalance error : ${e.message}`);
+        });
+    }
+    else{
+        const token = new mainnet.caver.contract(tokenABI, tokenAddr);
+        amount = await token.methods.balanceOf(govInfo.address).call().catch(e => {
+            logger.klaytn_v2.error(`${tokenAddr} getBalance error : ${e.message}`);
+        });
+    }
+    return parseInt(amount);
+}
+
+module.exports = {
+    getBalance,
+    initialize
+}

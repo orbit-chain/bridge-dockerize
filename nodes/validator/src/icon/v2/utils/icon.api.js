@@ -65,7 +65,34 @@ module.exports.getBalance = async (addr) => {
 
     global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'connected');
 
-    return balance;
+    return balance.toNumber();
+}
+
+module.exports.getTokenBalance = async (contractAddr, method, params) => {
+    let token = (new IconService.IconBuilder.CallBuilder()).to(contractAddr);
+    let transaction;
+    try {
+        transaction = await token.method(method).params(params).build();
+    }
+    catch (e) {
+        logger.icon_v2.error("callTransaction build error: " + e.message);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'disconnected');
+    }
+
+    if(!transaction)
+        return;
+
+    let res = await icon.call(transaction).execute().catch(e => {
+        logger.icon_v2.error("call error: " + e.message);
+        global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'disconnected');
+    });
+
+    if(!res)
+        return;
+
+    global.monitor.setNodeConnectStatus(chainName + '_v2', config.icon.api, 'connected');
+
+    return parseInt(res);
 }
 
 module.exports.getTransactionResult = async (txHash) => {

@@ -2,6 +2,39 @@
 	{
 		"constant": true,
 		"inputs": [],
+		"name": "bridgingFeeWithData",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "chainFeeWithData",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
 		"name": "getVersion",
 		"outputs": [
 			{
@@ -17,6 +50,32 @@
 		"constant": false,
 		"inputs": [
 			{
+				"name": "nftAddress",
+				"type": "address"
+			},
+			{
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			}
+		],
+		"name": "requestSwapNFT",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
 				"name": "token",
 				"type": "bytes"
 			},
@@ -26,6 +85,36 @@
 			}
 		],
 		"name": "addToken",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "isFungible",
+				"type": "bool"
+			},
+			{
+				"name": "token",
+				"type": "bytes"
+			},
+			{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "symbol",
+				"type": "string"
+			},
+			{
+				"name": "decimals",
+				"type": "uint8"
+			}
+		],
+		"name": "addTokenWithDeploy",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -161,6 +250,20 @@
 	{
 		"constant": true,
 		"inputs": [],
+		"name": "policyAdmin",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
 		"name": "governance",
 		"outputs": [
 			{
@@ -180,6 +283,20 @@
 			{
 				"name": "",
 				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "gasLimitForBridgeReceiver",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"payable": false,
@@ -236,6 +353,24 @@
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_token",
+				"type": "address"
+			},
+			{
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "setMinRequestSwapAmount",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -366,6 +501,20 @@
 		"constant": false,
 		"inputs": [
 			{
+				"name": "_policyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "setPolicyAdmin",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
 				"name": "_chain",
 				"type": "string"
 			},
@@ -475,6 +624,25 @@
 		"type": "function"
 	},
 	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "chainFee",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"constant": false,
 		"inputs": [
 			{
@@ -503,17 +671,22 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
+		"constant": true,
 		"inputs": [
 			{
-				"name": "_bridgingFee",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "minRequestAmount",
+		"outputs": [
+			{
+				"name": "",
 				"type": "uint256"
 			}
 		],
-		"name": "setBridgingFee",
-		"outputs": [],
 		"payable": false,
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -539,6 +712,20 @@
 			}
 		],
 		"name": "setFeeTokenAddress",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_gasLimitForBridgeReceiver",
+				"type": "uint256"
+			}
+		],
+		"name": "setGasLimitForBridgeReceiver",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -649,6 +836,54 @@
 			}
 		],
 		"name": "transferOwnership",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "chainSymbol",
+				"type": "string"
+			},
+			{
+				"name": "_fee",
+				"type": "uint256"
+			},
+			{
+				"name": "_feeWithData",
+				"type": "uint256"
+			}
+		],
+		"name": "setChainFee",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "tokenAddress",
+				"type": "address"
+			},
+			{
+				"name": "toChain",
+				"type": "string"
+			},
+			{
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "requestSwap",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -851,6 +1086,65 @@
 			}
 		],
 		"name": "SwapRequestNFT",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "success",
+				"type": "bool"
+			},
+			{
+				"indexed": false,
+				"name": "fromAddr",
+				"type": "bytes"
+			},
+			{
+				"indexed": false,
+				"name": "tokenAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "BridgeReceiverResult",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "fromAddr",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "taxAddr",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "tokenAddr",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "tax",
+				"type": "uint256"
+			}
+		],
+		"name": "TaxPay",
 		"type": "event"
 	}
 ]
