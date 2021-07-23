@@ -278,6 +278,39 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "bool",
+				"name": "isFungible",
+				"type": "bool"
+			},
+			{
+				"internalType": "bytes",
+				"name": "token",
+				"type": "bytes"
+			},
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "symbol",
+				"type": "string"
+			},
+			{
+				"internalType": "uint8",
+				"name": "decimals",
+				"type": "uint8"
+			}
+		],
+		"name": "addTokenWithDeploy",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "bridgingFee",
 		"outputs": [
@@ -319,6 +352,44 @@
 	{
 		"inputs": [
 			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "chainFee",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "chainFeeWithData",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "bool",
 				"name": "activate",
 				"type": "bool"
@@ -348,19 +419,6 @@
 		"outputs": [
 			{
 				"internalType": "address payable",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "feeTokenAddress",
-		"outputs": [
-			{
-				"internalType": "address",
 				"name": "",
 				"type": "address"
 			}
@@ -447,19 +505,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "hubContract",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "isActivated",
 		"outputs": [
 			{
@@ -529,6 +574,19 @@
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "policyAdmin",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -653,22 +711,22 @@
 	{
 		"inputs": [
 			{
+				"internalType": "string",
+				"name": "chainSymbol",
+				"type": "string"
+			},
+			{
 				"internalType": "uint256",
-				"name": "_bridgingFee",
+				"name": "_fee",
 				"type": "uint256"
 			},
 			{
 				"internalType": "uint256",
-				"name": "_bridgingFeeWithData",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_gasLimitForBridgeReceiver",
+				"name": "_feeWithData",
 				"type": "uint256"
 			}
 		],
-		"name": "setBridgingParams",
+		"name": "setChainFee",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -702,6 +760,19 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "_gasLimitForBridgeReceiver",
+				"type": "uint256"
+			}
+		],
+		"name": "setGasLimitForBridgeReceiver",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "bytes32",
 				"name": "_govId",
 				"type": "bytes32"
@@ -726,6 +797,19 @@
 			}
 		],
 		"name": "setMinRequestSwapAmount",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_policyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "setPolicyAdmin",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"

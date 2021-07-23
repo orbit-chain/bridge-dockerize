@@ -166,7 +166,7 @@ async function _confirmTransaction(node, data) {
 }
 
 async function getCurrentGas() {
-    return parseInt(10 ** 10);
+    return settings.BSC_GAS_PRICE || 10 * 10 ** 9;
 }
 
 module.exports = {

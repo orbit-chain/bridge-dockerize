@@ -19,6 +19,25 @@
 		"type": "function"
 	},
 	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "chainFeeWithData",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"constant": false,
 		"inputs": [
 			{
@@ -40,8 +59,8 @@
 		],
 		"name": "depositToken",
 		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
+		"payable": true,
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -56,70 +75,6 @@
 		],
 		"payable": false,
 		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_taxRate",
-				"type": "uint256"
-			},
-			{
-				"name": "_taxReceiver",
-				"type": "address"
-			},
-			{
-				"name": "_gasLimitForBridgeReceiver",
-				"type": "uint256"
-			}
-		],
-		"name": "setParams",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "owner",
-				"type": "address"
-			}
-		],
-		"name": "removeOwner",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "revokeConfirmation",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "tether",
-				"type": "address"
-			}
-		],
-		"name": "setTetherAddress",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -153,24 +108,6 @@
 		],
 		"payable": false,
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "token",
-				"type": "address"
-			},
-			{
-				"name": "valid",
-				"type": "bool"
-			}
-		],
-		"name": "setSilentToken",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -418,21 +355,12 @@
 	},
 	{
 		"constant": true,
-		"inputs": [
-			{
-				"name": "pending",
-				"type": "bool"
-			},
-			{
-				"name": "executed",
-				"type": "bool"
-			}
-		],
-		"name": "getTransactionCount",
+		"inputs": [],
+		"name": "policyAdmin",
 		"outputs": [
 			{
-				"name": "count",
-				"type": "uint256"
+				"name": "",
+				"type": "address"
 			}
 		],
 		"payable": false,
@@ -513,20 +441,6 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "owner",
-				"type": "address"
-			}
-		],
-		"name": "addOwner",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"constant": true,
 		"inputs": [],
 		"name": "taxRate",
@@ -534,25 +448,6 @@
 			{
 				"name": "",
 				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "isConfirmed",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bool"
 			}
 		],
 		"payable": false,
@@ -584,25 +479,6 @@
 		"outputs": [
 			{
 				"name": "",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "getConfirmationCount",
-		"outputs": [
-			{
-				"name": "count",
 				"type": "uint256"
 			}
 		],
@@ -683,48 +559,17 @@
 		"type": "function"
 	},
 	{
-		"constant": true,
-		"inputs": [],
-		"name": "getOwners",
-		"outputs": [
-			{
-				"name": "",
-				"type": "address[]"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
+		"constant": false,
 		"inputs": [
 			{
-				"name": "from",
-				"type": "uint256"
-			},
-			{
-				"name": "to",
-				"type": "uint256"
-			},
-			{
-				"name": "pending",
-				"type": "bool"
-			},
-			{
-				"name": "executed",
-				"type": "bool"
+				"name": "_policyAdmin",
+				"type": "address"
 			}
 		],
-		"name": "getTransactionIds",
-		"outputs": [
-			{
-				"name": "_transactionIds",
-				"type": "uint256[]"
-			}
-		],
+		"name": "setPolicyAdmin",
+		"outputs": [],
 		"payable": false,
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -814,22 +659,21 @@
 		"type": "function"
 	},
 	{
-		"constant": true,
+		"constant": false,
 		"inputs": [
 			{
-				"name": "transactionId",
+				"name": "_taxRate",
 				"type": "uint256"
-			}
-		],
-		"name": "getConfirmations",
-		"outputs": [
+			},
 			{
-				"name": "_confirmations",
-				"type": "address[]"
+				"name": "_taxReceiver",
+				"type": "address"
 			}
 		],
+		"name": "setTaxParams",
+		"outputs": [],
 		"payable": false,
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -847,72 +691,22 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
+		"constant": true,
 		"inputs": [
 			{
-				"name": "_required",
-				"type": "uint256"
+				"name": "",
+				"type": "bytes32"
 			}
 		],
-		"name": "changeRequirement",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_newImp",
-				"type": "address"
-			}
-		],
-		"name": "_setImplementation",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "confirmTransaction",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "destination",
-				"type": "address"
-			},
-			{
-				"name": "value",
-				"type": "uint256"
-			},
-			{
-				"name": "data",
-				"type": "bytes"
-			}
-		],
-		"name": "submitTransaction",
+		"name": "chainFee",
 		"outputs": [
 			{
-				"name": "transactionId",
+				"name": "",
 				"type": "uint256"
 			}
 		],
 		"payable": false,
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -927,6 +721,20 @@
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_gasLimitForBridgeReceiver",
+				"type": "uint256"
+			}
+		],
+		"name": "setGasLimitForBridgeReceiver",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -976,6 +784,20 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_feeGovernance",
+				"type": "address"
+			}
+		],
+		"name": "setFeeGovernance",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [
 			{
@@ -995,24 +817,6 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "owner",
-				"type": "address"
-			},
-			{
-				"name": "newOwner",
-				"type": "address"
-			}
-		],
-		"name": "replaceOwner",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"constant": true,
 		"inputs": [],
 		"name": "taxReceiver",
@@ -1024,47 +828,6 @@
 		],
 		"payable": false,
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "destination",
-				"type": "address"
-			},
-			{
-				"name": "value",
-				"type": "uint256"
-			},
-			{
-				"name": "data",
-				"type": "bytes"
-			}
-		],
-		"name": "addTransaction",
-		"outputs": [
-			{
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "executeTransaction",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1084,6 +847,28 @@
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "chainSymbol",
+				"type": "string"
+			},
+			{
+				"name": "_fee",
+				"type": "uint256"
+			},
+			{
+				"name": "_feeWithData",
+				"type": "uint256"
+			}
+		],
+		"name": "setChainFee",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1112,19 +897,14 @@
 		],
 		"name": "depositToken",
 		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
+		"payable": true,
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"name": "_owner",
-				"type": "address[]"
-			}
-		],
-		"payable": false,
-		"stateMutability": "nonpayable",
+		"inputs": [],
+		"payable": true,
+		"stateMutability": "payable",
 		"type": "constructor"
 	},
 	{
@@ -1321,7 +1101,7 @@
 			{
 				"indexed": false,
 				"name": "fromAddress",
-				"type": "address"
+				"type": "bytes"
 			},
 			{
 				"indexed": false,
@@ -1335,129 +1115,6 @@
 			}
 		],
 		"name": "BridgeReceiverResult",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"name": "sender",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "Confirmation",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"name": "sender",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "Revocation",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "Submission",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "Execution",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"name": "transactionId",
-				"type": "uint256"
-			}
-		],
-		"name": "ExecutionFailure",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"name": "sender",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"name": "value",
-				"type": "uint256"
-			}
-		],
-		"name": "Deposit",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"name": "owner",
-				"type": "address"
-			}
-		],
-		"name": "OwnerAddition",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"name": "owner",
-				"type": "address"
-			}
-		],
-		"name": "OwnerRemoval",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"name": "required",
-				"type": "uint256"
-			}
-		],
-		"name": "RequirementChange",
 		"type": "event"
 	}
 ]

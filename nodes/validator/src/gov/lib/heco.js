@@ -166,7 +166,7 @@ async function _confirmTransaction(node, data) {
 }
 
 async function getCurrentGas() {
-    return parseInt(2 * 10 ** 9);
+    return settings.HECO_GAS_PRICE || 2 * 10 ** 9;
 }
 
 module.exports = {

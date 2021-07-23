@@ -263,11 +263,19 @@ function validateSwap(data) {
             data: executionData
         }
 
+        let curBalance = await monitor.getBalance(token);
+        if(!curBalance || curBalance === 0 || Number.isNaN(curBalance)){
+            logger.icon_v2.error(`getBalance error ( ${token})`);
+            return;
+        }
+
+        let isValidAmount = curBalance >= parseInt(amount);
+
         // 두 조건을 만족하면 valid
-        if (isConfirmed)
+        if (isConfirmed && isValidAmount)
             await valid(params);
         else
-            console.log('Icon Swap Validated fromThash(' + data.bytes32s[1] + ') is invalid.', 'isConfirmed: ' + isConfirmed);
+            console.log(`depositId(${data.uints[2]}) is invalid. isConfirmed: ${isConfirmed}, isValidAmount: ${isValidAmount}`);
     }).catch(e => {
         logger.icon_v2.error('validateSwap getReceipt call error: ' + e.message);
     });
@@ -559,4 +567,20 @@ function makeSigs(validator, signature){
     return sigs;
 }
 
-module.exports.initialize = initialize;
+async function getBalance(tokenAddr) {
+    let amount = 0;
+
+    if(tokenAddr === "0x010000000000000000000000000000000000000000"){
+        amount = await icon.getBalance(govInfo.address);
+    }
+    else{
+        amount = await icon.getTokenBalance(tokenAddr.replace("0x01", "cx"), "balanceOf", {_owner: govInfo.address});
+    }
+
+    return amount;
+}
+
+module.exports = {
+    getBalance,
+    initialize
+}

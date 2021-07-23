@@ -2,10 +2,15 @@ const api = require(ROOT + '/lib/api');
 const txSender = require(ROOT + '/lib/txsender');
 const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
+const settings = config.requireEnv("./settings");
 
 const errmInvalidTransaction =  {
     "errm": "[ETH] Invalid Transaction Id",
     "data": "NotFoundError: Can't find data"
+}
+
+const FIX_CALL_GAS = {
+    gasPrice : 10 ** 9
 }
 
 async function init(){
@@ -23,7 +28,7 @@ async function _getTransaction(node, data, abiDecoder) {
     let _node = {...node};
     let mig = new _node.web3.eth.Contract(_node.abi, data.multisig);
 
-    let transaction = await mig.methods.transactions(data.transactionId).call().catch(e => {return;});
+    let transaction = await mig.methods.transactions(data.transactionId).call(FIX_CALL_GAS).catch(e => {return;});
     if(!transaction || transaction.destination === "0x0000000000000000000000000000000000000000"){
         return errmInvalidTransaction;
     }
@@ -33,7 +38,7 @@ async function _getTransaction(node, data, abiDecoder) {
         return errmInvalidTransaction;
     }
 
-    let confirmedValidatorList = await mig.methods.getConfirmations(data.transactionId).call().catch(e => {return;});
+    let confirmedValidatorList = await mig.methods.getConfirmations(data.transactionId).call(FIX_CALL_GAS).catch(e => {return;});
     if(!confirmedValidatorList){
         return errmInvalidTransaction;
     }
@@ -44,7 +49,7 @@ async function _getTransaction(node, data, abiDecoder) {
             myConfirmation = true;
     }
 
-    let required = await mig.methods.required().call().catch(e=>{return;});
+    let required = await mig.methods.required().call(FIX_CALL_GAS).catch(e=>{return;});
     if(!required) {
         return errmInvalidTransaction;
     }
@@ -94,6 +99,9 @@ async function _confirmTransaction(node, data) {
             from: validator.address,
             to: data.multisig
         };
+        if (settings.ETH_CHAIN_ID) {
+            txOptions.chainId = settings.ETH_CHAIN_ID;
+        }
 
         let gasPrice = await getCurrentGas().catch(e => {return;});
         if(!gasPrice){
@@ -109,17 +117,17 @@ async function _confirmTransaction(node, data) {
 
         let contract = new _node.web3.eth.Contract(_node.abi, data.multisig);
 
-        let transaction = await contract.methods.transactions(data.transactionId).call().catch(e => {return;});
+        let transaction = await contract.methods.transactions(data.transactionId).call(FIX_CALL_GAS).catch(e => {return;});
         if(!transaction || transaction.destination === "0x0000000000000000000000000000000000000000"){
             return errmInvalidTransaction;
         }
 
-        let required = await contract.methods.required().call().catch(e=>{return;});
+        let required = await contract.methods.required().call(FIX_CALL_GAS).catch(e=>{return;});
         if(!required) {
             return errmInvalidTransaction;
         }
 
-        let confirmedValidatorList = await contract.methods.getConfirmations(data.transactionId).call().catch(e => {return;});
+        let confirmedValidatorList = await contract.methods.getConfirmations(data.transactionId).call(FIX_CALL_GAS).catch(e => {return;});
         if(!confirmedValidatorList){
             return errmInvalidTransaction;
         }

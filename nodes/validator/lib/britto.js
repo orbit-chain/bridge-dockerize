@@ -159,6 +159,7 @@ class Britto {
             if (node.onconnect) {
                 node.onconnect();
             }
+            logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.rpc}`);
             global.monitor.setNodeConnectStatus(node.peggingType, node.rpc, "connected");
         }
 

@@ -51,11 +51,17 @@ const PORT = process.env.PORT || 8984;
 const indexRouter = require("./routes/index");
 app.use('/', indexRouter);
 
+let govInfo = config.governance;
+
 settings.chainList.forEach(key => {
     let chain = config.chain[key];
     console.log(`[VALIDATOR_CHAIN] key: ${key}, chain: ${JSON.stringify(chain)}`);
     let instance = require(ROOT + '/' + chain.src);
     instance.initialize(account);
+
+    if(key.includes(govInfo.chain.toLowerCase())){
+        global.monitor.getBalance = instance.getBalance;
+    }
 });
 
 const gov = require(`${ROOT}/src/gov`);

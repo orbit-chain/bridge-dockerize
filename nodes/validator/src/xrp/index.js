@@ -399,10 +399,22 @@ async function validateSwap(data) {
             return;
         }
     }
-
     let signature = Britto.signMessage(swapHash, validator.pk);
 
-    valid();
+    let curBalance = await monitor.getBalance("0x0000000000000000000000000000000000000000");
+    if(!curBalance || curBalance === 0 || Number.isNaN(curBalance)){
+        logger.xrp.error("getBalance error (0x0000000000000000000000000000000000000000)");
+        return;
+    }
+
+    let isValidAmount = curBalance >= parseInt(amount);
+    if(isValidAmount){
+        valid();
+    }
+    else{
+        console.log(`tx(${data.bytes32s[1]}) is invalid. isValidAmount: ${isValidAmount}`);
+        return;
+    }
 
     async function valid() {
         let sender = Britto.getRandomPkAddress();
@@ -905,4 +917,17 @@ function makeSigs(validator, signature){
     return sigs;
 }
 
-module.exports.initialize = initialize;
+async function getBalance(tokenAddr) {
+    let amount = 0;
+
+    if(tokenAddr === "0x0000000000000000000000000000000000000000"){
+        amount = await ripple.getBalance(govInfo.address);
+    }
+
+    return amount;
+}
+
+module.exports = {
+    getBalance,
+    initialize
+}

@@ -61,7 +61,6 @@ class Monitor {
             ICON_V2: 'icon-v2',
             ICON_MAINNET: 'icon_mainnet',
             ORBIT: 'orbit',
-            TERRA: 'terra',
             XRP: 'xrp',
             BSC: 'bsc',
             HECO: 'heco',

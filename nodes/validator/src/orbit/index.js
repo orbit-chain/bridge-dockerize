@@ -29,6 +29,8 @@ const chainName = 'ORBIT';
 const mainnet = Britto.getNodeConfigBase('mainnet');
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
+const tokenABI = [ { "constant": true, "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" } ];
+
 function initialize(_account) {
     if (!_account || !_account.address || !_account.pk)
         throw 'Invalid Ethereum Wallet Account';
@@ -241,11 +243,19 @@ function validateSwap(data) {
         // Check deposit block confirmed
         let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.ethConfirmCount;
 
+        let curBalance = await monitor.getBalance(params.token);
+        if(!curBalance || curBalance === 0 || Number.isNaN(curBalance)){
+            logger.orbit.error(`getBalance error ( ${params.token})`);
+            return;
+        }
+
+        let isValidAmount = curBalance >= parseInt(params.amount);
+
         // 두 조건을 만족하면 valid
-        if (isConfirmed)
+        if (isConfirmed && isValidAmount)
             await valid(params);
         else
-            console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed);
+            console.log(`depositId(${data.uints[2]}) is invalid. isConfirmed: ${isConfirmed}, isValidAmount: ${isValidAmount}`);
     }).catch(e => {
         logger.orbit.error('validateSwap error: ' + e.message);
     });
@@ -498,4 +508,23 @@ function makeSigs(validator, signature){
     return sigs;
 }
 
-module.exports.initialize = initialize;
+async function getBalance(tokenAddr) {
+    let amount = 0;
+    if(tokenAddr === "0x0000000000000000000000000000000000000000"){
+        amount = await mainnet.web3.eth.getBalance(govInfo.address).catch(e => {
+            logger.orbit.error(`${tokenAddr} getBalance error : ${e.message}`);
+        });
+    }
+    else{
+        const token = new mainnet.web3.eth.Contract(tokenABI, tokenAddr);
+        amount = await token.methods.balanceOf(govInfo.address).call().catch(e => {
+            logger.orbit.error(`${tokenAddr} getBalance error : ${e.message}`);
+        });
+    }
+    return parseInt(amount);
+}
+
+module.exports = {
+    getBalance,
+    initialize
+}

@@ -41,17 +41,6 @@ class BridgeUtils {
         if (!toChain)
             return false;
 
-        if(toChain === "TERRA"){
-            address = this.hex2str(address);
-            let bech32Addr;
-            try{
-                bech32Addr = bech32.decode(address);
-            }catch(e) {
-                return false;
-            }
-            return (bech32Addr.prefix === 'terra' || bech32Addr.prefix === 'terravaloper') && bech32Addr.words.length === 32;
-        }
-
         if(toChain === "ETH"){
             return address.slice(0,2) === '0x' && address.length == 42;
         }
