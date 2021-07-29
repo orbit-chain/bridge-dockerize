@@ -99,6 +99,16 @@ async function _confirmTransaction(node, data) {
             txOptions.chainId = settings.BSC_CHAIN_ID;
         }
 
+        let _node = {...node};
+
+        let web3GasPrice = await _node.web3.eth.getGasPrice().catch(e => {return;});
+        if(!web3GasPrice){
+            return {
+                "errm": "[BinanceSmartChain] getGasPrice Error",
+                "data": 'confirmTransaction getGasPrice error'
+            };
+        }
+
         let gasPrice = await getCurrentGas().catch(e => {return;});
         if(!gasPrice){
             return {
@@ -107,9 +117,7 @@ async function _confirmTransaction(node, data) {
             };
         }
 
-        txOptions.gasPrice = gasPrice;
-
-        let _node = {...node};
+        txOptions.gasPrice = parseInt(web3GasPrice) > parseInt(gasPrice) ? _node.web3.utils.toHex(web3GasPrice) : _node.web3.utils.toHex(gasPrice);
 
         let contract = new _node.web3.eth.Contract(_node.abi, data.multisig);
 
