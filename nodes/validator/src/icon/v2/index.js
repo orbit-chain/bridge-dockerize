@@ -247,8 +247,8 @@ function validateSwap(data) {
             return;
         }
 
-        if(executionData && executionData !== '0x' && !bridgeUtils.isValidData(params.toChain, params.data)){
-            logger.icon_v2.error(`Invalid data ( ${params.toChain}, ${params.data} )`);
+        if(executionData && executionData !== '0x' && !bridgeUtils.isValidData(toChain, executionData)){
+            logger.icon_v2.error(`Invalid data ( ${toChain}, ${executionData} )`);
             return;
         }
 
