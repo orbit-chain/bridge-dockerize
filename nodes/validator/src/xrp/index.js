@@ -290,12 +290,17 @@ async function validateSwap(data) {
 
     // STEP 2: Check Wallet Balance Changes
     let balanceChanges = transaction.outcome.balanceChanges[xrpWallet];
+    if(!balanceChanges){
+        logger.xrp.error('validateSwap error: balanceChanges undefined.');
+        return;
+    }
+
     let amount = '0';
     for (let balanceChange of balanceChanges) {
-        if (balanceChange.currency.toUpperCase() !== 'XRP')
+        if (balanceChange.currency.toUpperCase() !== 'XRP' || parseInt(balanceChange.value.dmove(6)) <= 0 || Number.isNaN(parseInt(balanceChange.value.dmove(6))))
             continue;
 
-        amount = amount.dadd(balanceChange.value).dmove(6);
+        amount = amount.dadd(balanceChange.value.dmove(6));
     }
 
     if (amount !== data.uints[0].toString()) {
@@ -547,8 +552,9 @@ async function validateTransactionSuggested(data) {
     }
 
     // Step 1: Sequence Check
-    if (currentSeq !== Number(suggestion.seq)) {
-        logger.xrp.error(`validateTransactionSuggested validation fail: Account sequence is different. Require ${currentSeq}, but ${suggestion.seq}`);
+    let suggestionSeq = Number(suggestion.seq);
+    if (currentSeq !== suggestionSeq || Number.isNaN(suggestionSeq)) {
+        logger.xrp.error(`validateTransactionSuggested validation fail: Account sequence is different. Require ${currentSeq}, but ${suggestionSeq}`);
         return;
     }
 
@@ -557,11 +563,15 @@ async function validateTransactionSuggested(data) {
     networkFee = networkFee < 1 ? (networkFee * 10 ** 6) : networkFee; // fee unit is drops. NOT XRP.
 
     let expectFee = networkFee * (1 + Math.max(quorumCount, Number(required)));
-    if (expectFee > Number(suggestion.fee)) {
-        logger.xrp.error(`validateTransactionSuggested validation fail: Small fee. Expected ${expectFee}, but ${suggestion.fee}`);
+    let suggestionFee = Number(suggestion.fee);
+    if (expectFee > suggestionFee) {
+        logger.xrp.error(`validateTransactionSuggested validation fail: Small fee. Expected ${expectFee}, but ${suggestionFee}`);
         return;
-    } else if (expectFee * 1.25 < Number(suggestion.fee)) {
-        logger.xrp.error(`validateTransactionSuggested validation fail: Too many fee. Maximum is ${expectFee * 1.25}, but ${suggestion.fee}`);
+    } else if (expectFee * 1.25 < suggestionFee) {
+        logger.xrp.error(`validateTransactionSuggested validation fail: Too many fee. Maximum is ${expectFee * 1.25}, but ${suggestionFee}`);
+        return;
+    } else if (Number.isNaN(suggestionFee)) {
+        logger.xrp.error(`validateTransactionSuggested validation fail: Invalid SuggestionFee ${suggestion.fee}`);
         return;
     }
 
