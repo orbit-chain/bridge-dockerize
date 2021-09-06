@@ -49,8 +49,8 @@ function initialize(_account) {
         mainnet.abi = Britto.getJSONInterface({filename: 'EthVault.abi', version: 'v2'});
     }
     else{
-        //mainnet.address = config.contract.ETH_MAINNET_MINTER;
-        //mainnet.abi = Britto.getJSONInterface({filename: 'EthMinter.abi', version: 'v2'});
+        mainnet.address = config.contract.ETH_MAINNET_MINTER;
+        mainnet.abi = Britto.getJSONInterface({filename: 'EthMinter.abi', version: 'v2'});
     }
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
@@ -207,6 +207,10 @@ function validateSwap(data) {
         let params;
         events.forEach(async _event => {
             if(_event.address.toLowerCase() !== mainnet.address.toLowerCase()){
+                return;
+            }
+
+            if(_event.transactionHash.toLowerCase() !== data.bytes32s[1].toLowerCase()){
                 return;
             }
 
@@ -382,6 +386,10 @@ function validateSwapNFT(data) {
         let params;
         events.forEach(async _event => {
             if(_event.address.toLowerCase() !== mainnet.address.toLowerCase()){
+                return;
+            }
+
+            if(_event.transactionHash.toLowerCase() !== data.bytes32s[1].toLowerCase()){
                 return;
             }
 

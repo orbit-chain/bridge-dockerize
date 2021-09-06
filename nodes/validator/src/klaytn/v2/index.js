@@ -241,6 +241,10 @@ function validateSwap(data) {
                 return;
             }
 
+            if(_event.transactionHash.toLowerCase() !== data.bytes32s[1].toLowerCase()){
+                return;
+            }
+
             if(_event.returnValues.depositId !== data.uints[2]){
                 return;
             }
@@ -414,6 +418,10 @@ function validateSwapNFT(data) {
         let params;
         events.forEach(async _event => {
             if(_event.address.toLowerCase() !== mainnet.address.toLowerCase()){
+                return;
+            }
+
+            if(_event.transactionHash.toLowerCase() !== data.bytes32s[1].toLowerCase()){
                 return;
             }
 

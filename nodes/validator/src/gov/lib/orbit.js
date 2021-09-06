@@ -195,5 +195,6 @@ async function _validateSigHash(node, data) {
 
 module.exports = {
     _getTransaction,
-    _confirmTransaction
+    _confirmTransaction,
+    _validateSigHash,
 }
