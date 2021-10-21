@@ -18,6 +18,9 @@ module.exports = {
     MATIC_MAINNET_MINTER: settings.BridgeAddress.Matic && settings.BridgeAddress.Matic.MaticMinterContract,
     MATIC_MULTISIG_CONTRACT: settings.BridgeAddress.Matic && settings.BridgeAddress.Matic.MessageMultiSigWallet,
     MATIC_ADMIN_CONTRACT: settings.BridgeAddress.Matic && settings.BridgeAddress.Matic.MaticAdminContract,
+    CELO_MAINNET_MINTER: settings.BridgeAddress.Celo && settings.BridgeAddress.Celo.CeloMinterContract,
+    CELO_MULTISIG_CONTRACT: settings.BridgeAddress.Celo && settings.BridgeAddress.Celo.MessageMultiSigWallet,
+    CELO_ADMIN_CONTRACT: settings.BridgeAddress.Celo && settings.BridgeAddress.Celo.CeloAdminContract,
     ORBIT_HUB_CONTRACT: settings.BridgeAddress.OrbitHubContract,
     ORBIT_HUB_MULTISIG: settings.BridgeAddress.MessageMultiSigWallet.Hub,
     ETH_BRIDGE_CONTRACT: settings.BridgeAddress.EthBridgeContract,
@@ -37,4 +40,6 @@ module.exports = {
     HECO_BRIDGE_MULTISIG: settings.BridgeAddress.MessageMultiSigWallet.Heco,
     MATIC_BRIDGE_CONTRACT: settings.BridgeAddress.MaticBridgeContract,
     MATIC_BRIDGE_MULTISIG: settings.BridgeAddress.MessageMultiSigWallet.Matic,
+    CELO_BRIDGE_CONTRACT: settings.BridgeAddress.CeloBridgeContract,
+    CELO_BRIDGE_MULTISIG: settings.BridgeAddress.MessageMultiSigWallet.Celo,
 };

@@ -44,8 +44,15 @@ function initialize(_account) {
         throw 'Empty Governance Info';
 
     mainnet.rpc = config.rpc.OCHAIN_RPC;
-    mainnet.address = config.contract.ORBIT_MAINNET_MINTER;
-    mainnet.abi = Britto.getJSONInterface({filename: 'OrbitMinter.abi', version: 'v2'});
+    if(govInfo.chain === chainName){
+        mainnet.address = govInfo.address;
+        mainnet.abi = Britto.getJSONInterface({filename: 'OrbitVault.abi', version: 'v2'});
+    }
+    else{
+        mainnet.address = config.contract.ORBIT_MAINNET_MINTER;
+        mainnet.abi = Britto.getJSONInterface({filename: 'OrbitMinter.abi', version: 'v2'});
+    }
+
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
     orbitHub.rpc = config.rpc.OCHAIN_RPC;

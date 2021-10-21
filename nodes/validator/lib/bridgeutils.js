@@ -61,6 +61,10 @@ class BridgeUtils {
             return address.slice(0,2) === '0x' && address.length == 42;
         }
 
+        if(toChain === "CELO"){
+            return address.slice(0,2) === '0x' && address.length == 42;
+        }
+
         if(toChain === "ICON"){
             let govInfo = config.governance;
             if(govInfo.chain === "ICON" && address.toLowerCase() === govInfo.bytes.toLowerCase()){

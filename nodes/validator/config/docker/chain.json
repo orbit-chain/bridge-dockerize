@@ -22,5 +22,8 @@
   },
   "matic": {
     "src": "src/matic"
+  },
+  "celo": {
+    "src": "src/celo"
   }
 }
