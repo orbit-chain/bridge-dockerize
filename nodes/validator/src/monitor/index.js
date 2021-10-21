@@ -65,6 +65,7 @@ class Monitor {
             BSC: 'bsc',
             HECO: 'heco',
             MATIC: 'matic',
+            CELO: 'celo',
         };
 
         return fullNames[chain] || '';

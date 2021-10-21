@@ -106,20 +106,30 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
 		"inputs": [
 			{
-				"name": "_chain",
+				"internalType": "string",
+				"name": "chainSymbol",
 				"type": "string"
 			},
 			{
+				"internalType": "bool",
 				"name": "valid",
 				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "fromAddrLen",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "uintsLen",
+				"type": "uint256"
 			}
 		],
 		"name": "setValidChain",
 		"outputs": [],
-		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
@@ -446,6 +456,43 @@
 		],
 		"name": "setPolicyAdmin",
 		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "chainSymbol",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_fee",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_feeWithData",
+				"type": "uint256"
+			}
+		],
+		"name": "setChainFee",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "tokenLen",
+				"type": "uint256"
+			}
+		],
+		"name": "setTokenLength",
+		"outputs": [],
+		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
 	}

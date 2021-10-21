@@ -18,3 +18,4 @@ exports.ripple = require(`./${RUNNING_LEVEL}/ripple.js`);
 exports.bsc = require(`./${RUNNING_LEVEL}/bsc.js`);
 exports.heco = require(`./${RUNNING_LEVEL}/heco.js`);
 exports.matic = require(`./${RUNNING_LEVEL}/matic.js`);
+exports.celo = require(`./${RUNNING_LEVEL}/celo.js`);

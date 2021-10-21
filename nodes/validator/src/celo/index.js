@@ -1,4 +1,4 @@
-global.logger.bsc = require('./logger');
+global.logger.celo = require('./logger');
 
 const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
@@ -25,7 +25,7 @@ let eventList = [
 
 let govInfo;
 
-const chainName = 'BSC';
+const chainName = 'CELO';
 const mainnet = Britto.getNodeConfigBase('mainnet');
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
@@ -43,14 +43,15 @@ function initialize(_account) {
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
 
-    mainnet.rpc = config.bsc.BSC_RPC;
+    mainnet.rpc = config.celo.CELO_RPC;
     if(govInfo.chain === chainName){
         mainnet.address = govInfo.address;
-        mainnet.abi = Britto.getJSONInterface({filename: 'BscVault.abi', version: 'v2'});
+        mainnet.abi = Britto.getJSONInterface({filename: 'CeloVault.abi', version: 'v2'});
     }
     else{
-        mainnet.address = config.contract.BSC_MAINNET_MINTER;
-        mainnet.abi = Britto.getJSONInterface({filename: 'BscMinter.abi', version: 'v2'});
+        //TODO: implement minter
+        // mainnet.address = config.contract.CELO_MAINNET_MINTER;
+        // mainnet.abi = Britto.getJSONInterface({filename: 'CeloMinter.abi', version: 'v2'});
     }
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
@@ -68,7 +69,7 @@ function initialize(_account) {
     Britto.setAdd0x();
     Britto.setRemove0x();
 
-    orbitHub.multisig.wallet = config.contract.BSC_BRIDGE_MULTISIG;
+    orbitHub.multisig.wallet = config.contract.CELO_BRIDGE_MULTISIG;
     orbitHub.multisig.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi', version: 'v2'});
     orbitHub.multisig.contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, orbitHub.multisig.wallet);
 }
@@ -83,7 +84,7 @@ function startSubscription(node) {
 function subscribeNewBlock(web3, callback) {
     web3.eth.subscribe('newBlockHeaders', (err, res) => {
         if (err)
-            return logger.bsc.error('subscribeNewBlock subscribe error: ' + err.message);
+            return logger.celo.error('subscribeNewBlock subscribe error: ' + err.message);
 
         if (!res.number) {
             return;
@@ -135,7 +136,7 @@ function getEvent(blockNumber, nodeConfig, nameOrArray, callback) {
                 events = events.filter(e => e.returnValues.fromChain === chainName && e.returnValues.bytes32s[0] === govInfo.id);
 
                 if (events.length > 0) {
-                    logger.bsc.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
+                    logger.celo.info(`[${nodeConfig.name.toUpperCase()}] Get '${event.name}' event from block ${blockNumber}. length: ${events.length}`);
                 }
 
                 if (event.callback)
@@ -193,14 +194,14 @@ function validateSwap(data) {
 
     mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
-            logger.bsc.error('No Transaction Receipt.');
+            logger.celo.error('No Transaction Receipt.');
             return;
         }
 
 
         let events = await parseEvent(receipt.blockNumber, mainnet, (govInfo.chain === chainName)? "Deposit" : "SwapRequest");
         if (events.length == 0){
-            logger.bsc.error('Invalid Transaction.');
+            logger.celo.error('Invalid Transaction.');
             return;
         }
 
@@ -222,17 +223,17 @@ function validateSwap(data) {
         });
 
         if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.decimal){
-            logger.bsc.error("Invalid Transaction (event params)");
+            logger.celo.error("Invalid Transaction (event params)");
             return;
         }
 
         if(!bridgeUtils.isValidAddress(params.toChain, params.toAddr)){
-            logger.bsc.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
+            logger.celo.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
             return;
         }
 
         if(params.data && !bridgeUtils.isValidData(params.toChain, params.data)){
-            logger.bsc.error(`Invalid data ( ${params.toChain}, ${params.data} )`);
+            logger.celo.error(`Invalid data ( ${params.toChain}, ${params.data} )`);
             return;
         }
 
@@ -241,18 +242,18 @@ function validateSwap(data) {
         params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
         let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
-            logger.bsc.error('getBlockNumber() execute error: ' + e.message);
+            logger.celo.error('getBlockNumber() execute error: ' + e.message);
         });
 
         if (!currentBlock)
             return console.error('No current block data.');
 
         // Check deposit block confirmed
-        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.bscConfirmCount;
+        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.celoConfirmCount;
 
         let curBalance = await monitor.getBalance(params.token);
         if(!curBalance || curBalance === 0 || Number.isNaN(curBalance)){
-            logger.bsc.error(`getBalance error ( ${params.token})`);
+            logger.celo.error(`getBalance error ( ${params.token})`);
             return;
         }
 
@@ -264,13 +265,13 @@ function validateSwap(data) {
         else
             console.log(`depositId(${data.uints[2]}) is invalid. isConfirmed: ${isConfirmed}, isValidAmount: ${isValidAmount}`);
     }).catch(e => {
-        logger.bsc.error('validateSwap error: ' + e.message);
+        logger.celo.error('validateSwap error: ' + e.message);
     });
 
     async function valid(data) {
         let sender = Britto.getRandomPkAddress();
         if(!sender || !sender.pk || !sender.address){
-            logger.bsc.error("Cannot Generate account");
+            logger.celo.error("Cannot Generate account");
             return;
         }
 
@@ -296,7 +297,7 @@ function validateSwap(data) {
         let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                logger.bsc.error(`Already signed. validated swapHash: ${hash}`);
+                logger.celo.error(`Already signed. validated swapHash: ${hash}`);
                 return;
             }
         }
@@ -324,7 +325,7 @@ function validateSwap(data) {
         };
 
         let gasLimit = await orbitHub.contract.methods.validateSwap(...params).estimateGas(txOptions).catch(e => {
-            logger.bsc.error('validateSwap estimateGas error: ' + e.message)
+            logger.celo.error('validateSwap estimateGas error: ' + e.message)
         });
 
         if (!gasLimit)
@@ -373,13 +374,13 @@ function validateSwapNFT(data) {
 
     mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
-            logger.bsc.error('No Transaction Receipt.');
+            logger.celo.error('No Transaction Receipt.');
             return;
         }
 
         let events = await parseEvent(receipt.blockNumber, mainnet, (govInfo.chain === chainName)? "DepositNFT" : "SwapRequestNFT");
         if (events.length == 0){
-            logger.bsc.error('Invalid Transaction.');
+            logger.celo.error('Invalid Transaction.');
             return;
         }
 
@@ -401,12 +402,12 @@ function validateSwapNFT(data) {
         });
 
         if(!params || !params.toChain || !params.fromAddr || !params.toAddr || !params.token || !params.amount || !params.tokenId){
-            logger.bsc.error("Invalid Transaction (event params)");
+            logger.celo.error("Invalid Transaction (event params)");
             return;
         }
 
         if(!bridgeUtils.isValidAddress(params.toChain, params.toAddr)){
-            logger.bsc.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
+            logger.celo.error(`Invalid toAddress ( ${params.toChain}, ${params.toAddr} )`);
             return;
         }
 
@@ -415,14 +416,14 @@ function validateSwapNFT(data) {
         params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
         let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
-            logger.bsc.error('getBlockNumber() execute error: ' + e.message);
+            logger.celo.error('getBlockNumber() execute error: ' + e.message);
         });
 
         if (!currentBlock)
             return console.error('No current block data.');
 
         // Check deposit block confirmed
-        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.bscConfirmCount;
+        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.celoConfirmCount;
 
         // 두 조건을 만족하면 valid
         if (isConfirmed)
@@ -430,13 +431,13 @@ function validateSwapNFT(data) {
         else
             console.log('depositId(' + data.uints[2] + ') is invalid.', 'isConfirmed: ' + isConfirmed);
     }).catch(e => {
-        logger.bsc.error('validateSwapNFT error: ' + e.message);
+        logger.celo.error('validateSwapNFT error: ' + e.message);
     });
 
     async function valid(data) {
         let sender = Britto.getRandomPkAddress();
         if(!sender || !sender.pk || !sender.address){
-            logger.bsc.error("Cannot Generate account");
+            logger.celo.error("Cannot Generate account");
             return;
         }
 
@@ -462,7 +463,7 @@ function validateSwapNFT(data) {
         let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
         for(var i = 0; i < validators.length; i++){
             if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                logger.bsc.error(`Already signed. validated swapHash: ${hash}`);
+                logger.celo.error(`Already signed. validated swapHash: ${hash}`);
                 return;
             }
         }
@@ -490,7 +491,7 @@ function validateSwapNFT(data) {
         };
 
         let gasLimit = await orbitHub.contract.methods.validateSwapNFT(...params).estimateGas(txOptions).catch(e => {
-            logger.bsc.error('validateSwapNFT estimateGas error: ' + e.message)
+            logger.celo.error('validateSwapNFT estimateGas error: ' + e.message)
         });
 
         if (!gasLimit)
@@ -528,13 +529,13 @@ async function getBalance(tokenAddr) {
     let amount = 0;
     if(tokenAddr === "0x0000000000000000000000000000000000000000"){
         amount = await mainnet.web3.eth.getBalance(govInfo.address).catch(e => {
-            logger.bsc.error(`${tokenAddr} getBalance error : ${e.message}`);
+            logger.celo.error(`${tokenAddr} getBalance error : ${e.message}`);
         });
     }
     else{
         const token = new mainnet.web3.eth.Contract(tokenABI, tokenAddr);
         amount = await token.methods.balanceOf(govInfo.address).call().catch(e => {
-            logger.bsc.error(`${tokenAddr} getBalance error : ${e.message}`);
+            logger.celo.error(`${tokenAddr} getBalance error : ${e.message}`);
         });
     }
     return parseInt(amount);
