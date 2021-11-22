@@ -1,0 +1,21 @@
+version: '3'
+services:
+  validator-heco:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    build:
+      args:
+        SETTINGS_FILEPATH: hecovault-validator/settings.js
+    ports:
+      - 17110:8984
+    networks:
+      - br-hecovalidator
+
+networks:
+    br-hecovalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.139.0/24

@@ -1,0 +1,21 @@
+version: '3'
+services:
+  validator-orbit:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    build:
+      args:
+        SETTINGS_FILEPATH: orbitvault-validator/settings.js
+    ports:
+      - 17090:8984
+    networks:
+      - br-orbitvalidator
+
+networks:
+    br-orbitvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.137.0/24
