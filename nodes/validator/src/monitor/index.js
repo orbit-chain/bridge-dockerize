@@ -68,7 +68,7 @@ class Monitor {
             CELO: 'celo',
         };
 
-        return fullNames[chain] || '';
+        return fullNames[chain] || (chain && chain.toLowerCase()) || "";
     }
 
     reportMonitorStatus(method, data) {
