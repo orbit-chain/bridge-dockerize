@@ -54,10 +54,17 @@ app.use('/', indexRouter);
 let govInfo = config.governance;
 
 settings.chainList.forEach(key => {
-    let chain = config.chain[key];
+    let chain = config.chain[key] || {
+        src: "src/evm",
+        class: true,
+    };
     console.log(`[VALIDATOR_CHAIN] key: ${key}, chain: ${JSON.stringify(chain)}`);
     let instance = require(ROOT + '/' + chain.src);
-    instance.initialize(account);
+    if (chain.class) {
+        instance = new instance(key, account);
+    } else {
+        instance.initialize(account);
+    }
 
     if(key.includes(govInfo.chain.toLowerCase())){
         global.monitor.getBalance = instance.getBalance;

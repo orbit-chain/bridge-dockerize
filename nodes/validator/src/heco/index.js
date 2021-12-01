@@ -45,9 +45,8 @@ function initialize(_account) {
 
     mainnet.rpc = config.heco.HECO_RPC;
     if(govInfo.chain === chainName){
-        //TODO: implement vault
-        //mainnet.address = govInfo.address;
-        //mainnet.abi = Britto.getJSONInterface({filename: 'HecoVault.abi', version: 'v2'});
+        mainnet.address = govInfo.address;
+        mainnet.abi = Britto.getJSONInterface({filename: 'HecoVault.abi', version: 'v2'});
     }
     else{
         mainnet.address = config.contract.HECO_MAINNET_MINTER;

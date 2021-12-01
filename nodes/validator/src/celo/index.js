@@ -49,9 +49,8 @@ function initialize(_account) {
         mainnet.abi = Britto.getJSONInterface({filename: 'CeloVault.abi', version: 'v2'});
     }
     else{
-        //TODO: implement minter
-        // mainnet.address = config.contract.CELO_MAINNET_MINTER;
-        // mainnet.abi = Britto.getJSONInterface({filename: 'CeloMinter.abi', version: 'v2'});
+        mainnet.address = config.contract.CELO_MAINNET_MINTER;
+        mainnet.abi = Britto.getJSONInterface({filename: 'CeloMinter.abi', version: 'v2'});
     }
 
     orbitHub.ws = config.rpc.OCHAIN_WS;

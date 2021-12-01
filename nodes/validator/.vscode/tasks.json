@@ -19,6 +19,11 @@
             "command": "cp ../../iconvault-validator/settings.localhost.js config/docker/settings.js"
         },
         {
+            "label": "copy-hecovault-setting",
+            "type": "shell",
+            "command": "cp ../../hecovault-validator/settings.localhost.js config/docker/settings.js"
+        },
+        {
             "label": "copy-xrpvault-setting",
             "type": "shell",
             "command": "cp ../../xrpvault-validator/settings.localhost.js config/docker/settings.js"
@@ -49,6 +54,14 @@
             "dependsOrder": "sequence",
             "dependsOn": [
                 "copy-iconvault-setting",
+                "install-modules"
+            ]
+        },
+        {
+            "label": "run-all-heco-pretasks",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "copy-hecovault-setting",
                 "install-modules"
             ]
         },
