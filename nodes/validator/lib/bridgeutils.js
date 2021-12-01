@@ -41,27 +41,23 @@ class BridgeUtils {
         if (!toChain)
             return false;
 
-        if(toChain === "ETH"){
-            return address.slice(0,2) === '0x' && address.length == 42;
-        }
+        const EVM_CHAINS = [
+            "ETH",
+            "KLAYTN",
+            "BSC",
+            "HECO",
+            "MATIC",
+            "CELO",
+            "AVAX",
+            "FANTOM",
+            "HARMONY",
+            "MOONRIVER",
+            "OEC",
+            "XDAI",
+            "ORBIT",
+        ]
 
-        if(toChain === "KLAYTN"){
-            return address.slice(0,2) === '0x' && address.length == 42;
-        }
-
-        if(toChain === "BSC"){
-            return address.slice(0,2) === '0x' && address.length == 42;
-        }
-
-        if(toChain === "HECO"){
-            return address.slice(0,2) === '0x' && address.length == 42;
-        }
-
-        if(toChain === "MATIC"){
-            return address.slice(0,2) === '0x' && address.length == 42;
-        }
-
-        if(toChain === "CELO"){
+        if (EVM_CHAINS.includes(toChain)) {
             return address.slice(0,2) === '0x' && address.length == 42;
         }
 
@@ -72,10 +68,6 @@ class BridgeUtils {
             }
 
             return (address.slice(0,4) === '0x00' || address.slice(0,4) === '0x01') && address.length == 44;
-        }
-
-        if(toChain === "ORBIT"){
-            return address.slice(0,2) === '0x' && address.length == 42;
         }
 
         if(toChain === "XRP"){

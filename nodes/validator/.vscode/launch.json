@@ -55,6 +55,22 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "hecovault",
+            "runtimeVersion": "14.15.4",
+            "preLaunchTask": "run-all-heco-pretasks",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "PROFILE": "docker",
+                "NODE_ENV": "development",
+            },
+            "program": "${workspaceFolder}/app.js",
+            "outputCapture": "std",
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "xrpvault",
             "runtimeVersion": "14.15.4",
             "preLaunchTask": "run-all-xrp-pretasks",
