@@ -1,0 +1,21 @@
+version: '3'
+services:
+  validator-klaytn:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    build:
+      args:
+        SETTINGS_FILEPATH: klaytnvault-validator/settings.js
+    ports:
+      - 17130:8984
+    networks:
+      - br-klaytnvalidator
+
+networks:
+    br-klaytnvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.141.0/24
