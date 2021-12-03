@@ -92,6 +92,10 @@ function initialize(_account) {
             }, 5000);
             tryReconnect();
         }
+        else{
+            logger.error("program exit cause ripple connection lost to " + config.ripple.ws);
+            process.exit(2);
+        }
     });
 
     ripple.on("connected", () => {
@@ -562,12 +566,14 @@ async function validateTransactionSuggested(data) {
     let networkFee = await ripple.getFee() || 0.000012;
     networkFee = networkFee < 1 ? (networkFee * 10 ** 6) : networkFee; // fee unit is drops. NOT XRP.
 
-    let expectFee = networkFee * (1 + Math.max(quorumCount, Number(required)));
+    let minFee = networkFee * (1 + Math.max(quorumCount, Number(required))); // expectFee
+    let maxFee = minFee * 1.25 < 100000 ? 100000 : minFee * 1.25; // expectFee * 1.25 or 0.1 XRP
+
     let suggestionFee = Number(suggestion.fee);
-    if (expectFee > suggestionFee) {
-        logger.xrp.error(`validateTransactionSuggested validation fail: Small fee. Expected ${expectFee}, but ${suggestionFee}`);
+    if (minFee > suggestionFee) {
+        logger.xrp.error(`validateTransactionSuggested validation fail: Small fee. Expected ${minFee}, but ${suggestionFee}`);
         return;
-    } else if (expectFee * 1.25 < suggestionFee) {
+    } else if (maxFee < suggestionFee) {
         logger.xrp.error(`validateTransactionSuggested validation fail: Too many fee. Maximum is ${expectFee * 1.25}, but ${suggestionFee}`);
         return;
     } else if (Number.isNaN(suggestionFee)) {
