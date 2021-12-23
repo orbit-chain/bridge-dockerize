@@ -1,5 +1,5 @@
 const request = require('request-promise');
-const IconService = require('icon-sdk-js');
+const IconService = require('icon-sdk-js').default;
 const { IconAmount, IconConverter, IconBuilder, IconWallet, SignedTransaction } = IconService;
 const config = require(ROOT + '/config');
 
