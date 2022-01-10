@@ -12,7 +12,11 @@ const errmInvalidTransaction =  {
 async function init(){
     const matic = Britto.getNodeConfigBase('matic');
 
-    matic.rpc = config.matic.MATIC_RPC;
+    if (Array.isArray(config.matic.MATIC_RPC)) {
+        matic.rpc = config.matic.MATIC_RPC[0];
+    } else {
+        matic.rpc = config.matic.MATIC_RPC;
+    }
     matic.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(matic, 'GOV_MATIC').connectWeb3();

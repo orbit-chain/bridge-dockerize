@@ -102,6 +102,22 @@ class Monitor {
         this.nodeConnect[chain][address] = {connectionStatus};
     }
 
+    setNodeElectionStatus (chain, address, electedBlock) {
+        if (!chain || !address) {
+            return;
+        }
+
+        chain = Monitor.getChainFullName(chain);
+        if (!chain) {
+            return;
+        }
+
+        if (!this.nodeConnect[chain]) {
+            this.nodeConnect[chain] = {};
+        }
+        this.nodeConnect[chain][address] = {electedBlock};
+    }
+
     setBlockNumber (chain, block) {
         if (!chain || !block)
             return;
