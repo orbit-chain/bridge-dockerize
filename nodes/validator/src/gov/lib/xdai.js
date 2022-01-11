@@ -12,7 +12,11 @@ const errmInvalidTransaction =  {
 async function init(){
     const xdai = Britto.getNodeConfigBase('xdai');
 
-    xdai.rpc = settings.Endpoints.Xdai.rpc;
+    if (Array.isArray(settings.Endpoints.Xdai.rpc)) {
+        xdai.rpc = settings.Endpoints.Xdai.rpc[0];
+    } else {
+        xdai.rpc = settings.Endpoints.Xdai.rpc;
+    }
     xdai.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(xdai, 'GOV_XDAI').connectWeb3();

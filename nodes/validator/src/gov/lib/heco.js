@@ -12,7 +12,11 @@ const errmInvalidTransaction =  {
 async function init(){
     const heco = Britto.getNodeConfigBase('heco');
 
-    heco.rpc = config.heco.HECO_RPC;
+    if (Array.isArray(settings.Endpoints.Heco.rpc)) {
+        heco.rpc = settings.Endpoints.Heco.rpc[0];
+    } else {
+        heco.rpc = settings.Endpoints.Heco.rpc;
+    }
     heco.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(heco, 'GOV_HECO').connectWeb3();

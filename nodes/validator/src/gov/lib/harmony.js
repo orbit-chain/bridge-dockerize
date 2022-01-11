@@ -12,7 +12,11 @@ const errmInvalidTransaction =  {
 async function init(){
     const harmony = Britto.getNodeConfigBase('harmony');
 
-    harmony.rpc = settings.Endpoints.Harmony.rpc;
+    if (Array.isArray(settings.Endpoints.Harmony.rpc)) {
+        harmony.rpc = settings.Endpoints.Harmony.rpc[0];
+    } else {
+        harmony.rpc = settings.Endpoints.Harmony.rpc;
+    }
     harmony.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(harmony, 'GOV_HARMONY').connectWeb3();

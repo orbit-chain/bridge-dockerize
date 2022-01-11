@@ -12,7 +12,12 @@ const errmInvalidTransaction =  {
 async function init(){
     const bsc = Britto.getNodeConfigBase('bsc');
 
-    bsc.rpc = config.bsc.BSC_RPC;
+
+    if (Array.isArray(settings.Endpoints.Bsc.rpc)) {
+        bsc.rpc = settings.Endpoints.Bsc.rpc[0];
+    } else {
+        bsc.rpc = settings.Endpoints.Bsc.rpc;
+    }
     bsc.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(bsc, 'GOV_BSC').connectWeb3();

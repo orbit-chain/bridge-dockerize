@@ -12,7 +12,11 @@ const errmInvalidTransaction =  {
 async function init(){
     const moonriver = Britto.getNodeConfigBase('moonriver');
 
-    moonriver.rpc = settings.Endpoints.Moonriver.rpc;
+    if (Array.isArray(settings.Endpoints.Moonriver.rpc)) {
+        moonriver.rpc = settings.Endpoints.Moonriver.rpc[0];
+    } else {
+        moonriver.rpc = settings.Endpoints.Moonriver.rpc;
+    }
     moonriver.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(moonriver, 'GOV_MOONRIVER').connectWeb3();
