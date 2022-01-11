@@ -12,10 +12,10 @@ const errmInvalidTransaction =  {
 async function init(){
     const matic = Britto.getNodeConfigBase('matic');
 
-    if (Array.isArray(config.matic.MATIC_RPC)) {
-        matic.rpc = config.matic.MATIC_RPC[0];
+    if (Array.isArray(settings.Endpoints.Matic.rpc)) {
+        matic.rpc = settings.Endpoints.Matic.rpc[0];
     } else {
-        matic.rpc = config.matic.MATIC_RPC;
+        matic.rpc = settings.Endpoints.Matic.rpc;
     }
     matic.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 

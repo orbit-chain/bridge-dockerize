@@ -96,10 +96,9 @@ class Monitor {
             return;
         }
 
-        if (!this.nodeConnect[chain]) {
-            this.nodeConnect[chain] = {};
-        }
-        this.nodeConnect[chain][address] = {connectionStatus};
+        this.nodeConnect[chain] = this.nodeConnect[chain] || {};
+        this.nodeConnect[chain][address] = this.nodeConnect[chain][address] || {};
+        this.nodeConnect[chain][address].connectionStatus = connectionStatus;
     }
 
     setNodeElectionStatus (chain, address, electedBlock) {
@@ -112,10 +111,9 @@ class Monitor {
             return;
         }
 
-        if (!this.nodeConnect[chain]) {
-            this.nodeConnect[chain] = {};
-        }
-        this.nodeConnect[chain][address] = {electedBlock};
+        this.nodeConnect[chain] = this.nodeConnect[chain] || {};
+        this.nodeConnect[chain][address] = this.nodeConnect[chain][address] || {};
+        this.nodeConnect[chain][address].electedBlock = electedBlock;
     }
 
     setBlockNumber (chain, block) {

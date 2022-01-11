@@ -1,7 +1,9 @@
 global.logger.bsc = require('./logger');
 
 const config = require(ROOT + '/config');
+const settings = config.requireEnv("./settings");
 const Britto = require(ROOT + '/lib/britto');
+const RPCAggregator = require(ROOT + '/lib/rpcAggregator');
 const txSender = require(ROOT + '/lib/txsender');
 const packer = require('./utils/packer');
 
@@ -26,7 +28,7 @@ let eventList = [
 let govInfo;
 
 const chainName = 'BSC';
-const mainnet = Britto.getNodeConfigBase('mainnet');
+const rpcAggregator = new RPCAggregator(chainName, settings.BSC_CHAIN_ID);
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
 const tokenABI = [ { "constant": true, "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" } ];
@@ -40,17 +42,27 @@ function initialize(_account) {
     monitor.address[chainName] = account.address;
 
     govInfo = config.governance;
-    if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
+    if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id) {
         throw 'Empty Governance Info';
-
-    mainnet.rpc = config.bsc.BSC_RPC;
-    if(govInfo.chain === chainName){
-        mainnet.address = govInfo.address;
-        mainnet.abi = Britto.getJSONInterface({filename: 'BscVault.abi', version: 'v2'});
     }
-    else{
-        mainnet.address = config.contract.BSC_MAINNET_MINTER;
-        mainnet.abi = Britto.getJSONInterface({filename: 'BscMinter.abi', version: 'v2'});
+
+    let brittoConfig = {};
+    if (govInfo.chain === chainName) {
+        brittoConfig.address = govInfo.address;
+        brittoConfig.abi = Britto.getJSONInterface({filename: 'BscVault.abi', version: 'v2'});
+    } else {
+        brittoConfig.address = settings.BridgeAddress.Bsc.BscMinterContract;
+        brittoConfig.abi = Britto.getJSONInterface({filename: 'BscMinter.abi', version: 'v2'});
+    }
+    const rpc = settings.Endpoints.Bsc.rpc;
+    if (Array.isArray(rpc)) {
+        for (const url of rpc) {
+            rpcAggregator.addRpc(url, brittoConfig);
+        }
+    } else if (typeof rpc === "string") {
+        rpcAggregator.addRpc(rpc, brittoConfig);
+    } else {
+        throw `Unsupported Endpoints: ${rpc}`;
     }
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
@@ -60,8 +72,6 @@ function initialize(_account) {
 
     orbitHub.onconnect = () => { startSubscription(orbitHub) };
 
-    global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connecting");
-    new Britto(mainnet, chainName).connectWeb3();
     global.monitor.setNodeConnectStatus(chainName, orbitHub.ws, "connecting");
     new Britto(orbitHub, chainName).connectWeb3();
 
@@ -187,10 +197,11 @@ function receiveSwapRelay(events) {
     }
 }
 
-function validateSwap(data) {
+async function validateSwap(data) {
     let validator = {...data.validator} || {};
     delete data.validator;
 
+    const mainnet = await rpcAggregator.select();
     mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
             logger.bsc.error('No Transaction Receipt.');
@@ -367,10 +378,11 @@ function receiveSwapNFTRelay(events) {
     }
 }
 
-function validateSwapNFT(data) {
+async function validateSwapNFT(data) {
     let validator = {...data.validator} || {};
     delete data.validator;
 
+    const mainnet = await rpcAggregator.select();
     mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
             logger.bsc.error('No Transaction Receipt.');
@@ -525,6 +537,7 @@ function makeSigs(validator, signature){
 }
 
 async function getBalance(tokenAddr) {
+    const mainnet = await rpcAggregator.select();
     let amount = 0;
     if(tokenAddr === "0x0000000000000000000000000000000000000000"){
         amount = await mainnet.web3.eth.getBalance(govInfo.address).catch(e => {

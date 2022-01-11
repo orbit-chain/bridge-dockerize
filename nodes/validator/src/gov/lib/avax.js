@@ -12,7 +12,11 @@ const errmInvalidTransaction =  {
 async function init(){
     const avax = Britto.getNodeConfigBase('avax');
 
-    avax.rpc = settings.Endpoints.Avax.rpc;
+    if (Array.isArray(settings.Endpoints.Avax.rpc)) {
+        avax.rpc = settings.Endpoints.Avax.rpc[0];
+    } else {
+        avax.rpc = settings.Endpoints.Avax.rpc;
+    }
     avax.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(avax, 'GOV_AVAX').connectWeb3();

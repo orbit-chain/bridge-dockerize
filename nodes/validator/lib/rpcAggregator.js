@@ -37,11 +37,14 @@ class RPCAggregator {
         continue;
       }
 
-      const chainId = await node.web3.eth.getChainId().catch( e => {
-        logger.error(`[RPC_AGGREGATOR] getChainId:${e}`);
-      });
-      if (!chainId || parseInt(this.chainId) !== parseInt(chainId)) {
-        continue;
+      // chainId가 세팅된 경우에만 검증
+      if (this.chainId) {
+        const chainId = await node.web3.eth.getChainId().catch( e => {
+          logger.error(`[RPC_AGGREGATOR] getChainId:${e}`);
+        });
+        if (!chainId || parseInt(this.chainId) !== parseInt(chainId)) {
+          continue;
+        }
       }
 
       const curBlockNumber = await node.web3.eth.getBlockNumber().catch( e => {
@@ -56,7 +59,7 @@ class RPCAggregator {
     }
     const elected = this.pool[electedIndex];
     if (elected) {
-      global.monitor.setNodeElectionStatus(node.peggingType, elected.rpc, bn);
+      global.monitor.setNodeElectionStatus(elected.peggingType, elected.rpc, bn);
     }
 
     return elected;
