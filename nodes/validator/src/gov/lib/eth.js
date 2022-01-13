@@ -12,7 +12,11 @@ const errmInvalidTransaction =  {
 async function init(){
     const eth = Britto.getNodeConfigBase('eth');
 
-    eth.rpc = config.rpc.ETH_MAINNET_RPC;
+    if (Array.isArray(settings.Endpoints.Eth.rpc)) {
+        eth.rpc = settings.Endpoints.Eth.rpc[0];
+    } else {
+        eth.rpc = settings.Endpoints.Eth.rpc;
+    }
     eth.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(eth, 'GOV_ETH').connectWeb3();

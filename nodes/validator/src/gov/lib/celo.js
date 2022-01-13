@@ -12,7 +12,11 @@ const errmInvalidTransaction =  {
 async function init(){
     const celo = Britto.getNodeConfigBase('celo');
 
-    celo.rpc = config.celo.CELO_RPC;
+    if (Array.isArray(settings.Endpoints.Celo.rpc)) {
+        celo.rpc = settings.Endpoints.Celo.rpc[0];
+    } else {
+        celo.rpc = settings.Endpoints.Celo.rpc;
+    }
     celo.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(celo, 'GOV_CELO').connectWeb3();

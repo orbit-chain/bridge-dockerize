@@ -96,10 +96,24 @@ class Monitor {
             return;
         }
 
-        if (!this.nodeConnect[chain]) {
-            this.nodeConnect[chain] = {};
+        this.nodeConnect[chain] = this.nodeConnect[chain] || {};
+        this.nodeConnect[chain][address] = this.nodeConnect[chain][address] || {};
+        this.nodeConnect[chain][address].connectionStatus = connectionStatus;
+    }
+
+    setNodeElectionStatus (chain, address, electedBlock) {
+        if (!chain || !address) {
+            return;
         }
-        this.nodeConnect[chain][address] = {connectionStatus};
+
+        chain = Monitor.getChainFullName(chain);
+        if (!chain) {
+            return;
+        }
+
+        this.nodeConnect[chain] = this.nodeConnect[chain] || {};
+        this.nodeConnect[chain][address] = this.nodeConnect[chain][address] || {};
+        this.nodeConnect[chain][address].electedBlock = electedBlock;
     }
 
     setBlockNumber (chain, block) {

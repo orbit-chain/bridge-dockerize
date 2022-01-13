@@ -12,7 +12,11 @@ const errmInvalidTransaction =  {
 async function init(){
     const fantom = Britto.getNodeConfigBase('fantom');
 
-    fantom.rpc = settings.Endpoints.Fantom.rpc;
+    if (Array.isArray(settings.Endpoints.Fantom.rpc)) {
+        fantom.rpc = settings.Endpoints.Fantom.rpc[0];
+    } else {
+        fantom.rpc = settings.Endpoints.Fantom.rpc;
+    }
     fantom.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
     new Britto(fantom, 'GOV_FANTOM').connectWeb3();

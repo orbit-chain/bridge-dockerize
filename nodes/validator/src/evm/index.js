@@ -3,6 +3,7 @@ global.logger.evm = require('./logger');
 const config = require(ROOT + '/config');
 const settings = config.requireEnv("./settings");
 const Britto = require(ROOT + '/lib/britto');
+const RPCAggregator = require(ROOT + '/lib/rpcAggregator');
 const txSender = require(ROOT + '/lib/txsender');
 const packer = require('./utils/packer');
 
@@ -60,17 +61,26 @@ class EVMValidator {
             throw Error('Empty Governance Info');
         }
 
-        const mainnet = this.mainnet = Britto.getNodeConfigBase('mainnet');;
+        const rpcAggregator = this.rpcAggregator = new RPCAggregator(chainName, settings[`${chainName}_CHAIN_ID`]);
         const orbitHub = this.orbitHub = Britto.getNodeConfigBase('orbitHub');
 
-        mainnet.rpc = settings.Endpoints[this.chainCamel].rpc;
-        if(govInfo.chain === chainName){
-            mainnet.address = govInfo.address;
-            mainnet.abi = Britto.getJSONInterface({filename: `${this.chainCamel}Vault.abi`, version: 'v2'});
+        let brittoConfig = {};
+        if (govInfo.chain === chainName) {
+            brittoConfig.address = govInfo.address;
+            brittoConfig.abi = Britto.getJSONInterface({filename: `${this.chainCamel}Vault.abi`, version: 'v2'});
+        } else {
+            brittoConfig.address = settings.BridgeAddress[this.chainCamel][`${this.chainCamel}MinterContract`];
+            brittoConfig.abi = Britto.getJSONInterface({filename: `${this.chainCamel}Minter.abi`, version: 'v2'});
         }
-        else{
-            mainnet.address = settings.BridgeAddress[this.chainCamel][`${this.chainCamel}MinterContract`];
-            mainnet.abi = Britto.getJSONInterface({filename: `${this.chainCamel}Minter.abi`, version: 'v2'});
+        const rpc = settings.Endpoints[this.chainCamel].rpc;
+        if (Array.isArray(rpc)) {
+            for (const url of rpc) {
+                rpcAggregator.addRpc(url, brittoConfig);
+            }
+        } else if (typeof rpc === "string") {
+            rpcAggregator.addRpc(rpc, brittoConfig);
+        } else {
+            throw `Unsupported Endpoints: ${rpc}`;
         }
 
         orbitHub.ws = config.rpc.OCHAIN_WS;
@@ -80,8 +90,6 @@ class EVMValidator {
 
         orbitHub.onconnect = () => { this.startSubscription(orbitHub) };
 
-        global.monitor.setNodeConnectStatus(chainName, mainnet.rpc, "connecting");
-        new Britto(mainnet, chainName).connectWeb3();
         global.monitor.setNodeConnectStatus(chainName, orbitHub.ws, "connecting");
         new Britto(orbitHub, chainName).connectWeb3();
 
@@ -208,11 +216,11 @@ class EVMValidator {
         }
     }
 
-    validateSwap(data) {
+    async validateSwap(data) {
         let validator = {...data.validator} || {};
         delete data.validator;
 
-        const mainnet = this.mainnet;
+        const mainnet = await this.rpcAggregator.select();
         const orbitHub = this.orbitHub;
         const chainName = this.chainName;
         const govInfo = this.govInfo;
@@ -393,11 +401,11 @@ class EVMValidator {
         }
     }
 
-    validateSwapNFT(data) {
+    async validateSwapNFT(data) {
         let validator = {...data.validator} || {};
         delete data.validator;
 
-        const mainnet = this.mainnet;
+        const mainnet = await this.rpcAggregator.select();
         const orbitHub = this.orbitHub;
         const chainName = this.chainName;
         const govInfo = this.govInfo;
@@ -541,14 +549,15 @@ class EVMValidator {
     }
 
     async getBalance(tokenAddr) {
+        const mainnet = await this.rpcAggregator.select();
         let amount = 0;
         if(tokenAddr === "0x0000000000000000000000000000000000000000"){
-            amount = await this.mainnet.web3.eth.getBalance(this.govInfo.address).catch(e => {
+            amount = await mainnet.web3.eth.getBalance(this.govInfo.address).catch(e => {
                 logger.evm.error(`${tokenAddr} getBalance error : ${e.message}`, this.loggerOpt);
             });
         }
         else{
-            const token = new this.mainnet.web3.eth.Contract(tokenABI, tokenAddr);
+            const token = new mainnet.web3.eth.Contract(tokenABI, tokenAddr);
             amount = await token.methods.balanceOf(this.govInfo.address).call().catch(e => {
                 logger.evm.error(`${tokenAddr} getBalance error : ${e.message}`, this.loggerOpt);
             });
