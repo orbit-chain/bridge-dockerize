@@ -13,6 +13,7 @@
     "@terra-money/core": "^2.0.0",
     "abi-decoder": "^2.3.0",
     "bn.js": "^5.1.3",
+    "bs58": "^4.0.1",
     "caver-js": "^1.5.1",
     "crypto-js": "^3.1.9-1",
     "elliptic": "^6.4.1",
@@ -27,14 +28,13 @@
     "moment": "^2.28.0",
     "readline-sync": "^1.4.10",
     "request-promise": "^4.2.6",
-    "secp256k1": "^4.0.2",
-    "web3": "^1.0.0-beta.37",
-    "winston": "^3.1.0",
-    "winston-daily-rotate-file": "^2.0.0-rc.1",
     "ripple-binary-codec": "^0.2.1",
     "ripple-keypairs": "^0.11.0",
     "ripple-lib": "^1.2.3",
-    "bs58": "^4.0.1",
-    "varuint-bitcoin": "^1.1.0"
+    "secp256k1": "^4.0.2",
+    "varuint-bitcoin": "^1.1.0",
+    "web3": "^1.0.0-beta.37",
+    "winston": "^3.1.0",
+    "winston-daily-rotate-file": "^2.0.0-rc.1"
   }
 }
