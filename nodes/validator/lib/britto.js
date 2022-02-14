@@ -7,26 +7,124 @@ const ethers = require('ethers');
 
 let STORED_PROVIDERS = {};
 
-function getStoredProvider(britto) {
-    const node = britto.node;
-    let isWebSocket = node.ws !== null && node.ws !== undefined;
-    let host = node.ws || node.rpc;
-    let stored_provider;
-    if (isWebSocket) {
-        host = host.includes("wss://") ? host : `ws://${host.replace("ws://", "")}`;
-        stored_provider = STORED_PROVIDERS[host];
-        if (stored_provider) {
-            britto.setWeb3ProviderConnectionCallback(stored_provider);
+class WebSocketProviderManager {
+    provider;
+    host;
+    web3Objs = [];
+    connCallbacks = [];
+    disconnectCallbacks = [];
+    intervalObj;
+    __tryreconnect = 0;
+    isConnected = false;
+
+    constructor(host) {
+        this.host = host;
+        this.provider = new Web3.providers.WebsocketProvider(host, {
+            clientConfig: {
+                maxReceivedFrameSize: 100000000,
+                maxReceivedMessageSize: 100000000,
+            },
+            timeout: 20000
+        });
+        this.intervalObj = setInterval(this.ping.bind(this), 5000);
+    }
+
+    addWeb3(web3, connCallback, disconnectCallback) {
+        const provider = this.provider;
+
+        this.web3Objs.push(web3);
+        if (connCallback) {
+            this.connCallbacks.push(connCallback);
+        }
+        if (disconnectCallback) {
+            this.disconnectCallbacks.push(disconnectCallback);
+        }
+
+        // callback immediately if connection already opened
+        if (provider.connection.readyState === provider.connection.OPEN) {
+            this.__tryreconnect = 0;
+            this.isConnected = true;
+            connCallback();
+        }
+        this.setConnectionCallback();
+    }
+
+    async ping() {
+        if (this.web3Objs.length <= 0) {
+            return;
+        }
+
+        if (this.intervalObj) {
+            clearInterval(this.intervalObj);
+            this.intervalObj = undefined;
+        }
+
+        const web3 = this.web3Objs[0];
+        try {
+            if (!await web3.eth.net.isListening()) {
+                throw Error(`isListening false`);
+            }
+        } catch (e) {
+            this.reconnect();
+        } finally {
+            if (!this.intervalObj) {
+                this.intervalObj = setInterval(this.ping.bind(this), 5000);
+            }
         }
     }
-    if (!isWebSocket) {
-        host = host.includes("https://")? host : `http://${host.replace("http://", "")}`;
-        stored_provider = STORED_PROVIDERS[host];
-        if (stored_provider && node.onconnect) {
-            node.onconnect();
-        }
+
+    setConnectionCallback() {
+        this.provider.on('end', () => {
+            if (!this.isConnected) {
+                return;
+            }
+            this.disconnectCallbacks.forEach(callback => { callback(); });
+        });
+        this.provider.on('connect', () => {
+            this.__tryreconnect = 0;
+            this.isConnected = true;
+            this.connCallbacks.forEach(callback => { callback(); });
+        });
     }
-    return stored_provider;
+
+    reconnect() {
+        const provider = this.provider;
+        provider.removeAllListeners("connect");
+        provider.removeAllListeners('end');
+        provider.disconnect();
+        this.isConnected = false;
+        if (this.__tryreconnect >= 3000) {
+            logger.info(`Program exit cause web3 connection lost to ${this.host}`);
+            process.exit(2);
+        }
+
+        this.__tryreconnect++;
+        logger.warn(`Try reconnect to ${this.host} (${this.__tryreconnect})`);
+
+        this.provider = new Web3.providers.WebsocketProvider(this.host, {
+            clientConfig: {
+                maxReceivedFrameSize: 100000000,
+                maxReceivedMessageSize: 100000000,
+            },
+            timeout: 20000
+        });
+        this.setConnectionCallback();
+        this.web3Objs.forEach(web3 => {
+            web3.setProvider(this.provider);
+        });
+    }
+}
+
+function getStoredProvider(host, isSocket) {
+    if (STORED_PROVIDERS[host]) {
+        return STORED_PROVIDERS[host];
+    }
+    if (isSocket) {
+        STORED_PROVIDERS[host] = new WebSocketProviderManager(host);
+    } else {
+        STORED_PROVIDERS[host] = new Web3.providers.HttpProvider(host);
+    }
+    return STORED_PROVIDERS[host];
 }
 
 // Britto the Pegging Utils with Ethereum web3 and utils.
@@ -61,8 +159,14 @@ class Britto {
                 contract: null,
                 abi: null
             },
-            isConnected: false,
-            pingInterval: null
+            checkInterval: null,
+            get isConnected() {
+                if (this.ws) {
+                    const manager = getStoredProvider(this.ws, true);
+                    return manager.isConnected;
+                }
+                return true;
+            },
         }
     }
 
@@ -83,135 +187,61 @@ class Britto {
 
         const node = this.node;
 
-        if (logger)
+        if (logger) {
             logger.info(`[${this.node.peggingType}] ${node.name} web3 connecting to ${node.ws || node.rpc}`);
+        }
 
-        let provider = this.getProvider();
-
-        node.web3 = new Web3(provider);
-        node.__tryreconnect = 0;
+        this.createWeb3();
         node.contract = new node.web3.eth.Contract(node.abi, node.address);
-
-        if (node.ws) {
-            this.node.pingInterval = setInterval(this.ping.bind(this), 5000); // connection check
-            // call immediately if connection already opened.
-            if (provider.connection.readyState === provider.connection.OPEN) {
-                node.__tryreconnect = 0;
-                node.isConnected = true;
-                logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.ws}`);
-                if (node.onconnect) {
-                    node.onconnect();
-                }
-            }
-        }
     }
 
-    setWeb3ProviderConnectionCallback(provider) {
-        const node = this.node;
-        function callback() {
-            node.__tryreconnect = 0;
-            node.isConnected = true;
-
-            logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.ws}`);
-
-            if (node.onconnect) {
-                node.onconnect();
-            }
-        }
-        provider.on('connect', callback);
-        provider.on('end', () => {
-            if (node.isConnected && node.ondisconnect) node.ondisconnect();
-        });
-    }
-
-    getProvider() {
+    createWeb3() {
         if (!this.node)
             throw 'node object is undefined.';
 
         const node = this.node;
-
-        let provider = getStoredProvider(this);
-        if (provider) {
-            return provider;
-        }
         if (node.ws) {
             if (!node.ws.includes("wss://")) {
                 node.ws = `ws://${node.ws.replace("ws://", "")}`;
             }
-            provider = new Web3.providers.WebsocketProvider(node.ws, {
-                clientConfig: {
-                    maxReceivedFrameSize: 100000000,
-                    maxReceivedMessageSize: 100000000,
-                },
-                timeout: 20000
-            });
-
-            STORED_PROVIDERS[node.ws] = provider;
-
-            this.setWeb3ProviderConnectionCallback(provider);
+            const manager = getStoredProvider(node.ws, true);
+            node.web3 = new Web3(manager.provider);
+            manager.addWeb3(node.web3, () => {
+                logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.ws}`);
+                node.onconnect();
+            }, node.ondisconnect);
+            node.checkInterval = setInterval(this.check.bind(this), 1000 * 10);
         } else if (node.rpc) {
             if (!node.rpc.includes("https://")) {
                 node.rpc = `http://${node.rpc.replace("http://", "")}`;
             }
-            provider = new Web3.providers.HttpProvider(node.rpc);
-            STORED_PROVIDERS[node.rpc] = provider;
-            node.isConnected = true;
+            const provider = getStoredProvider(node.rpc);
+            node.web3 = new Web3(provider);
             if (node.onconnect) {
                 node.onconnect();
             }
             logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.rpc}`);
             global.monitor.setNodeConnectStatus(node.peggingType, node.rpc, "connected");
-        }
-
-        return provider;
-    }
-
-    async ping() {
-        if (!this.node)
-            throw 'node object is undefined.';
-
-        const context = this;
-
-        if(this.node.pingInterval){
-            clearInterval(this.node.pingInterval);
-            this.node.pingInterval = null;
-        }
-
-        let isListening;
-        try {
-            isListening = await this.node.web3.eth.net.isListening();
-        } catch (e) {
-            isListening = false;
-        }
-        global.monitor.setNodeConnectStatus(this.node.peggingType, this.node.ws, isListening ? "connected" : "reconnecting");
-
-        if (!isListening) {
-            STORED_PROVIDERS[this.node.web3._provider.url] = undefined;
-            context.reconnectWeb3();
-        }
-
-        if(!this.node.pingInterval){
-            this.node.pingInterval = setInterval(this.ping.bind(this), 5000);
+        } else {
+            throw Error(`UnSupported`);
         }
     }
 
-    reconnectWeb3() {
+    check() {
         const node = this.node;
-
-        node.web3.currentProvider.removeAllListeners('connect');
-        node.web3.currentProvider.removeAllListeners('end');
-        node.web3.currentProvider.disconnect();
-        node.isConnected = false;
-
-        if (node.__tryreconnect >= 3000) {
-            logger.info(`[${node.peggingType}] Program exit cause web3 connection lost to ${node.name} : ${node.ws}`);
-            process.exit(2);
-            return;
+        if (node.checkInterval) {
+            clearInterval(node.checkInterval);
+            node.checkInterval = undefined;
         }
 
-        node.__tryreconnect++;
-        logger.warn(`[${node.peggingType}] Try reconnect to ${node.ws} (${node.__tryreconnect})`);
-        node.web3.setProvider(this.getProvider());
+        try {
+            const manager = getStoredProvider(node.ws, true);
+            global.monitor.setNodeConnectStatus(node.peggingType, node.ws, manager.isConnected === true && manager.__tryreconnect === 0 ? "connected" : "reconnecting");
+        } finally {
+            if (!node.checkInterval) {
+                node.checkInterval = setInterval(this.check.bind(this), 1000 * 10);
+            }
+        }
     }
 
     static getJSONInterface({filename, path, version}) {
