@@ -121,8 +121,6 @@ async function _confirmTransaction(node, data) {
             };
         }
 
-        txOptions.gasPrice = parseInt(web3GasPrice) > parseInt(gasPrice) ? _node.web3.utils.toHex(web3GasPrice) : _node.web3.utils.toHex(gasPrice);
-
         let contract = new _node.web3.eth.Contract(_node.abi, data.multisig);
 
         let transaction = await contract.methods.transactions(data.transactionId).call().catch(e => {return;});
@@ -162,6 +160,7 @@ async function _confirmTransaction(node, data) {
 
         gasLimit = (parseInt(gasLimit) * 2).toString();
         txOptions.gasLimit = _node.web3.utils.toHex(gasLimit);
+        txOptions.gasPrice = parseInt(web3GasPrice) > parseInt(gasPrice) ? _node.web3.utils.toHex(web3GasPrice) : _node.web3.utils.toHex(gasPrice);
 
         let txData = {
             method: 'confirmTransaction',
