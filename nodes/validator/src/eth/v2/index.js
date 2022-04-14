@@ -544,9 +544,14 @@ async function getBalance(tokenAddr) {
         });
     }
     else{
-        const token = new mainnet.web3.eth.Contract(tokenABI, tokenAddr);
+        let taddr = tokenAddr;
+        if(tokenAddr.toLowerCase() === "0xC355fe6E4e99C0B93577F08c4e9a599714435912".toLowerCase()){
+            taddr = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+        }
+
+        const token = new mainnet.web3.eth.Contract(tokenABI, taddr);
         amount = await token.methods.balanceOf(govInfo.address).call().catch(e => {
-            logger.eth_v2.error(`${tokenAddr} getBalance error : ${e.message}`);
+            logger.eth_v2.error(`${taddr} getBalance error : ${e.message}`);
         });
     }
     return parseInt(amount);
