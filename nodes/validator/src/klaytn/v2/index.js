@@ -4,7 +4,8 @@ const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
 const txSender = require(ROOT + '/lib/txsender');
 const packer = require('./utils/packer');
-const Caver = require('caver-js');
+const Web3 = require('web3');
+const RPCAggregator = require(ROOT + '/lib/rpcAggregator');
 
 const BridgeUtils = require(ROOT + '/lib/bridgeutils');
 const bridgeUtils = new BridgeUtils();
@@ -27,7 +28,7 @@ let eventList = [
 let govInfo;
 
 const chainName = 'KLAYTN';
-const mainnet = Britto.getNodeConfigBase('mainnet');
+const rpcAggregator = new RPCAggregator(chainName);
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
 const tokenABI = [ { "constant": true, "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" } ];
@@ -44,47 +45,49 @@ async function initialize(_account) {
     if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
         throw 'Empty Governance Info';
 
+    let brittoConfig = {};
+    if(govInfo.chain === chainName){
+        brittoConfig.address = govInfo.address;
+        brittoConfig.abi = Britto.getJSONInterface({filename: 'KlaytnVault.abi', version: 'v2'});
+    }
+    else{
+        brittoConfig.address = config.contract.KLAYTN_MAINNET_MINTER;
+        brittoConfig.abi = Britto.getJSONInterface({filename: 'KlaytnMinter.abi', version: 'v2'});
+    }
+    const rpc = config.klaytn.KLAYTN_RPC;
+    if(Array.isArray(rpc)){
+        for (const url of rpc) {
+            rpcAggregator.addRpc(url, brittoConfig);
+        }
+    }
+    else if (typeof rpc === "string"){
+        rpcAggregator.addRpc(rpc, brittoConfig);
+    }
+    else{
+        if(!config.klaytn.KLAYTN_ISKAS) throw `Unsupported klaytn endpoints`;
+    }
+
     if(config.klaytn.KLAYTN_ISKAS){
+        const kas = config.klaytn.KLAYTN_KAS;
+
         const option = {
             headers: [
-                {name: 'Authorization', value: 'Basic ' + Buffer.from(config.klaytn.KLAYTN_KAS.accessKeyId + ':' + config.klaytn.KLAYTN_KAS.secretAccessKey).toString('base64')},
-                {name: 'x-chain-id', value: config.klaytn.KLAYTN_KAS.chainId},
+                {name: 'Authorization', value: 'Basic ' + Buffer.from(kas.accessKeyId + ':' + kas.secretAccessKey).toString('base64')},
+                {name: 'x-chain-id', value: kas.chainId},
             ]
         }
 
-        mainnet.rpc = config.klaytn.KLAYTN_KAS.rpc;
-        mainnet.caver = new Caver(new Caver.providers.HttpProvider(config.klaytn.KLAYTN_KAS.rpc, option));
-    }
-    else{
-        mainnet.rpc = config.klaytn.KLAYTN_RPC;
-        mainnet.caver = new Caver(config.klaytn.KLAYTN_RPC);
-    }
+        const node = Britto.getNodeConfigBase("mainnet");
+        node.rpc = kas.rpc;
+        node.web3 = new Web3(new Web3.providers.HttpProvider(kas.rpc, option));
 
-    global.monitor.setNodeConnectStatus(chainName + "_v2", mainnet.rpc, "connecting");
+        node.address = brittoConfig.address;
+        node.abi = brittoConfig.abi;
+        node.contract = new node.web3.eth.Contract(node.abi, node.address);
 
-    let isListening = await mainnet.caver.klay.net.isListening().catch(e => {
-        logger.klaytn_v2.error(e);
-        return;
-    });
+        global.monitor.setNodeConnectStatus(chainName + "_kas", kas.rpc, "connected");
 
-    if(!isListening){
-        global.monitor.setNodeConnectStatus(chainName + "_v2", mainnet.rpc, "connectionFail");
-        return;
-    }
-    else{
-        logger.info(`[KLAYTN] klaytn caver connected to ${mainnet.rpc}`);
-        global.monitor.setNodeConnectStatus(chainName + "_v2", mainnet.rpc, "connected");
-    }
-
-    if(govInfo.chain === chainName){
-        mainnet.address = govInfo.address;
-        mainnet.abi = Britto.getJSONInterface({filename: 'KlaytnVault.abi', version: 'v2'});
-        mainnet.contract = new mainnet.caver.klay.Contract(mainnet.abi, mainnet.address);
-    }
-    else{
-        mainnet.address = config.contract.KLAYTN_MAINNET_MINTER;
-        mainnet.abi = Britto.getJSONInterface({filename: 'KlaytnMinter.abi', version: 'v2'});
-        mainnet.contract = new mainnet.caver.klay.Contract(mainnet.abi, mainnet.address);
+        rpcAggregator.addRpcWithBritto(node);
     }
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
@@ -219,11 +222,12 @@ function receiveSwapRelay(events) {
     }
 }
 
-function validateSwap(data) {
+async function validateSwap(data) {
     let validator = {...data.validator} || {};
     delete data.validator;
 
-    mainnet.caver.klay.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
+    const mainnet = await rpcAggregator.select();
+    mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
             logger.klaytn_v2.error('No Transaction Receipt.');
             return;
@@ -275,7 +279,7 @@ function validateSwap(data) {
         params.uints = [params.amount, params.decimal, params.depositId];
         params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
-        let currentBlock = await mainnet.caver.klay.getBlockNumber().catch(e => {
+        let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
             logger.klaytn_v2.error('getBlockNumber() execute error: ' + e.message);
         });
 
@@ -399,11 +403,12 @@ function receiveSwapNFTRelay(events) {
     }
 }
 
-function validateSwapNFT(data) {
+async function validateSwapNFT(data) {
     let validator = {...data.validator} || {};
     delete data.validator;
 
-    mainnet.caver.klay.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
+    const mainnet = await rpcAggregator.select();
+    mainnet.web3.eth.getTransactionReceipt(data.bytes32s[1]).then(async receipt => {
         if (!receipt){
             logger.klaytn_v2.error('No Transaction Receipt.');
             return;
@@ -450,7 +455,7 @@ function validateSwapNFT(data) {
         params.uints = [params.amount, params.tokenId, params.depositId];
         params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
-        let currentBlock = await mainnet.caver.klay.getBlockNumber().catch(e => {
+        let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
             logger.klaytn_v2.error('getBlockNumber() execute error: ' + e.message);
         });
 
@@ -556,14 +561,16 @@ function makeSigs(validator, signature){
 }
 
 async function getBalance(tokenAddr) {
+    const mainnet = await rpcAggregator.select();
+
     let amount = 0;
     if(tokenAddr === "0x0000000000000000000000000000000000000000"){
-        amount = await mainnet.caver.klay.getBalance(govInfo.address).catch(e => {
+        amount = await mainnet.web3.eth.getBalance(govInfo.address).catch(e => {
             logger.klaytn_v2.error(`${tokenAddr} getBalance error : ${e.message}`);
         });
     }
     else{
-        const token = new mainnet.caver.contract(tokenABI, tokenAddr);
+        const token = new mainnet.web3.eth.Contract(tokenABI, tokenAddr);
         amount = await token.methods.balanceOf(govInfo.address).call().catch(e => {
             logger.klaytn_v2.error(`${tokenAddr} getBalance error : ${e.message}`);
         });
