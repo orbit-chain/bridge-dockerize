@@ -24,8 +24,13 @@ async function init(){
         klaytn.caver = new Caver(new Caver.providers.HttpProvider(config.klaytn.KLAYTN_KAS.rpc, option));
     }
     else{
-        klaytn.rpc = config.klaytn.KLAYTN_RPC;
-        klaytn.caver = new Caver(config.klaytn.KLAYTN_RPC);
+        const rpc = config.klaytn.KLAYTN_RPC;
+        if (Array.isArray(rpc)) {
+            klaytn.rpc = rpc[0];
+        } else {
+            klaytn.rpc = rpc;
+        }
+        klaytn.caver = new Caver(klaytn.rpc);
     }
     klaytn.abi = Britto.getJSONInterface({filename: 'MessageMultiSigWallet.abi'});
 
@@ -161,7 +166,7 @@ async function _confirmTransaction(node, data) {
 
         txOptions.type = 'SMART_CONTRACT_EXECUTION';
         txOptions.data = contract.methods.confirmTransaction(data.transactionId).encodeABI();
-        txOptions.gas = '7000000';
+        txOptions.gas = (parseInt(gasLimit) * 2).toString();
         txOptions.value = 0;
 
         let signedTx = await _node.caver.klay.accounts.signTransaction(txOptions, '0x' + validator.pk.replace('0x', '')).catch(e => {

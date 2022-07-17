@@ -27,6 +27,10 @@ class RPCAggregator {
     this.pool.push(node);
   }
 
+  addRpcWithBritto(node) {
+    this.pool.push(node);
+  }
+
   async select() {
     let bn = 0;
     let electedIndex;
