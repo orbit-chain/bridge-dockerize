@@ -99,6 +99,8 @@ function subscribeNewBlock(web3, callback) {
             return;
         }
 
+        global.monitor.setBlockTime();
+
         if (!lastBlockNum)
             lastBlockNum = res.number - 1;
 

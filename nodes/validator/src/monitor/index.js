@@ -26,6 +26,9 @@ class Monitor {
         this.blockNumber = {};
         this.ibc = {};
 
+        this.lastBlockTime = parseInt(Date.now() / 1000);
+        this.connectionHandler();
+
         if(!settings.VALIDATOR_MONITOR){
             console.log("Validator Monitor set is empty!");
             return;
@@ -39,6 +42,13 @@ class Monitor {
                 this.reportMonitorStatus(key, value);
             }, value.Interval);
         }
+    }
+
+    connectionHandler() {
+        setTimeout(this.connectionHandler.bind(this), 1000 * 60);
+
+        const now = parseInt(Date.now() / 1000);
+        if(this.lastBlockTime + 60 * 10 < now) process.exit(1);
     }
 
     static getChainFullName(chain) {
@@ -130,6 +140,10 @@ class Monitor {
         this.blockNumber[chain] = block
     }
 
+    setBlockTime() {
+        this.lastBlockTime = parseInt(Date.now() / 1000);
+    }
+
     setProgress(chain, func, block) {
         if (!chain || !func || !block)
             return;
@@ -153,6 +167,7 @@ class Monitor {
             nodeConnection: this.nodeConnect,
             orbitBlockNumber: this.blockNumber,
             ibc: this.ibc,
+            lastBlockTime: this.lastBlockTime,
         }
     }
 }

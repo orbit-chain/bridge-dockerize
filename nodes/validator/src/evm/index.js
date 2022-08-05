@@ -117,6 +117,8 @@ class EVMValidator {
                 return;
             }
 
+            global.monitor.setBlockTime();
+
             if (!this.lastBlockNum) {
                 this.lastBlockNum = res.number - 1;
             }

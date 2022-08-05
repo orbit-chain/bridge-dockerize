@@ -184,6 +184,8 @@ function subscribeNewBlock(web3, name, callback) {
             return;
         }
 
+        global.monitor.setBlockTime();
+
         if (!lastBlockNum[name])
             lastBlockNum[name] = res.number - 1;
 
