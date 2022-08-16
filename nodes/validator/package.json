@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@stacks/transactions": "^3.3.0",
     "@terra-money/core": "^2.0.0",
     "abi-decoder": "^2.3.0",
     "bn.js": "^5.1.3",

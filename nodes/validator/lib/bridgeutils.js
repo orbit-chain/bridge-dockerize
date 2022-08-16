@@ -1,6 +1,8 @@
 const bech32 = require('bech32');
 const rippleAddr = require('ripple-address-codec');
 const config = require(ROOT + '/config');
+const settings = config.requireEnv("./settings");
+const { AddressVersion, addressFromVersionHash, addressToString } = require("@stacks/transactions");
 
 class BridgeUtils {
     str2hex(input){
@@ -81,6 +83,26 @@ class BridgeUtils {
             }
 
             return rippleAddr.isValidClassicAddress(address) && govInfo.chain === "XRP" && address.toLowerCase() !== govInfo.address.toLowerCase();
+        }
+
+        if (toChain.includes("STACKS")) {
+            if(address.length != 42) {
+                return false;
+            }
+
+            let addr;
+            try {
+                if(settings.Endpoints.Stacks.network === "testnet"){
+                    addr = addressToString(addressFromVersionHash(AddressVersion.TestnetSingleSig, address.replace("0x", "")));
+                    return addr.slice(0,2) === "ST";
+                }
+                else{
+                    addr = addressToString(addressFromVersionHash(AddressVersion.MainnetSingleSig, address.replace("0x", "")));
+                    return addr.slice(0,2) === "SP";
+                }
+            } catch(e) {
+                return false;
+            }
         }
 
         return false;

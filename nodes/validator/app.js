@@ -69,6 +69,10 @@ settings.chainList.forEach(key => {
     if(key.includes(govInfo.chain.toLowerCase())){
         global.monitor.getBalance = instance.getBalance;
     }
+    if (key === "stacks_layer_2") {
+        global.stacksLayer2 = {};
+        global.stacksLayer2.validateSwapData = instance.validateSwapData;
+    }
 });
 
 const gov = require(`${ROOT}/src/gov`);

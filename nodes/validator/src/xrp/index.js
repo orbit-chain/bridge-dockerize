@@ -49,6 +49,8 @@ const orbitHub = Britto.getNodeConfigBase('orbitHub');
 const xrpBridge = Britto.getNodeConfigBase('xrpBridge');
 const addressBook = Britto.getNodeConfigBase('xrpAddressBook');
 
+const gateKeeperABI = [{"constant":false,"inputs":[{"name":"","type":"string"},{"name":"","type":"string"},{"name":"","type":"bytes"},{"name":"","type":"bytes"},{"name":"","type":"bytes"},{"name":"","type":"bytes32[]"},{"name":"","type":"uint256[]"},{"name":"","type":"bytes32[]"}],"name":"applyLimitation","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"string"},{"name":"","type":"string"},{"name":"","type":"bytes"},{"name":"","type":"bytes32[]"},{"name":"","type":"uint256[]"}],"name":"isApplied","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"}];
+
 let govInfo;
 
 let reconnectHandle;
@@ -323,7 +325,7 @@ async function validateSwap(data) {
     let fromAddr = transaction.specification.source.address;
     fromAddr = bridgeUtils.getAddressToHex(fromAddr);
     if(!fromAddr || fromAddr.length === 0){
-        logger.xrp.error(`validateSwap error: invalid fromAddr ${data.fromAddr}`);
+        logger.xrp.error(`validateSwap error: invalid fromAddr ${fromAddr}`);
         return;
     }
 
@@ -386,7 +388,7 @@ async function validateSwap(data) {
         return;
     }
 
-    let swapData = {
+    let params = {
         hubContract: orbitHub.address,
         fromChain: 'XRP',
         toChain: toChain,
@@ -398,41 +400,45 @@ async function validateSwap(data) {
         data: transfortData,
     }
 
-    let swapHash = Britto.sha256sol(packer.packSwapData(swapData));
+    let gateKeeperAddr;
+    try {
+        gateKeeperAddr = await orbitHub.contract.methods.gateKeeper().call();
+    } catch (e) {}
 
-    let toChainMig = await orbitHub.contract.methods.getBridgeMig(toChain, govInfo.id).call();
-    let contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, toChainMig);
-
-    let validators = await contract.methods.getHashValidators(swapHash.toString('hex').add0x()).call();
-    for(var i = 0; i < validators.length; i++){
-        if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-            logger.xrp.error(`Already signed. validated swapHash: ${swapHash}`);
-            return;
-        }
-    }
-    let signature = Britto.signMessage(swapHash, validator.pk);
-
-    let curBalance = await monitor.getBalance("0x0000000000000000000000000000000000000000");
-    if(!curBalance || curBalance === 0 || Number.isNaN(curBalance)){
-        logger.xrp.error("getBalance error (0x0000000000000000000000000000000000000000)");
+    if(!gateKeeperAddr || gateKeeperAddr === "0x0000000000000000000000000000000000000000"){
+        await valid(params);
         return;
     }
 
-    let isValidAmount = curBalance >= parseInt(amount);
-    if(isValidAmount){
-        valid();
+    let gateKeeper = new orbitHub.web3.eth.Contract(gateKeeperABI, gateKeeperAddr);
+    let isApplied = await gateKeeper.methods.isApplied(params.fromChain, params.toChain, params.token, params.bytes32s, params.uints).call();
+    if(!isApplied){
+        await applyLimitation(gateKeeper, params);
     }
     else{
-        console.log(`tx(${data.bytes32s[1]}) is invalid. isValidAmount: ${isValidAmount}`);
-        return;
+        await valid(params);
     }
 
-    async function valid() {
+    async function valid(swapData) {
         let sender = Britto.getRandomPkAddress();
         if(!sender || !sender.pk || !sender.address){
             logger.xrp.error("Cannot Generate account");
             return;
         }
+
+        let swapHash = Britto.sha256sol(packer.packSwapData(swapData));
+
+        let toChainMig = await orbitHub.contract.methods.getBridgeMig(swapData.toChain, govInfo.id).call();
+        let contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, toChainMig);
+
+        let validators = await contract.methods.getHashValidators(swapHash.toString('hex').add0x()).call();
+        for(var i = 0; i < validators.length; i++){
+            if(validators[i].toLowerCase() === validator.address.toLowerCase()){
+                logger.xrp.error(`Already signed. validated swapHash: ${swapHash}`);
+                return;
+            }
+        }
+        let signature = Britto.signMessage(swapHash, validator.pk);
 
         let sigs = makeSigs(validator.address, signature);
 
@@ -472,6 +478,76 @@ async function validateSwap(data) {
 
         await txSender.sendTransaction(orbitHub, txData, {address: sender.address, pk: sender.pk, timeout: 1});
         global.monitor && global.monitor.setProgress(chainName, 'validateSwap', data.block);
+    }
+
+    async function applyLimitation(gateKeeper, data) {
+        let sender = Britto.getRandomPkAddress();
+        if(!sender || !sender.pk || !sender.address){
+            logger.xrp.error("Cannot Generate account");
+            return;
+        }
+
+        let hash = Britto.sha256WithEncode(packer.packLimitationData({
+            fromChain: data.fromChain,
+            toChain: data.toChain,
+            token: data.token,
+            bytes32s: data.bytes32s,
+            uints: data.uints
+        }));
+
+        let hubMig = await orbitHub.contract.methods.getBridgeMig("HUB", govInfo.id).call();
+        let migCon = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, hubMig);
+
+        let validators = await migCon.methods.getHashValidators(hash.toString('hex').add0x()).call();
+        for(var i = 0; i < validators.length; i++){
+            if(validators[i].toLowerCase() === validator.address.toLowerCase()){
+                logger.xrp.error(`Already signed. applyLimitation: ${hash}`);
+                return;
+            }
+        }
+
+        let signature = Britto.signMessage(hash, validator.pk);
+        let sigs = makeSigs(validator.address, signature);
+
+        let params = [
+            data.fromChain,
+            data.toChain,
+            data.fromAddr,
+            data.toAddr,
+            data.token,
+            data.bytes32s,
+            data.uints,
+            sigs
+        ];
+
+        let gasLimit = await gateKeeper.methods.applyLimitation(...params).estimateGas({
+            from: sender.address,
+            to: gateKeeper._address
+        }).catch((e) => {});
+        if(!gasLimit) return;
+
+        let applyData = gateKeeper.methods.applyLimitation(...params).encodeABI();
+        if(!applyData) return;
+
+        let txData = {
+            nonce: orbitHub.web3.utils.toHex(0),
+            from: sender.address,
+            to: gateKeeper._address,
+            value: orbitHub.web3.utils.toHex(0),
+            gasLimit: orbitHub.web3.utils.toHex(FIX_GAS),
+            data: applyData
+        };
+
+        let signedTx = await orbitHub.web3.eth.accounts.signTransaction(txData, "0x"+sender.pk.toString('hex'));
+        let tx = await orbitHub.web3.eth.sendSignedTransaction(signedTx.rawTransaction, async (err, thash) => {
+            if(err) {
+                logger.xrp.error(`applyLimitation error: ${err.message}`);
+                return;
+            }
+
+            logger.xrp.info(`applyLimitation: ${thash}`);
+            global.monitor && global.monitor.setProgress(chainName, 'applyLimitation', data.block);
+        });
     }
 }
 

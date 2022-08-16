@@ -25,5 +25,11 @@
   },
   "celo": {
     "src": "src/celo"
+  },
+  "stacks_layer_1": {
+    "src": "src/stacks_layer_1"
+  },
+  "stacks_layer_2": {
+    "src": "src/stacks_layer_2"
   }
 }

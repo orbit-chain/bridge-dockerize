@@ -32,6 +32,7 @@ const rpcAggregator = new RPCAggregator(chainName, settings.ETH_CHAIN_ID);
 const orbitHub = Britto.getNodeConfigBase('orbitHub');
 
 const tokenABI = [ { "constant": true, "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "payable": false, "stateMutability": "view", "type": "function" } ];
+const gateKeeperABI = [{"constant":false,"inputs":[{"name":"","type":"string"},{"name":"","type":"string"},{"name":"","type":"bytes"},{"name":"","type":"bytes"},{"name":"","type":"bytes"},{"name":"","type":"bytes32[]"},{"name":"","type":"uint256[]"},{"name":"","type":"bytes32[]"}],"name":"applyLimitation","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"string"},{"name":"","type":"string"},{"name":"","type":"bytes"},{"name":"","type":"bytes32[]"},{"name":"","type":"uint256[]"}],"name":"isApplied","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"}];
 
 function initialize(_account) {
     if (!_account || !_account.address || !_account.pk)
@@ -210,7 +211,6 @@ async function validateSwap(data) {
             return;
         }
 
-
         let events = await parseEvent(receipt.blockNumber, mainnet, (govInfo.chain === chainName)? "Deposit" : "SwapRequest");
         if (events.length == 0){
             logger.eth_v2.error('Invalid Transaction.');
@@ -253,6 +253,22 @@ async function validateSwap(data) {
         params.uints = [params.amount, params.decimal, params.depositId];
         params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
+        if (params.toChain === "STACKS") {
+            const isValid = await stacksLayer2.validateSwapData({
+                ...params,
+                uints: [
+                    ...params.uints,
+                    data.uints[3],
+                ],
+                bytes32s: data.bytes32s,
+            });
+            if (!isValid) {
+                return;
+            }
+            params.uints.push(data.uints[3]);
+            params.bytes32s.push(data.bytes32s[2]);
+        }
+
         let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
             logger.eth_v2.error('getBlockNumber() execute error: ' + e.message);
         });
@@ -262,20 +278,29 @@ async function validateSwap(data) {
 
         // Check deposit block confirmed
         let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.ethConfirmCount;
-
-        let curBalance = await monitor.getBalance(params.token);
-        if(!curBalance || curBalance === 0 || Number.isNaN(curBalance)){
-            logger.eth_v2.error(`getBalance error ( ${params.token})`);
+        if (!isConfirmed) {
+            console.log(`depositId(${data.uints[2]}) is invalid. isConfirmed: ${isConfirmed}`);
             return;
         }
 
-        let isValidAmount = curBalance >= parseInt(params.amount);
+        let gateKeeperAddr;
+        try {
+            gateKeeperAddr = await orbitHub.contract.methods.gateKeeper().call();
+        } catch (e) {}
 
-        // 두 조건을 만족하면 valid
-        if (isConfirmed && isValidAmount)
+        if(!gateKeeperAddr || gateKeeperAddr === "0x0000000000000000000000000000000000000000"){
             await valid(params);
-        else
-            console.log(`depositId(${data.uints[2]}) is invalid. isConfirmed: ${isConfirmed}, isValidAmount: ${isValidAmount}`);
+            return;
+        }
+
+        let gateKeeper = new orbitHub.web3.eth.Contract(gateKeeperABI, gateKeeperAddr);
+        let isApplied = await gateKeeper.methods.isApplied(params.fromChain, params.toChain, params.token, params.bytes32s, params.uints).call();
+        if(!isApplied){
+            await applyLimitation(gateKeeper, params);
+        }
+        else{
+            await valid(params);
+        }
     }).catch(e => {
         logger.eth_v2.error('validateSwap error: ' + e.message);
     });
@@ -302,7 +327,6 @@ async function validateSwap(data) {
             uints: data.uints,
             data: data.data,
         }));
-
         let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
         let contract = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, toChainMig);
 
@@ -353,6 +377,76 @@ async function validateSwap(data) {
 
         await txSender.sendTransaction(orbitHub, txData, {address: sender.address, pk: sender.pk, timeout: 1});
         global.monitor && global.monitor.setProgress(chainName + "_v2", 'validateSwap', data.block);
+    }
+
+    async function applyLimitation(gateKeeper, data) {
+        let sender = Britto.getRandomPkAddress();
+        if(!sender || !sender.pk || !sender.address){
+            logger.eth_v2.error("Cannot Generate account");
+            return;
+        }
+
+        let hash = Britto.sha256WithEncode(packer.packLimitationData({
+            fromChain: data.fromChain,
+            toChain: data.toChain,
+            token: data.token,
+            bytes32s: data.bytes32s,
+            uints: data.uints
+        }));
+
+        let hubMig = await orbitHub.contract.methods.getBridgeMig("HUB", govInfo.id).call();
+        let migCon = new orbitHub.web3.eth.Contract(orbitHub.multisig.abi, hubMig);
+
+        let validators = await migCon.methods.getHashValidators(hash.toString('hex').add0x()).call();
+        for(var i = 0; i < validators.length; i++){
+            if(validators[i].toLowerCase() === validator.address.toLowerCase()){
+                logger.eth_v2.error(`Already signed. applyLimitation: ${hash}`);
+                return;
+            }
+        }
+
+        let signature = Britto.signMessage(hash, validator.pk);
+        let sigs = makeSigs(validator.address, signature);
+
+        let params = [
+            data.fromChain,
+            data.toChain,
+            data.fromAddr,
+            data.toAddr,
+            data.token,
+            data.bytes32s,
+            data.uints,
+            sigs
+        ];
+
+        let gasLimit = await gateKeeper.methods.applyLimitation(...params).estimateGas({
+            from: sender.address,
+            to: gateKeeper._address
+        }).catch((e) => {});
+        if(!gasLimit) return;
+
+        let applyData = gateKeeper.methods.applyLimitation(...params).encodeABI();
+        if(!applyData) return;
+
+        let txData = {
+            nonce: orbitHub.web3.utils.toHex(0),
+            from: sender.address,
+            to: gateKeeper._address,
+            value: orbitHub.web3.utils.toHex(0),
+            gasLimit: orbitHub.web3.utils.toHex(FIX_GAS),
+            data: applyData
+        };
+
+        let signedTx = await orbitHub.web3.eth.accounts.signTransaction(txData, "0x"+sender.pk.toString('hex'));
+        let tx = await orbitHub.web3.eth.sendSignedTransaction(signedTx.rawTransaction, async (err, thash) => {
+            if(err) {
+                logger.eth_v2.error(`applyLimitation error: ${err.message}`);
+                return;
+            }
+
+            logger.eth_v2.info(`applyLimitation: ${thash}`);
+            global.monitor && global.monitor.setProgress(chainName + '_v2', 'applyLimitation', data.block);
+        });
     }
 }
 
