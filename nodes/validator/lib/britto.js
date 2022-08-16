@@ -3,6 +3,7 @@ let fs = require('fs');
 let ethUtil = require('ethereumjs-util');
 let ethAbi = require('ethereumjs-abi');
 const EC = require('elliptic').ec;
+const ED = require('elliptic').eddsa;
 const ethers = require('ethers');
 
 let STORED_PROVIDERS = {};
@@ -288,6 +289,39 @@ class Britto {
         return '0x' + ethAbi.soliditySHA256(types, values).toString('hex');
     }
 
+    static sha256WithEncode(arr) {
+        if (!Array.isArray(arr))
+            throw TypeError('Parameter must be the array');
+
+        const types = [], values = [];
+        for (let data of arr) {
+            if (typeof data !== 'object')
+                throw TypeError('Only Object is allowed in the array.');
+
+            let type, value;
+            if (data.hasOwnProperty('type') && data.type !== undefined)
+                type = data.type;
+            else if (data.hasOwnProperty('t') && data.t !== undefined)
+                type = data.t;
+            else
+                throw TypeError('Invalid type.');
+
+            if (data.hasOwnProperty('value') && data.value !== undefined)
+                value = data.value;
+            else if (data.hasOwnProperty('v') && data.v !== undefined)
+                value = data.v;
+            else
+                throw TypeError('Invalid value.');
+
+            types.push(type);
+            values.push(value);
+        }
+
+        let packed = ethAbi.rawEncode(types, values);
+        let hash = ethUtil.sha256(packed)
+        return '0x' + hash.toString('hex');
+    }
+
     static signMessage(str, pk) {
         if (!pk)
             throw 'No Private Key';
@@ -306,6 +340,30 @@ class Britto {
             r: '0x' + signature.r.toString('hex'),
             s: '0x' + signature.s.toString('hex'),
         };
+    }
+
+    static signEd25519(str, pk) {
+        if(!pk)
+            throw 'No Private Key';
+
+        if(Buffer.isBuffer(pk))
+            pk = pk.toString('hex');
+
+        pk = pk.replace("0x", "");
+
+        let ed = new ED('ed25519');
+        let key = ed.keyFromSecret(pk);
+
+        let hash = str.replace("0x", "");
+        hash = Buffer.from(hash, 'hex');
+
+        let signature = key.sign(hash).toHex().toLowerCase();
+
+        return {
+            message: hash,
+            r: sig.slice(0, 64),
+            s: sig.slice(64)
+        }
     }
 
     static setAdd0x(method) {
@@ -372,6 +430,23 @@ class Britto {
         }
 
         return { address: address, pk: pk };
+    }
+
+    static getEd25519Pubkey(pk) {
+        try {
+            if(Buffer.isBuffer(pk))
+                pk = pk.toString('hex');
+
+            pk = pk.replace("0x", "");
+
+            let ed = new ED('ed25519');
+            let key = ed.keyFromSecret(pk);
+
+            return "0x" + Buffer.from(key.getPublic()).toString('hex');
+        } catch (e) {
+            logger.error(e);
+            return null;
+        }
     }
 }
 

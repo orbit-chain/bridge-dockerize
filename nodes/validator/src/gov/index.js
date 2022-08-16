@@ -41,7 +41,7 @@ async function initialize(_account) {
     for(let chain of settings.chainList){
         let name = chain.replace(/-v[1-9]$/, '').toLowerCase();
 
-        if(chainNode[name] || name === 'orbit' || name === 'xrp'){
+        if(chainNode[name] || ['orbit', 'xrp', 'stacks_layer_1', 'stacks_layer_2'].includes(name)){
             continue;
         }
 
