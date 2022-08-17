@@ -1,4 +1,4 @@
-FROM node:fermium
+FROM node:latest
 RUN npm install -g pm2
 COPY nodes/validator/package.json /validator/package.json
 RUN cd /validator && yarn
