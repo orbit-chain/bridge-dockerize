@@ -1,5 +1,7 @@
 global.logger.eth_v2 = require('./logger');
 
+const request = require('request-promise');
+
 const config = require(ROOT + '/config');
 const settings = config.requireEnv("./settings");
 const Britto = require(ROOT + '/lib/britto');
@@ -26,6 +28,9 @@ let eventList = [
 ];
 
 let govInfo;
+
+let beacon;
+let terminalTotalDifficulty;
 
 const chainName = 'ETH';
 const rpcAggregator = new RPCAggregator(chainName, settings.ETH_CHAIN_ID);
@@ -65,6 +70,9 @@ function initialize(_account) {
     } else {
         throw `Unsupported Endpoints: ${rpc}`;
     }
+
+    beacon = settings.Endpoints.Eth.beacon || "https://beacon.chain-node.orbitchain.io:7643";
+    terminalTotalDifficulty = settings.ETH_TERMINAL_TOTAL_DIFFICULTY || "58750000000000000000000";
 
     orbitHub.ws = config.rpc.OCHAIN_WS;
     orbitHub.rpc = config.rpc.OCHAIN_RPC;
@@ -269,15 +277,32 @@ async function validateSwap(data) {
             params.bytes32s.push(data.bytes32s[2]);
         }
 
-        let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
-            logger.eth_v2.error('getBlockNumber() execute error: ' + e.message);
+        let currentBlock = await mainnet.web3.eth.getBlock("latest").catch(e => {
+            logger.eth_v2.error('getBlock() execute error: ' + e.message);
         });
+        if (!currentBlock || !currentBlock.number || !currentBlock.totalDifficulty) return;
+        let currentBlockNumber = currentBlock.number;
+        let currentTotalDifficulty = currentBlock.totalDifficulty;
 
-        if (!currentBlock)
-            return console.error('No current block data.');
+        let beaconBlock = await getBeaconBlock().catch(e => {
+            logger.eth_v2.error('getBeaconBlock() execute error: ' + e.message);
+        });
+        if (!beaconBlock || !beaconBlock.data || !beaconBlock.data.message || !beaconBlock.data.message.body || !beaconBlock.data.message.body.execution_payload) return;
+        let finalizedBlockNumber = parseInt(beaconBlock.data.message.body.execution_payload.block_number);
+        if (isNaN(finalizedBlockNumber)) {
+            logger.eth_v2.error('get finalized block number error.');
+            return;
+        }
 
         // Check deposit block confirmed
-        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.ethConfirmCount;
+        let isConfirmed;
+        if((currentTotalDifficulty).dcomp(terminalTotalDifficulty) === -1 || finalizedBlockNumber === 0){
+            isConfirmed = parseInt(currentBlockNumber) - parseInt(receipt.blockNumber) >= config.system.ethConfirmCount;
+        }
+        else {
+            isConfirmed = parseInt(receipt.blockNumber) <= finalizedBlockNumber;
+        }
+
         if (!isConfirmed) {
             console.log(`depositId(${data.uints[2]}) is invalid. isConfirmed: ${isConfirmed}`);
             return;
@@ -522,17 +547,32 @@ async function validateSwapNFT(data) {
         params.uints = [params.amount, params.tokenId, params.depositId];
         params.bytes32s = [govInfo.id, data.bytes32s[1]];
 
-        let currentBlock = await mainnet.web3.eth.getBlockNumber().catch(e => {
-            logger.eth_v2.error('getBlockNumber() execute error: ' + e.message);
+        let currentBlock = await mainnet.web3.eth.getBlock("latest").catch(e => {
+            logger.eth_v2.error('getBlock() execute error: ' + e.message);
         });
+        if (!currentBlock || !currentBlock.number || !currentBlock.totalDifficulty) return;
+        let currentBlockNumber = currentBlock.number;
+        let currentTotalDifficulty = currentBlock.totalDifficulty;
 
-        if (!currentBlock)
-            return console.error('No current block data.');
+        let beaconBlock = await getBeaconBlock().catch(e => {
+            logger.eth_v2.error('getBeaconBlock() execute error: ' + e.message);
+        });
+        if (!beaconBlock || !beaconBlock.data || !beaconBlock.data.message || !beaconBlock.data.message.body || !beaconBlock.data.message.body.execution_payload) return;
+        let finalizedBlockNumber = parseInt(beaconBlock.data.message.body.execution_payload.block_number);
+        if (isNaN(finalizedBlockNumber)) {
+            logger.eth_v2.error('get finalized block number error.');
+            return;
+        }
 
         // Check deposit block confirmed
-        let isConfirmed = currentBlock - Number(receipt.blockNumber) >= config.system.ethConfirmCount;
+        let isConfirmed;
+        if((currentTotalDifficulty).dcomp(terminalTotalDifficulty) === -1 || finalizedBlockNumber === 0){
+            isConfirmed = parseInt(currentBlockNumber) - parseInt(receipt.blockNumber) >= config.system.ethConfirmCount;
+        }
+        else {
+            isConfirmed = parseInt(receipt.blockNumber) <= finalizedBlockNumber;
+        }
 
-        // 두 조건을 만족하면 valid
         if (isConfirmed)
             await valid(params);
         else
@@ -651,6 +691,18 @@ async function getBalance(tokenAddr) {
         });
     }
     return parseInt(amount);
+}
+
+async function getBeaconBlock() {
+    if(!beacon) return;
+
+    let res;
+    try {
+        res = await request.get(`${beacon}/eth/v2/beacon/blocks/finalized`);
+        res = JSON.parse(res);
+    } catch (e) {}
+
+    return res;
 }
 
 module.exports = {
