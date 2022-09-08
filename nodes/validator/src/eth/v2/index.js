@@ -300,6 +300,10 @@ async function validateSwap(data) {
             isConfirmed = parseInt(currentBlockNumber) - parseInt(receipt.blockNumber) >= config.system.ethConfirmCount;
         }
         else {
+            if(parseInt(currentBlock.difficulty) !== 0){
+                logger.eth_v2.error(`current block difficulty is invalid. ${currentBlock.difficulty}`);
+                return;
+            }
             isConfirmed = parseInt(receipt.blockNumber) <= finalizedBlockNumber;
         }
 
@@ -570,6 +574,10 @@ async function validateSwapNFT(data) {
             isConfirmed = parseInt(currentBlockNumber) - parseInt(receipt.blockNumber) >= config.system.ethConfirmCount;
         }
         else {
+            if(parseInt(currentBlock.difficulty) !== 0){
+                logger.eth_v2.error(`current block difficulty is invalid. ${currentBlock.difficulty}`);
+                return;
+            }
             isConfirmed = parseInt(receipt.blockNumber) <= finalizedBlockNumber;
         }
 
