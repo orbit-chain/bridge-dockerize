@@ -27,8 +27,14 @@ class RPCAggregator {
     this.pool.push(node);
   }
 
-  addRpcWithBritto(node) {
+  async addRpcWithBritto(node) {
     this.pool.push(node);
+    let block = await node.web3.eth.getBlock("latest").catch(e => {console.log(e)});
+    return !block ? false : true;
+  }
+
+  length() {
+    return this.pool.length;
   }
 
   async select() {
@@ -39,16 +45,6 @@ class RPCAggregator {
       const node = this.pool[i];
       if (!node.isConnected) {
         continue;
-      }
-
-      // chainId가 세팅된 경우에만 검증
-      if (this.chainId) {
-        const chainId = await node.web3.eth.getChainId().catch( e => {
-          logger.error(`[RPC_AGGREGATOR] getChainId:${e}`);
-        });
-        if (!chainId || parseInt(this.chainId) !== parseInt(chainId)) {
-          continue;
-        }
       }
 
       const curBlockNumber = await node.web3.eth.getBlockNumber().catch( e => {
@@ -67,6 +63,10 @@ class RPCAggregator {
     }
 
     return elected;
+  }
+
+  async getNodes() {
+    return [...this.pool];
   }
 }
 

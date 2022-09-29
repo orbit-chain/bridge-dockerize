@@ -1,0 +1,79 @@
+[
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "",
+                "type": "string"
+            },
+            {
+                "name": "",
+                "type": "string"
+            },
+            {
+                "name": "",
+                "type": "bytes"
+            },
+            {
+                "name": "",
+                "type": "bytes"
+            },
+            {
+                "name": "",
+                "type": "bytes"
+            },
+            {
+                "name": "",
+                "type": "bytes32[]"
+            },
+            {
+                "name": "",
+                "type": "uint256[]"
+            },
+            {
+                "name": "",
+                "type": "bytes32[]"
+            }
+        ],
+        "name": "applyLimitation",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "",
+                "type": "string"
+            },
+            {
+                "name": "",
+                "type": "string"
+            },
+            {
+                "name": "",
+                "type": "bytes"
+            },
+            {
+                "name": "",
+                "type": "bytes32[]"
+            },
+            {
+                "name": "",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "isApplied",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    }
+]

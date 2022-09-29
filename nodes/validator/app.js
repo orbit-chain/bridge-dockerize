@@ -13,6 +13,7 @@ global.monitor = new Monitor();
 
 const settings = config.requireEnv("./settings");
 const validatorAccount = settings.VALIDATOR_ACCOUNT;
+
 let PK;
 switch (validatorAccount.TYPE) {
     case 'PK':
@@ -23,9 +24,8 @@ switch (validatorAccount.TYPE) {
 }
 
 let v3 = walletUtils.getWalletFromPK(PK);
-
 if (!v3)
-    throw 'Invalid wallet information';
+    throw 'Invalid wallet information.';
 
 let account = {
     address: v3.address,
@@ -35,14 +35,35 @@ let account = {
 };
 global.monitor.validatorAddress = account.address;
 global.monitor.publicKey = account.publicKey;
-console.log('Start Orbit Chain Validator ! : ' + account.address);
 
-if(!config.chain || Object.keys(config.chain).length === 0) {
+logger.info(`Start Orbit Chain Validator ! : ${account.address}`);
+
+global.instances = {};
+
+let chainList = settings.chainList;
+if(!chainList || chainList.length === 0) {
     console.log('No available chain.');
     process.exit(1);
 }
 
-logger.info('Start Orbit Chain Validator!');
+let hubInstance = require(ROOT + '/src/hub');
+hubInstance = new hubInstance(chainList);
+instances['hub'] = hubInstance;
+
+chainList.forEach(key => {
+    key = key.replace(/-v[1-9]$/, '').toLowerCase();;
+    let chain = config.chain[key] || { src: "src/evm" };
+
+    console.log(`[VALIDATOR_CHAIN] key: ${key}, chain: ${JSON.stringify(chain)}`);
+
+    let instance = require(ROOT + '/' + chain.src);
+    instance = new instance(key, account);
+
+    instances[key] = instance;
+});
+
+const gov = require(`${ROOT}/src/gov`);
+instances["gov"] = new gov();
 
 const express = require('express');
 const app = express();
@@ -50,34 +71,7 @@ const PORT = process.env.PORT || 8984;
 
 const indexRouter = require("./routes/index");
 app.use('/', indexRouter);
-
-let govInfo = config.governance;
-
-settings.chainList.forEach(key => {
-    let chain = config.chain[key] || {
-        src: "src/evm",
-        class: true,
-    };
-    console.log(`[VALIDATOR_CHAIN] key: ${key}, chain: ${JSON.stringify(chain)}`);
-    let instance = require(ROOT + '/' + chain.src);
-    if (chain.class) {
-        instance = new instance(key, account);
-    } else {
-        instance.initialize(account);
-    }
-
-    if(key.includes(govInfo.chain.toLowerCase())){
-        global.monitor.getBalance = instance.getBalance;
-    }
-    if (key === "stacks_layer_2") {
-        global.stacksLayer2 = {};
-        global.stacksLayer2.validateSwapData = instance.validateSwapData;
-    }
-});
-
-const gov = require(`${ROOT}/src/gov`);
-gov.initialize(account);
-app.use("/v1/gov", require("./routes/v1/gov").setGovInstance(gov));
+app.use("/v1/gov", require("./routes/v1/gov").setGovInstance(instances["gov"]));
 
 app.listen(PORT, () => {
     logger.info('Listening on port ' + PORT);
