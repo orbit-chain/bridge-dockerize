@@ -1,35 +1,20 @@
 {
-  "eth-v2": {
-    "src": "src/eth/v2"
-  },
-  "klaytn-v2": {
-    "src": "src/klaytn/v2"
-  },
-  "icon-v2": {
-    "src": "src/icon/v2"
-  },
-  "orbit": {
-    "src": "src/orbit"
-  },
   "xrp": {
     "src": "src/xrp"
   },
-  "bsc": {
-    "src": "src/bsc"
-  },
-  "heco": {
-    "src": "src/heco"
-  },
-  "matic": {
-    "src": "src/matic"
-  },
-  "celo": {
-    "src": "src/celo"
+  "icon": {
+    "src": "src/icon"
   },
   "stacks_layer_1": {
     "src": "src/stacks_layer_1"
   },
-  "stacks_layer_2": {
-    "src": "src/stacks_layer_2"
+  "stacks": {
+    "src": "src/stacks"
+  },
+  "ton_layer_1": {
+    "src": "src/ton_layer_1"
+  },
+  "ton": {
+    "src": "src/ton"
   }
 }

@@ -76,7 +76,8 @@ class Monitor {
             HECO: 'heco',
             MATIC: 'matic',
             CELO: 'celo',
-            STACKS_LAYER_1: 'stacks_layer_1'
+            STACKS_LAYER_1: 'stacks_layer_1',
+            TON_LATER_1: 'ton_layer_1'
         };
 
         return fullNames[chain] || (chain && chain.toLowerCase()) || "";

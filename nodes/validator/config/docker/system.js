@@ -8,6 +8,7 @@ module.exports = {
     hecoConfirmCount: 20,
     maticConfirmCount: 300,
     celoConfirmCount: 4,
-    stacksConfirmCount: 3,
+    stacksConfirmCount: 6,
+    tonConfirmCount: 12,
     logLevel: 'debug'
 };

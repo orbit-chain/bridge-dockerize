@@ -80,6 +80,14 @@ class WebSocketProviderManager {
                 return;
             }
             this.disconnectCallbacks.forEach(callback => { callback(); });
+
+        });
+        this.provider.on('close', () => {
+            if (!this.isConnected) {
+                return;
+            }
+            this.disconnectCallbacks.forEach(callback => { callback(); });
+
         });
         this.provider.on('connect', () => {
             this.__tryreconnect = 0;
@@ -196,7 +204,7 @@ class Britto {
         node.contract = new node.web3.eth.Contract(node.abi, node.address);
     }
 
-    createWeb3() {
+    async createWeb3() {
         if (!this.node)
             throw 'node object is undefined.';
 
@@ -221,8 +229,18 @@ class Britto {
             if (node.onconnect) {
                 node.onconnect();
             }
-            logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.rpc}`);
-            global.monitor.setNodeConnectStatus(node.peggingType, node.rpc, "connected");
+
+            let block = await node.web3.eth.getBlock("latest").catch(e => {})
+            if(!block){
+                logger.info(`[${node.peggingType}] ${node.name} web3 disconnected to ${node.rpc}`);
+                global.monitor.setNodeConnectStatus(node.peggingType, node.rpc, "disconnected");
+            }
+            else{
+                logger.info(`[${node.peggingType}] ${node.name} web3 connected to ${node.rpc}`);
+                global.monitor.setNodeConnectStatus(node.peggingType, node.rpc, "connected");
+            }
+
+            node.checkRPCInterval = setInterval(this.checkRPC.bind(this), 1000 * 60 * 10);
         } else {
             throw Error(`UnSupported`);
         }
@@ -245,7 +263,29 @@ class Britto {
         }
     }
 
-    static getJSONInterface({filename, path, version}) {
+    async checkRPC() {
+        const node = this.node
+        if (node.checkRPCInterval) {
+            clearInterval(node.checkRPCInterval);
+            node.checkRPCInterval = undefined;
+        }
+
+        try {
+            let block = await node.web3.eth.getBlock("latest").catch(e => {})
+            if(!block){
+                global.monitor.setNodeConnectStatus(node.peggingType, node.rpc, "disconnected");
+                return;
+            }
+
+            global.monitor.setNodeConnectStatus(node.peggingType, node.rpc, "connected");
+        } finally {
+            if (!node.checkRPCInterval) {
+                node.checkRPCInterval = setInterval(this.checkRPC.bind(this), 1000 * 60 * 10);
+            }
+        }
+    }
+
+    static getJSONInterface({filename, path}) {
         if (!filename)
             throw 'Invalid JSON Interface filename.';
 
@@ -255,7 +295,7 @@ class Britto {
         const RUNNING_LEVEL = process.env.RUNNING_LEVEL || 'dev';
         const defaultPath = process.cwd() + '/abi/' + RUNNING_LEVEL;
 
-        return JSON.parse(fs.readFileSync(`${path ? path : defaultPath}/${version ? version : 'v2'}/${filename}`, 'utf8'));
+        return JSON.parse(fs.readFileSync(`${path ? path : defaultPath}/${filename}.abi`, 'utf8'));
     }
 
     static sha256sol(arr) {
@@ -361,9 +401,29 @@ class Britto {
 
         return {
             message: hash,
-            r: sig.slice(0, 64),
-            s: sig.slice(64)
+            r: '0x'+signature.slice(0, 64),
+            s: '0x'+signature.slice(64)
         }
+    }
+
+    static verifyEd25519(message, sig, pub) {
+        if(!message || !sig || !pub)
+            throw 'Invalid input params';
+
+        if(Buffer.isBuffer(message))
+            message = message.toString('hex');
+        message = message.remove0x();
+
+        if(Buffer.isBuffer(sig))
+            sig = sig.toString('hex');
+        sig = sig.remove0x();
+
+        if(Buffer.isBuffer(pub))
+            pub = pub.toString('hex');
+        pub = pub.remove0x();
+
+        let ed = new ED('ed25519');
+        return ed.verify(message, sig, pub);
     }
 
     static setAdd0x(method) {

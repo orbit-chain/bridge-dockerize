@@ -12,6 +12,8 @@ const {
   addressFromVersionHash,
   addressToString,
   broadcastTransaction,
+  callReadOnlyFunction,
+  deserializeCV,
   makeUnsignedSTXTokenTransfer,
   nextVerification,
   TransactionSigner,
@@ -49,12 +51,32 @@ class StacksBridgeUtils extends BridgeUtils {
     this.Network = network;
   }
 
+  hexToCV(hex) {
+    if (hex.startsWith('0x'))
+        hex = hex.substring(2);
+    return deserializeCV(new BufferReader(Buffer.from(hex, 'hex')))
+  }
+
+  async getLatestBlock() {
+    const response = await request.get({
+      url: `${settings.Endpoints.Stacks.url}/extended/v1/block?limit=1`,
+      ...baseReqObj,
+    }).catch(e => {
+      logger.stacks.error(`getTransaction error. tx:${thash}, err:${e.message}`);
+    });
+    if (!response) {
+      return;
+    }
+
+    return response.results[0];
+  }
+
   async getTransaction(thash) {
     const tx = await request.get({
       url: `${settings.Endpoints.Stacks.url}/extended/v1/tx/${thash}`,
       ...baseReqObj,
     }).catch(e => {
-      logger.stacks_layer_1.error(`getTransaction error. tx:${thash}, err:${e.message}`);
+      logger.stacks.error(`getTransaction error. tx:${thash}, err:${e.message}`);
     });
     if (!tx) {
       return;
@@ -73,7 +95,7 @@ class StacksBridgeUtils extends BridgeUtils {
       url: `${settings.Endpoints.Stacks.url}/extended/v1/address/${address}/stx`,
       ...baseReqObj,
     }).catch(e => {
-      logger.stacks_layer_1.error(`getBalance error. addr:${address}, err:${e.message}`);
+      logger.stacks.error(`getBalance error. addr:${address}, err:${e.message}`);
     });
     if(!stx)
         return;
@@ -86,25 +108,12 @@ class StacksBridgeUtils extends BridgeUtils {
       url: `${settings.Endpoints.Stacks.url}/extended/v1/address/${address}/nonces`,
       ...baseReqObj,
     }).catch(e => {
-      logger.stacks_layer_1.error(`getNonce error. addr:${address}, err:${e.message}`);
+      logger.stacks.error(`getNonce error. addr:${address}, err:${e.message}`);
     });
     if(!account)
         return;
 
     return account.possible_next_nonce;
-  }
-
-  async getCurrentBlock() {
-    const block = await request.get({
-      url: `${settings.Endpoints.Stacks.url}/extended/v1/block`,
-      ...baseReqObj,
-    }).catch(e => {
-      logger.stacks_layer_1.error(`getCurrentBlock error.`);
-    });
-    if(!block)
-        return;
-
-    return block.results[0].height;
   }
 
   async makeUnsignedSTXTokenTransfer(nonce, publicKeys, quorumCount, toAddr, memo, amount) {
@@ -119,12 +128,28 @@ class StacksBridgeUtils extends BridgeUtils {
         network: this.Network,
         anchorMode: AnchorMode.Any,
     }).catch(e => {
-        logger.stacks_layer_1.error(`makeTransaction error. nonce: ${nonce}, err:${e.message}`);
+        logger.stacks.error(`makeTransaction error. nonce: ${nonce}, err:${e.message}`);
     });
     if(!transaction)
         return;
 
     return transaction;
+  }
+
+  async readContract(contractAddress, contractName, functionName, functionArgs, sender) {
+    const ret = await callReadOnlyFunction({
+      contractAddress,
+      contractName,
+      functionName,
+      functionArgs,
+      network: this.Network,
+      senderAddress: sender,
+    });
+    if (!ret) {
+      return;
+    }
+
+    return ret;
   }
 
   async estimateFee(serializedTx) {
@@ -133,7 +158,7 @@ class StacksBridgeUtils extends BridgeUtils {
         ...baseReqObj,
         params: {transaction : serializedTx}
     }).catch(e => {
-        logger.stacks_layer_1.error(`estimateFee error. tx:${serializedTx}, err:${e.message}`);
+        logger.stacks.error(`estimateFee error. tx:${serializedTx}, err:${e.message}`);
     });
     if(!stx)
         return;
@@ -151,7 +176,7 @@ class StacksBridgeUtils extends BridgeUtils {
 
   async broadcastTransaction(transaction) {
     const res = await broadcastTransaction(transaction.serialize(), settings.Endpoints.Stacks.url).catch(e => {
-        logger.stacks_layer_1.error(`broadcastTransaction fail. err: ${e.message}`);
+        logger.stacks.error(`broadcastTransaction fail. err: ${e.message}`);
     });
     if(!res)
       return;
@@ -178,7 +203,7 @@ class StacksBridgeUtils extends BridgeUtils {
             {data: lastSignature.replace("0x","")} // {00,01}{r}{s}
         )
     } catch(e) {
-        logger.stacks_layer_1.error(`getCrrentSigHash fail. err: ${e.message}`);
+        logger.stacks.error(`getCrrentSigHash fail. err: ${e.message}`);
         return;
     };
     if(!res)
@@ -201,7 +226,7 @@ class StacksBridgeUtils extends BridgeUtils {
     try{
         res = makeSigHashPreSign(curSigHash, authType, fee, nonce);
     } catch(e) {
-        logger.stacks_layer_1.error(`makeSigHashPreSign fail. err: ${e.message}`);
+        logger.stacks.error(`makeSigHashPreSign fail. err: ${e.message}`);
         return;
     }
     if(!res)

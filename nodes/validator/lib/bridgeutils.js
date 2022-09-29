@@ -3,6 +3,7 @@ const rippleAddr = require('ripple-address-codec');
 const config = require(ROOT + '/config');
 const settings = config.requireEnv("./settings");
 const { AddressVersion, addressFromVersionHash, addressToString } = require("@stacks/transactions");
+const request = require("request-promise");
 
 class BridgeUtils {
     str2hex(input){
@@ -110,6 +111,20 @@ class BridgeUtils {
 
     padLeft(data, length) {
         return '0x' + data.replace('0x','').padStart(length,'0');
+    }
+
+    async getBeaconBlock() {
+        const info = config.info.eth;
+        if(!info) return;
+
+        const beacon = info.ENDPOINT.beacon || "https://beacon.chain-node.orbitchain.io:7643";
+        let res;
+        try {
+            res = await request.get(`${beacon}/eth/v2/beacon/blocks/finalized`);
+            res = JSON.parse(res);
+        } catch (e) {console.log(e);}
+
+        return res;
     }
 }
 
