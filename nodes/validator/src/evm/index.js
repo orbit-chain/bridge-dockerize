@@ -146,8 +146,8 @@ class EVMValidator {
             return;
         }
 
-        let events = await this.parseEvent(receipt.blockNumber, mainnet, functionSig);
-        if (events.length == 0){
+        let events = await this.parseEvent(receipt.blockNumber, mainnet, functionSig).catch(e => {});
+        if (!events || events.length == 0){
             logger.evm.error('Invalid Transaction.', loggerOpt);
             return;
         }
