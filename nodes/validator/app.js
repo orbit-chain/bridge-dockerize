@@ -51,7 +51,7 @@ hubInstance = new hubInstance(chainList);
 instances['hub'] = hubInstance;
 
 chainList.forEach(key => {
-    key = key.replace(/-v[1-9]$/, '').toLowerCase();;
+    key = key.replace(/-v[1-9]$/, '').toLowerCase();
     let chain = config.chain[key] || { src: "src/evm" };
 
     console.log(`[VALIDATOR_CHAIN] key: ${key}, chain: ${JSON.stringify(chain)}`);
