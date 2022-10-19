@@ -21,6 +21,7 @@ class Monitor {
     constructor () {
         this.validatorAddress;
         this.publicKey;
+        this.chain;
         this.address = {};
         this.nodeConnect = {};
         this.blockNumber = {};
@@ -165,6 +166,7 @@ class Monitor {
             version: VERSION,
             validatorAddress: this.validatorAddress,
             publicKey: this.publicKey,
+            chain: this.chain,
             address: this.address,
             nodeConnection: this.nodeConnect,
             orbitBlockNumber: this.blockNumber,

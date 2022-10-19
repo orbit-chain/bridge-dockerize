@@ -22,6 +22,32 @@ class TonAPI {
 
         this.ton = new TonClient({endpoint: this.rpc, apiKey: this.apiKey});
         this.tonWeb = new TonWeb(new TonWeb.HttpProvider(this.rpc, {apiKey: this.apiKey}));
+
+        this.tonWeb.checkRPCInterval = setInterval(this.checkRPC.bind(this), 1000 * 60);
+    }
+
+    async checkRPC() {
+        const rpc = this.rpc;
+        const apiKey = this.apiKey;
+        const tonWeb = this.tonWeb;
+        if(tonWeb.checkRPCInterval) {
+            clearInterval(tonWeb.checkRPCInterval);
+            tonWeb.checkRPCInterval = undefined;
+        }
+
+        try {
+            let masterInfo = await tonWeb.provider.getMasterchainInfo().catch(e => {});
+            if(!masterInfo || !masterInfo.last || !masterInfo.last.seqno) {
+                global.monitor.setNodeConnectStatus("ton", `${rpc}/${apiKey}`, "disconnected");
+                return;
+            }
+
+            global.monitor.setNodeConnectStatus("ton", `${rpc}/${apiKey}`, "connected");
+        } finally {
+            if (!tonWeb.checkRPCInterval) {
+                tonWeb.checkRPCInterval = setInterval(this.checkRPC.bind(this), 1000 * 60);
+            }
+        }
     }
 
     async getTonAccount(pk) {
