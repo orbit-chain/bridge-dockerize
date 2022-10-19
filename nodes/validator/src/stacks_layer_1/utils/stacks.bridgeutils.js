@@ -47,6 +47,9 @@ class StacksBridgeUtils extends BridgeUtils {
     this.SingleAddressVersion = singleAddressVersion;
     this.TransactionVersion = transactionVersion;
     this.Network = network;
+
+    let endpoints = settings.Endpoints.Stacks;
+    global.monitor.setNodeConnectStatus("stacks", `${endpoints.url}/${endpoints.network ? endpoints.network : "mainnet"}`, "connected");
   }
 
   async getTransaction(thash) {

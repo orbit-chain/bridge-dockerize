@@ -35,6 +35,7 @@ let account = {
 };
 global.monitor.validatorAddress = account.address;
 global.monitor.publicKey = account.publicKey;
+global.monitor.chain = config.governance.chain;
 
 logger.info(`Start Orbit Chain Validator ! : ${account.address}`);
 

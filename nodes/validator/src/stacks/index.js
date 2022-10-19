@@ -288,9 +288,14 @@ class STACKSValidator {
             data: params.data,
         }));
 
+        let conAddrs = {};
+        for(let key in info.CONTRACT_ADDRESS){
+            conAddrs[key.toLowerCase()] = info.CONTRACT_ADDRESS[key];
+        }
+
         let res = await stacks.readContract(
             info.CONTRACT_ADDRESS.DeployAddress,
-            info.CONTRACT_ADDRESS[params.token.toLowerCase()],
+            conAddrs[params.token.toLowerCase()],
             "is-confirmed",
             [bufferCV(Buffer.from(hash.replace("0x",""), "hex"))],
             stacksAddrs.DeployAddress

@@ -10,7 +10,7 @@
 			}
 		],
 		"payable": false,
-		"stateMutability": "view",
+		"stateMutability": "pure",
 		"type": "function"
 	},
 	{
@@ -113,6 +113,24 @@
 				"type": "address[]"
 			}
 		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "govId",
+				"type": "bytes32"
+			},
+			{
+				"name": "selectionIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "revertLastSelection",
+		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -740,6 +758,11 @@
 				"indexed": false,
 				"name": "uints",
 				"type": "uint256[]"
+			},
+			{
+				"indexed": false,
+				"name": "nonce",
+				"type": "uint256"
 			}
 		],
 		"name": "StacksTransactionValidated",
