@@ -106,8 +106,26 @@ class TONValidator {
         let lt = data.uints[3];
 
         let tx = await ton.getTransaction(tonMinter, txHash, lt);
-        if(!tx){
+        if(!tx || !tx.data){
             logger.ton.error(`getTransaction error: ${txHash}, ${lt}`);
+            return;
+        }
+
+        let description = await ton.parseTransaction(tx.data);
+        if(!description || !description.computePhase || !description.actionPhase){
+            logger.ton.error(`Invalid description: ${txHash}, ${lt}`);
+            return;
+        }
+
+        let computePhase = description.computePhase;
+        if(!computePhase.success || parseInt(computePhase.exitCode) !== 0){
+            logger.ton.error(`ComputePhase fail: ${txHash}, ${lt}`);
+            return;
+        }
+
+        let actionPhase = description.actionPhase;
+        if(!actionPhase.success){
+            logger.ton.error(`ActionPhase fail: ${txHash}, ${lt}`);
             return;
         }
 
@@ -286,7 +304,7 @@ class TONValidator {
             let fromChainId = chainIds[data.fromChain];
             let toChainId = chainIds[data.toChain];
             if(!fromChainId || !toChainId){
-                logger.ton_layer_1.error(`Cannot get chainId. ${data.fromChain}, ${data.toChain}`);
+                logger.ton.error(`Cannot get chainId. ${data.fromChain}, ${data.toChain}`);
                 return;
             }
 
