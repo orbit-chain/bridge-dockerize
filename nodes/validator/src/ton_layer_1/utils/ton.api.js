@@ -6,7 +6,7 @@ const DEFAULT_WALLET_VERSION = "v3R2";
 
 const { beginCell, beginDict, Cell, Slice, toNano, TupleSlice } = require("ton");
 const { CellMessage, InternalMessage, CommonMessageInfo, SendMode, Wallet, ExternalMessage } = require("ton");
-const { Address, TonClient, WalletContract, WalletV3R2Source, contractAddress, parseDict } = require("ton");
+const { Address, TonClient, WalletContract, WalletV3R2Source, contractAddress, parseDict, parseTransaction } = require("ton");
 
 const BN = require("bn.js");
 function makeBN(str) {
@@ -147,6 +147,20 @@ class TonAPI {
         }
 
         return { required, pubkeys }
+    }
+
+    async parseTransaction(data) {
+        let description;
+
+        try {
+            let cell = Cell.fromBoc(Buffer.from(data,'base64').toString('hex'))[0].beginParse();
+            let res = parseTransaction(0, cell);
+            description = res.description;
+        } catch (e) {
+            logger.ton_layer_1.error(`parseTransaction error`);
+        }
+
+        return description;
     }
 }
 
