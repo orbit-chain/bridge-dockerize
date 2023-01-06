@@ -13,7 +13,7 @@ services:
       - br-wemixvalidator
 
 networks:
-    br-tonvalidator:
+    br-wemixvalidator:
         driver: bridge
         ipam:
             driver: default
