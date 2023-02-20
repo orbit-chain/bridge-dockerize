@@ -1,0 +1,24 @@
+version: '3'
+services:
+  validator:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    ports:
+      - 17195:8984
+    networks:
+      - br-wemixvalidator
+    build:
+      args:
+        ENV_FILE: composes/wemix/.env
+    environment:
+      PROFILE: prod
+      CHAIN: wemix
+
+networks:
+    br-wemixvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.152.0/24

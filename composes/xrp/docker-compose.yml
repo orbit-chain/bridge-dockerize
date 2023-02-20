@@ -1,0 +1,24 @@
+version: '3'
+services:
+  validator:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    ports:
+      - 17000:8984
+    networks:
+      - br-xrpvalidator
+    build:
+      args:
+        ENV_FILE: composes/xrp/.env
+    environment:
+      PROFILE: prod
+      CHAIN: xrp
+
+networks:
+    br-xrpvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.129.0/24

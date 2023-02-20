@@ -1,0 +1,8 @@
+version: '3'
+services:
+  app:
+    build:
+      context: ../
+      dockerfile: ./Dockerfile
+    environment:
+      VERSION: v1.0.5

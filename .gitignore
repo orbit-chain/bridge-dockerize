@@ -1,1 +1,24 @@
+# IDE
+## webstorm?
+.idea/
+## vscode
+.vscode/
+## MacOS
+*.DS_Store
 
+# node dependency
+## installed modules
+node_modules/
+
+## nvm
+.nvmrc
+
+# log
+logs/
+log/
+
+# dev config
+**/dev
+
+# docker-compose env_file
+**/.env

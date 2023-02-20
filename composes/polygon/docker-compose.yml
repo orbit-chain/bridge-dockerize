@@ -1,0 +1,24 @@
+version: '3'
+services:
+  validator:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    ports:
+      - 17152:8984
+    networks:
+      - br-polygonvalidator
+    build:
+      args:
+        ENV_FILE: composes/polygon/.env
+    environment:
+      PROFILE: prod
+      CHAIN: polygon
+
+networks:
+    br-polygonvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.143.0/24

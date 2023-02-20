@@ -1,0 +1,24 @@
+version: '3'
+services:
+  validator:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    ports:
+      - 18985:8984
+    networks:
+      - br-bscvalidator
+    build:
+      args:
+        ENV_FILE: composes/bsc/.env
+    environment:
+      PROFILE: prod
+      CHAIN: bsc
+
+networks:
+    br-bscvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.131.0/24
