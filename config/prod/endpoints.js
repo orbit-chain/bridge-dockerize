@@ -38,6 +38,13 @@ module.exports = {
             rpc : ["https://heco.chain-node.orbitchain.io:7643", "https://http-mainnet.hecochain.com"],
             chain_id: '0x80'
         },
+        icon: {
+            api: 'https://ctz.solidwallet.io/api/v3',
+            rpc: 'https://ctz.solidwallet.io/api/v3',
+            debug: 'https://ctz.solidwallet.io/api/debug/v3',
+            version: 3,
+            nid: 1
+        },       
         klaytn: {
             is_kas: false,
             kas: {
