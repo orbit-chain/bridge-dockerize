@@ -82,6 +82,10 @@ module.exports = {
         xdai: {
             rpc: ["https://rpc.gnosischain.com", "https://rpc.ankr.com/gnosis", "https://gnosis-mainnet.public.blastapi.io"],
         },
+        xrp: {
+            rpc: "https://s1.ripple.com:51234",
+            socket: "wss://s1.ripple.com:443",
+        },
     },
 
     LOGLEVEL: 'debug',
