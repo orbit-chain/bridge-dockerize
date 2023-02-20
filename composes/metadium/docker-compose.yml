@@ -1,0 +1,24 @@
+version: '3'
+services:
+  validator:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    ports:
+      - 17197:8984
+    networks:
+      - br-metadiumvalidator
+    build:
+      args:
+        ENV_FILE: composes/metadium/.env
+    environment:
+      PROFILE: prod
+      CHAIN: metadium
+
+networks:
+    br-metadiumvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.153.0/24

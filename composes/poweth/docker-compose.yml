@@ -1,0 +1,23 @@
+version: '3'
+services:
+  validator:
+    extends:
+      file: ../docker-compose.common.yml
+      service: app
+    ports:
+      - 18990:8984
+    networks:
+      - br-ethvalidator
+    build:
+      args:
+        ENV_FILE: composes/poweth/.env
+    environment:
+      PROFILE: prod
+      CHAIN: poweth
+networks:
+    br-ethvalidator:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.24.130.0/24

@@ -6,6 +6,8 @@
 * [Requirements](#requirements)
 * [Installation](#installation)
 * [Run](#run)
+* [Parser APIs](#parser-apis)
+* [Syncer APIs](#syncer-apis)
 
 <br/>
 
@@ -15,13 +17,13 @@ Orbit Bridge is a service that allows people to transfer tokens from a chain to 
 
 **project modules**
 
-Validator : Checks if the transfer requests sent from various chains are valid.
-
 Parser : Gathers block info and filters Orbit Bridge's transactions out of it from various chains.
 
 Syncer : Saves the filtered info and provides data for the Operator to send transactions to various chains.
 
 Operator : Executes transactions to various chains.
+
+Validator : Checks if the transfer requests sent from various chains are valid.
 
 <br/>
 
@@ -50,8 +52,8 @@ Operator : Executes transactions to various chains.
 
 * for ether vault validator
 ```bash
-cp settings.js ~/bridge-dockerize/ethvault-validator/
-sudo docker-compose -f ~/bridge-dockerize/ethvault-validatot/docker-compose.yml up --build -d
+cp .example.env ~/bridge-dockerize/composes/eth/.env
+sudo docker-compose -f ~/bridge-dockerize/eth/docker-compose.yml up --build -d
 ```
 
 ## Validator APIs
