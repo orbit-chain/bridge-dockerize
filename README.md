@@ -52,13 +52,8 @@ Validator : Checks if the transfer requests sent from various chains are valid.
 
 * for ether vault validator
 ```bash
-cp settings.js ~/bridge-dockerize/eth/
-sudo docker-compose -f ~/bridge-dockerize/ethvault-validatot/docker-compose.yml up --build -d
-```
-* for ether vault operator
-```bash
-cp settings.js ~/bridge-dockerize/ethvault-operator/
-sudo docker-compose -f ~/bridge-dockerize/ethvault-validatot/docker-compose.yml up --build -d
+cp .example.env ~/bridge-dockerize/composes/eth/.env
+sudo docker-compose -f ~/bridge-dockerize/eth/docker-compose.yml up --build -d
 ```
 
 ## Validator APIs
@@ -68,40 +63,5 @@ sudo docker-compose -f ~/bridge-dockerize/ethvault-validatot/docker-compose.yml 
 
 	GET|POST /v1/gov/confirm/:address/:transactionId
 > Returns the transaction hash that has been sent by validator.
-
-<br/>
-
-
-<br/>
-
-## Parser APIs
-	GET /v1/{chainName}/fullBlock/{blockNum}
-    e.g. /v1/ozys/fullblock/1234567
->  Returns the entire block info of the block with the matching block number.
-
-<br/>
-
-	GET /v1/{chainName}/scanBlock/{blockNum}
-    e.g. /v1/terra/scanBlock/1234567
->  Returns the parsed block info which only contains transactions from/to Orbit Bridge of of the block with the matching block number.
->  Note that this API only exists in specific chains.
-
-<br/>
-
-	GET /v1/{chainName}/tx/{hash}
-    e.g. /v1/ozys/tx/0xb91c7b18851ca37fec6a4aabb6b9595ae5f84a7cf0966321144f48fe6c197617
-> Returns the transaction info of the transaction with the matching transaction hash.
-
-<br>
-
-
-## Syncer APIs
-	GET /v1/{chainName}/lock-relay
-> Returns the list of transactions that needs to be validated by the Orbit Hub.
-
-<br/>
-
-	GET /v1/{chainName}/pending-release
-> Returns the list of transactions that has been validated by the Orbit Hub and is waiting to be executed.
 
 <br/>
