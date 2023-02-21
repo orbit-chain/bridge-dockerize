@@ -24,4 +24,6 @@ COPY wallet.js wallet.js
 
 COPY --from=builder workspace/node_modules node_modules
 
+RUN apk --no-cache add curl
+
 ENTRYPOINT ["node", "app.js", "--max_old_space_size=1536", "--expose-gc"]
