@@ -44,7 +44,7 @@ module.exports = {
             debug: 'https://ctz.solidwallet.io/api/debug/v3',
             version: 3,
             nid: 1
-        },       
+        },
         klaytn: {
             is_kas: false,
             kas: {
@@ -52,7 +52,7 @@ module.exports = {
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
                 chain_id: 8217
             },
-            rpc: ["https://klaytn-mainnet-rpc.allthatnode.com:8551", "https://klaytn01.fautor.app", "https://klaytn02.fautor.app", "https://public-node-api.klaytnapi.com/v1/cypress"],
+            rpc: ["https://klaytn-mainnet-rpc.allthatnode.com:8551", "https://public-node-api.klaytnapi.com/v1/cypress"],
         },
         matic: {
             rpc : ["https://polygon-rpc.com", "https://matic.chain-node.orbitchain.io:7643", "https://rpc.ankr.com/polygon"],
