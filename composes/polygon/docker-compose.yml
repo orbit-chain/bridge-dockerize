@@ -13,7 +13,7 @@ services:
         ENV_FILE: composes/polygon/.env
     environment:
       PROFILE: prod
-      CHAIN: polygon
+      CHAIN: matic
 
 networks:
     br-polygonvalidator:
