@@ -40,7 +40,7 @@ module.exports = {
             xdai: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
         },
         ton: {
-            vault: "EQAcY1y-LVL9pj_X1F6vhbGE7m6x50jRMxZJZg44md76hngN",
+            vault: "EQAtkbV8ysI75e7faO8Ihu0mFtmsg-osj7gmrTg_mljVRccy",
             multisig: "EQB8mNTgoG5QxqhOdVFi6X0MOjkmGNd33ct-RGBT9ZT5oDAX",
         },
         avax: {
@@ -103,7 +103,7 @@ module.exports = {
         },
         governance: {
             chain: "TON_LAYER_1",
-            address: "EQAcY1y-LVL9pj_X1F6vhbGE7m6x50jRMxZJZg44md76hngN",
+            address: "EQAtkbV8ysI75e7faO8Ihu0mFtmsg-osj7gmrTg_mljVRccy",
             bytes: "0x8a140d51b86267680a943c55c780ac4b3a785c2ff6a62020d158c39f6512374f",
             id: "0xc25b710f269dfffd6f045756d330b084451c6a0db366309b7f400859a1b76db4",
         },
