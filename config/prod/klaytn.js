@@ -98,14 +98,14 @@ module.exports = {
             admin: "0x3060E2fbDB75663b50bf9e629693DC39A4418736",
         },
         stacks: {
-			deploy_address: "SP2JWSZAKDEVADF2FADKS0DF8S01CY5WP61YXAV71",
-			multisig: "gov-matic",
-			"0x0000000000000000000000000000000000000000": "orbit-klay",
-			"0xc6a2ad8cc6e4a7e08fc37cc5954be07d499e7654": "orbit-ksp",
+            deploy_address: "SP2JWSZAKDEVADF2FADKS0DF8S01CY5WP61YXAV71",
+            multisig: "gov-matic",
+            "0x0000000000000000000000000000000000000000": "orbit-klay",
+            "0xc6a2ad8cc6e4a7e08fc37cc5954be07d499e7654": "orbit-ksp",
         },
         ton: {
-            TonMinterContract: "EQAlMRLTYOoG6kM0d3dLHqgK30ol3qIYwMNtEelktzXP_pD5",
-            MessageMultiSigWallet: "EQAblz6Xr6b-7eLAWeagIK2Dn-g81YiNpu0okHfc9EwY9_72",
+            minter: "EQAlMRLTYOoG6kM0d3dLHqgK30ol3qIYwMNtEelktzXP_pD5",
+            multisig: "EQAblz6Xr6b-7eLAWeagIK2Dn-g81YiNpu0okHfc9EwY9_72",
         },
         xdai: {
             minter: "0x9abc3f6c11dbd83234d6e6b2c373dfc1893f648d",
