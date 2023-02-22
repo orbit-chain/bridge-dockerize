@@ -5,4 +5,4 @@ services:
       context: ../
       dockerfile: ./Dockerfile
     environment:
-      VERSION: v1.0.7
+      VERSION: v1.0.9
