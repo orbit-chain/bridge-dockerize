@@ -11,6 +11,8 @@ COPY src src
 
 FROM node:18-alpine
 
+RUN npm install -g pm2
+
 ARG ENV_FILE
 COPY $ENV_FILE .env
 COPY abi abi
@@ -21,9 +23,10 @@ COPY src src
 COPY app.js app.js
 COPY logger.js logger.js
 COPY wallet.js wallet.js
+COPY pm2.yaml pm2.yaml
 
 COPY --from=builder workspace/node_modules node_modules
 
 RUN apk --no-cache add curl
 
-ENTRYPOINT ["node", "app.js", "--max_old_space_size=1536", "--expose-gc"]
+ENTRYPOINT ["pm2-runtime", "pm2.yaml"]

@@ -1,0 +1,10 @@
+apps:
+  - script    : app.js
+    name      : 'validator'
+    cwd       : .
+    instances : 1
+    watch     : false
+    exec_mode : fork
+    env       :
+      NODE_ENV  : production
+      PORT      : 8984
