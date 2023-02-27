@@ -46,7 +46,7 @@ module.exports = {
             nid: 1
         },
         klaytn: {
-            is_kas: false,
+            is_kas: true,
             kas: {
                 // KAS Default
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
