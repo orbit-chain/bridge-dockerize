@@ -89,7 +89,7 @@ class EVMValidator {
             const option = {
                 headers: [
                     {name: 'Authorization', value: 'Basic ' + Buffer.from(kas.accessKeyId + ':' + kas.secretAccessKey).toString('base64')},
-                    {name: 'x-chain-id', value: kas.chainId},
+                    {name: 'x-chain-id', value: kas.chain_id},
                 ]
             };
 
