@@ -14,6 +14,7 @@ const Ton = require("./utils/ton.api");
 const FIX_GAS = 99999999;
 
 const UINT64_MAX = "18446744073709551616";
+const NumberFormat = /^[0-9]+$/;
 
 const { Cell, Slice } = require("ton");
 
@@ -231,7 +232,13 @@ class TONLayer1Validator {
             amount = amount.dsub(fee);
 
             let tag = in_msg.message;
-            if(!tag || isNaN(parseInt(tag)) || parseInt(tag) <= 100000000){
+            if(!tag){
+                logger.ton_layer_1.error(`Null tag. ${txHash}, ${lt}`);
+                return;
+            }
+
+            tag = tag.trim();
+            if(!NumberFormat.test(tag) || isNaN(parseInt(tag)) || parseInt(tag) <= 100000000){
                 logger.ton_layer_1.error(`Invalid tag. ${txHash}, ${lt}, ${tag}`);
                 return;
             }
