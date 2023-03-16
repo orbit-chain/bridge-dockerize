@@ -96,7 +96,7 @@ module.exports = {
     },
 
     LOGLEVEL: 'debug',
-    
+
     VALIDATOR_MONITOR: {
         ozys: {
             endpoint: "https://va.bridge.orbitchain.io.prod.ozys.work/v1/validator/report",

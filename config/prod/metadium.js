@@ -110,8 +110,8 @@ module.exports = {
             multisig: "0x070BB923318bE659Db7bF72cfb500C6C554EC9ef"
         },
         ton: {
-            minter: "EQDiluynnsKKIS6HTOQxKM9FSUMUY1AofTfRhYyx4e1T8bSg",
-            multisig: "EQAbS7Y3vCI5bWPcaAkNxIDnYNyBdjByfzMBUHiUBP7l124S",
+            minter: "EQChjxYqk_fq_fz3QiUdu27fHEiu0ZbGuN2TF0f0vVFDZLqB",
+            multisig: "EQBuMD8iUYs8WrGky-DmHenxi5urcXgQ7kMO2w1v-OMuZKlb",
         },
         xdai: {
             minter: "0xd614BD2B1f95ea3D1A32320747B8d37e757d196d",
