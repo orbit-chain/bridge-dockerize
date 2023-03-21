@@ -13,7 +13,7 @@ module.exports = {
             rpc : ["https://bsc-dataseed.binance.org", "https://bsc-dataseed1.binance.org", "https://rpc.ankr.com/bsc", "http://prd-bsc-mainnet-rpc.node.ozys.work:8545"],
         },
         celo: {
-            rpc: ["https://forno.celo.org", "https://rpc.ankr.com/celo", "http://prd-celo-mainnet-erpc.node.ozys.work:8545"],
+            rpc: ["https://forno.celo.org", "https://rpc.ankr.com/celo", "http://prd-celo-mainnet-rpc.node.ozys.work:8545"],
             chain_id: '0xa4ec'
         },
         eth: {
