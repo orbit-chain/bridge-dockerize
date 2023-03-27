@@ -6,19 +6,19 @@ module.exports = {
             socket: "wss://bridge-en.orbitchain.io:7444",
         },
         avax: {
-            rpc: ["https://api.avax.network/ext/bc/C/rpc", "https://rpc.ankr.com/avalanche", "https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc"],
+            rpc: ["https://api.avax.network/ext/bc/C/rpc", "https://rpc.ankr.com/avalanche", "https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc", "http://prd-avax-mainnet.node.ozys.work:8545/ext/bc/C/rpc"],
             chain_id: '0xa86a'
         },
         bsc: {
-            rpc : ["https://bsc-dataseed.binance.org", "https://bsc-dataseed1.binance.org", "https://rpc.ankr.com/bsc", "https://bsc.chain-node.orbitchain.io:7643"],
+            rpc : ["https://bsc-dataseed.binance.org", "https://bsc-dataseed1.binance.org", "https://rpc.ankr.com/bsc", "http://prd-bsc-mainnet-rpc.node.ozys.work:8545"],
         },
         celo: {
-            rpc: ["https://forno.celo.org", "https://rpc.ankr.com/celo", "https://celo.chain-node.orbitchain.io:7643"],
+            rpc: ["https://forno.celo.org", "https://rpc.ankr.com/celo", "http://prd-celo-mainnet-rpc.node.ozys.work:8545"],
             chain_id: '0xa4ec'
         },
         eth: {
-            rpc: ["https://eth.chain-node.orbitchain.io:7643", "https://rpc.ankr.com/eth"],
-            beacon: "https://beacon.chain-node.orbitchain.io:7643",
+            rpc: ["http://prd-eth-mainnet-erpc.node.ozys.work:8545", "https://rpc.ankr.com/eth"],
+            beacon: "http://prd-eth-mainnet-brpc.node.ozys.work:8545",
             chain_id: '0x1'
         },
         faireth: {
@@ -27,7 +27,7 @@ module.exports = {
             chain_id: "0x7D44C",
         },
         fantom: {
-            rpc: ["https://rpc.ftm.tools", "https://rpc.fantom.network", "https://rpc.ankr.com/fantom"],
+            rpc: ["https://rpc.ftm.tools", "https://rpc.fantom.network", "https://rpc.ankr.com/fantom", "http://prd-fantom-mainnet-rpc.node.ozys.work:8545"],
             chain_id: '0xfa'
         },
         harmony: {
@@ -35,7 +35,7 @@ module.exports = {
             chain_id: 1666600000
         },
         heco: {
-            rpc : ["https://heco.chain-node.orbitchain.io:7643", "https://http-mainnet.hecochain.com"],
+            rpc : ["http://prd-heco-mainnet-rpc.node.ozys.work:8545", "https://http-mainnet.hecochain.com"],
             chain_id: '0x80'
         },
         icon: {
