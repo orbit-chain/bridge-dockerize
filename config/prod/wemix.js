@@ -10,6 +10,7 @@ module.exports = {
         "heco",
         "fantom",
         "matic",
+        "metadium",
         "moonriver",
         "oec",
         "ton",
