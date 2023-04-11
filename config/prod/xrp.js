@@ -3,7 +3,7 @@ module.exports = {
     chain_list: [
         'klaytn',
         'xrp',
-    	'orbit',
+        'orbit',
         'avax',
         'bsc',
         'celo',
@@ -37,6 +37,7 @@ module.exports = {
             matic: "0x1e9f03b3bdcb33bfec6ef504356bcbc72392e3c5",
             moonriver: "0x1e9f03b3bdcb33bfec6ef504356bcbc72392e3c5",
             oec: "0x1e9f03b3bdcb33bfec6ef504356bcbc72392e3c5",
+            wemix: "0x1e9f03b3bdcb33bfec6ef504356bcbc72392e3c5",
             xdai: "0x1e9f03b3bdcb33bfec6ef504356bcbc72392e3c5",
         },
         klaytn: {
@@ -91,6 +92,11 @@ module.exports = {
             minter: "0xE38ca00A6FD34B793012Bb9c1471Adc4E98386cF",
             multisig: "0xfa50391705D2FA7ac47Dd211B78378825bc763e6",
             admin: "0x009071058740276327A393B084eC447b8F0Fc6Ae",
+        },
+        wemix: {
+            minter: "0x3fc270534bBEEF400777B587D03fc66D8Ddd716E",
+            multisig: "0x60D85ED151CBdE337019263A54AD2fb6b495547C",
+            admin: "0xC9bD6dE100b923C275e74dC75F895B50c7488eD3",
         },
         xdai: {
             minter: "0xE38ca00A6FD34B793012Bb9c1471Adc4E98386cF",
