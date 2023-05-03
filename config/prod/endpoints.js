@@ -55,7 +55,7 @@ module.exports = {
             rpc: ["https://klaytn-mainnet-rpc.allthatnode.com:8551", "https://public-node-api.klaytnapi.com/v1/cypress"],
         },
         matic: {
-            rpc : ["https://polygon-rpc.com", "https://matic.chain-node.orbitchain.io:7643", "https://rpc.ankr.com/polygon"],
+            rpc : ["https://polygon-rpc.com", "http://prd-matic-bor-mainnet-rpc.node.ozys.work:8545", "https://rpc.ankr.com/polygon"],
             chain_id: '0x89'
         },
         metadium: {
@@ -66,7 +66,7 @@ module.exports = {
             rpc: ["https://moonriver.public.blastapi.io", "https://rpc.api.moonriver.moonbeam.network"],
         },
         oec: {
-            rpc: ["https://exchainrpc.okex.org", "https://oec.chain-node.orbitchain.io:7643"],
+            rpc: ["https://exchainrpc.okex.org", "http://prd-oktc-mainnet-rpc.node.ozys.work:8545"],
             chain_id: 66
         },
         poweth: {
