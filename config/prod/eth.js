@@ -17,6 +17,7 @@ module.exports = {
         'xdai',
         'stacks',
         'ton',
+        'wemix',
     ],
 
     // Bridge Addresses
