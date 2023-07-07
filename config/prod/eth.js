@@ -46,6 +46,7 @@ module.exports = {
             ton: "0xFb504CD4eD46024B83c4337044995CF112205f18",
             xdai: "0xfffec9385a40a12f8526fefc0036b6fc44b68092",
             orbit: "0xfffec9385a40a12f8526fefc0036b6fc44b68092",
+            wemix: "0xfffec9385a40a12f8526fefc0036b6fc44b68092",
         },
         eth: {
             vault: "0x1bf68a9d1eaee7826b3593c20a0ca93293cb489a",
