@@ -115,6 +115,11 @@ module.exports = {
             minter: "EQAihs8RdUgLANjNypV5LgaUHfdoUsMVL5o06K2F-qFSki00",
             multisig: "EQBbAqI1eVJ8PbZpKXA5njk6hq8Q6ZUxwXLZf-ntG1wf90Tm",
         },
+        wemix: {
+            minter: "0x6BD8E3beEC87176BA9c705c9507Aa5e6F0E6706f",
+            multisig: "0xCeBB82777bfe09c65AA47E8dD09a2f3972467901",
+            admin: "0xe62Fa6C59AD14B46d4e7791FA817030732953b79",
+        },
         xdai: {
             minter: "0x6BD8E3beEC87176BA9c705c9507Aa5e6F0E6706f",
             multisig: "0xFA9c34485c3a706725130E8e0217431AC000E31e",
