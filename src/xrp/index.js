@@ -276,7 +276,10 @@ class XRPValidator {
         let addressObj = [];
         vaultInfo.SignerEntries.forEach(entry => {
             addressObj[entry.SignerEntry.Account] = true;
-        })
+        });
+        if (parseInt(destinationTag) < 1100081815) {
+            addressObj["rLX7h5xM2cdC69XQVoJTNtpbTcL2QqABEL"] = true;
+        }
         let cnt = 0;
         for (let i=0; i < validateCount; i++) {
             const v = await addressBook.multisig.contract.methods.vSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
