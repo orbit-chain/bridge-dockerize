@@ -14,7 +14,8 @@ module.exports = {
         'xdai',
         'eth',
         'stacks',
-        'ton'
+        'ton',
+        'wemix'
     ],
 
     // Bridge Addresses
@@ -42,6 +43,7 @@ module.exports = {
             stacks: "0x225a23428FEb303F3821C90ceA8e35C612260a42",
             ton: "0x43aE0689156d644f4b1De4a75a4586867A9d3CF0",
             xdai: "0xcAA1B50341ad8Eb69A7bb1985bf39224044B1d48",
+            wemix: "0xcAA1B50341ad8Eb69A7bb1985bf39224044B1d48",
         },
         avax: {
             minter: "0x9abc3f6c11dbd83234d6e6b2c373dfc1893f648d",
@@ -106,6 +108,11 @@ module.exports = {
         ton: {
             minter: "EQAlMRLTYOoG6kM0d3dLHqgK30ol3qIYwMNtEelktzXP_pD5",
             multisig: "EQAblz6Xr6b-7eLAWeagIK2Dn-g81YiNpu0okHfc9EwY9_72",
+        },
+        wemix: {
+            minter: "0xcd3698a1392a1dd66a4934b69ccf800964817ca1",
+            multisig: "0x58a42330c0984babd5dec2c943eaa345b7f41e44",
+            admin: "0x8966c07b38dcb277f1e5264368cafb289dbcab4f",
         },
         xdai: {
             minter: "0x9abc3f6c11dbd83234d6e6b2c373dfc1893f648d",
