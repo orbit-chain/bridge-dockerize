@@ -52,7 +52,7 @@ module.exports = {
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
                 chain_id: 8217
             },
-            rpc: ["https://klaytn-mainnet-rpc.allthatnode.com:8551", "https://public-node-api.klaytnapi.com/v1/cypress"],
+            rpc: ["https://klaytn-mainnet-rpc.allthatnode.com:8551", "https://public-en-cypress.klaytn.net"],
         },
         matic: {
             rpc : ["https://polygon-rpc.com", "http://prd-matic-bor-mainnet-rpc.node.ozys.work:8545", "https://rpc.ankr.com/polygon"],
