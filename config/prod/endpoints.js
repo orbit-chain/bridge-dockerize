@@ -35,7 +35,7 @@ module.exports = {
             chain_id: 1666600000
         },
         heco: {
-            rpc : ["http://prd-heco-mainnet-rpc.node.ozys.work:8545", "https://http-mainnet.hecochain.com"],
+            rpc : ["https://http-mainnet-node.huobichain.com", "http://prd-heco-mainnet-rpc.node.ozys.work:8545", "https://http-mainnet.hecochain.com"],
             chain_id: '0x80'
         },
         icon: {
