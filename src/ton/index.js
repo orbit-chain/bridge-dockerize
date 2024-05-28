@@ -50,7 +50,6 @@ class TONValidator {
     }
 
     constructor(chain, _account) {
-        console.log(config);
         this.chainIds = {};
         if(chain.toLowerCase() !== "ton")
             throw 'Invalid chain symbol';
