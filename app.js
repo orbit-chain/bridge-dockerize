@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+require("dotenv").config();
+
 global.ROOT = __dirname;
 global.logger = require('./logger');
 global.VERSION = process.env.VERSION;
 
-console.log(`[DEPLOYED VERSION] ${VERSION}`);
+console.log(`[DEPLOYED VERSION] ${process.env.VERSION}`);
 
 const config = require(ROOT + '/config');
 const walletUtils = require('./wallet');
@@ -12,10 +14,7 @@ const Monitor = require('./src/monitor');
 global.monitor = new Monitor();
 
 const settings = config.settings;
-// TODO
-// const validatorAccount = settings.VALIDATOR_ACCOUNT;
 
-require("dotenv").config();
 
 let PK = process.env.VALIDATOR_PK;
 if(PK) {
@@ -47,10 +46,6 @@ if(!chainList || chainList.length === 0) {
     console.log('No available chain.');
     process.exit(1);
 }
-
-let hubInstance = require(ROOT + '/src/hub');
-hubInstance = new hubInstance(chainList);
-instances['hub'] = hubInstance;
 
 chainList.forEach(key => {
     key = key.replace(/-v[1-9]$/, '').toLowerCase();

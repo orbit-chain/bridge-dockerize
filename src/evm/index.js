@@ -5,6 +5,7 @@ const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
 const RPCAggregator = require(ROOT + '/lib/rpcAggregator');
 const txSender = require(ROOT + '/lib/txsender');
+const api = require(ROOT + '/lib/api');
 const packer = require('./utils/packer');
 
 const BridgeUtils = require(ROOT + '/lib/bridgeutils');
@@ -43,6 +44,7 @@ class EVMValidator {
         }
         this.chainLower = chain.toLowerCase();
         this.chainCamel = `${this.chainName[0]}${this.chainName.slice(1).toLowerCase()}`;
+        this.orbitHub = config.orbitHub.address
 
         monitor.address[chainName] = this.account.address;
 
@@ -50,6 +52,14 @@ class EVMValidator {
         if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id) {
             throw Error('Empty Governance Info');
         }
+
+        this.intervals = {
+            getLockRelay: {
+                handler: this.getLockRelay.bind(this),
+                timeout: 1000 * 10,
+                interval: null,
+            }
+        };
 
         const info = config.info[this.chainLower];
 
@@ -83,29 +93,31 @@ class EVMValidator {
         if(chainName === "KLAYTN" && info.ENDPOINT.is_kas){
             const kas = info.ENDPOINT.kas;
 
-            kas.accessKeyId = process.env.KAS_ACCESS_KEY_ID
-            kas.secretAccessKey = process.env.KAS_SECRET_ACCESS_KEY
+            kas.accessKeyId = process.env.KAS_ACCESS_KEY_ID;
+            kas.secretAccessKey = process.env.KAS_SECRET_ACCESS_KEY;
 
-            const option = {
-                headers: [
-                    {name: 'Authorization', value: 'Basic ' + Buffer.from(kas.accessKeyId + ':' + kas.secretAccessKey).toString('base64')},
-                    {name: 'x-chain-id', value: kas.chain_id},
-                ]
-            };
+            if(kas.accessKeyId && kas.accessKeyId.length !== 0 && kas.secretAccessKey && kas.secretAccessKey.length !== 0){
+                const option = {
+                    headers: [
+                        {name: 'Authorization', value: 'Basic ' + Buffer.from(kas.accessKeyId + ':' + kas.secretAccessKey).toString('base64')},
+                        {name: 'x-chain-id', value: kas.chain_id},
+                    ]
+                };
 
-            const node = Britto.getNodeConfigBase("mainnet");
-            node.rpc = kas.rpc;
-            node.web3 = new Web3(new Web3.providers.HttpProvider(kas.rpc, option));
+                const node = Britto.getNodeConfigBase("mainnet");
+                node.rpc = kas.rpc;
+                node.web3 = new Web3(new Web3.providers.HttpProvider(kas.rpc, option));
 
-            node.address = brittoConfig.address;
-            node.abi = brittoConfig.abi;
-            node.contract = new node.web3.eth.Contract(node.abi, node.address);
-            node.peggingType = `${this.chainName}_kas`;
+                node.address = brittoConfig.address;
+                node.abi = brittoConfig.abi;
+                node.contract = new node.web3.eth.Contract(node.abi, node.address);
+                node.peggingType = `${this.chainName}_kas`;
 
-            rpcAggregator.addRpcWithBritto(node).then((connected) => {
-                logger.info(`[KLAYTN_KAS] mainnet ${connected ? "connected" : "disconnected"} to ${kas.rpc}.`);
-                global.monitor.setNodeConnectStatus(chainName + "_kas", kas.rpc, connected ? "connected" : "disconnected");
-            });
+                rpcAggregator.addRpcWithBritto(node).then((connected) => {
+                    logger.info(`[KLAYTN_KAS] mainnet ${connected ? "connected" : "disconnected"} to ${kas.rpc}.`);
+                    global.monitor.setNodeConnectStatus(chainName + "_kas", kas.rpc, connected ? "connected" : "disconnected");
+                });
+            }
         }
 
         if(rpcAggregator.length() === 0) {
@@ -115,10 +127,33 @@ class EVMValidator {
         Britto.setAdd0x();
         Britto.setRemove0x();
 
+        this.migAddress = info.CONTRACT_ADDRESS.multisig
         this.multisigABI = Britto.getJSONInterface({filename: 'multisig/Common'});
 
         this.hashMap = new Map();
         this.flushHashMap();
+
+        this.workerStarted = false;
+        this.startIntervalWorker();
+    }
+
+    startIntervalWorker() {
+        if (this.workerStarted) {
+            return;
+        }
+        this.workerStarted = true;
+
+        this.getLockRelay();
+    }
+
+    intervalSet(obj) {
+        if (obj.interval) return;
+        obj.interval = setInterval(obj.handler.bind(this), obj.timeout);
+    }
+
+    intervalClear(obj) {
+        clearInterval(obj.interval);
+        obj.interval = null;
     }
 
     flushHashMap() {
@@ -129,6 +164,83 @@ class EVMValidator {
             if (obj.timestamp + 60 * 10 < now) {
                 this.hashMap.delete(hash);
             }
+        }
+    }
+
+    async getLockRelay() {
+        this.intervalClear(this.intervals.getLockRelay);
+
+        try {
+            let response = await api.bible.get(`/v1/api/${this.chainLower}/lock-relay`)
+            if (response.success !== "success") {
+                logger.evm.error(`lock-relay api error: ${response}`);
+                return;
+            }
+
+            let info = response.info;
+            if (!Array.isArray(info)) {
+                logger.evm.error('Received data is not array.');
+                return;
+            }
+
+            logger.evm.info(`LockRelay list ${info.length === 0 ? 'is empty.' : 'length: ' + info.length.toString()}`, this.loggerOpt);
+
+            for (let result of info) {
+                if (result.toChain === "ORBIT") continue;
+                if (this.govInfo.chain.replace("_LAYER_1", "") === result.toChain) result.toChain = this.govInfo.chain;
+
+                let data = {
+                    fromChain: result.fromChain,
+                    toChain: result.toChain,
+                    fromAddr: bridgeUtils.str2hex(result.fromAddr),
+                    toAddr: bridgeUtils.str2hex(result.toAddr),
+                    token: bridgeUtils.str2hex(result.token) || "0x0000000000000000000000000000000000000000",
+                    // relayThash: result.relayThash,  // stacks용...사용X
+                    bytes32s: [this.govInfo.id, result.fromThash],
+                    uints: [result.amount, result.decimals, result.depositId],
+                    data: result.data
+                };
+
+                if (!bridgeUtils.isValidAddress(data.toChain, data.toAddr)) {
+                    logger.evm.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`, this.loggerOpt);
+                    continue;
+                }
+
+                if (data.data && !bridgeUtils.isValidData(data.toChain, data.data)) {
+                    logger.evm.error(`Invalid data ( ${data.toChain}, ${data.data} )`, this.loggerOpt);
+                    continue;
+                }
+        
+                // TODO: bypass 처리 OK
+                // operator's relaySwap
+                
+                const nodes = await this.rpcAggregator.getNodes();
+                if (!(await bridgeUtils.checkTransaction(nodes[0], data.bytes32s[1]))) continue;
+
+                // stacks만 사용
+                if (data.relayThash) {
+                    const resp = await api.bible.get(`/v1/api/txevent/${data.toChain}/${data.relayThash}`);
+                    const eventData = JSON.parse(resp.info.data);
+                    const addSwapId = eventData.data.dataId;
+                    data.bytes32s.push(data.relayThash);
+                    data.uints.push(addSwapId);
+                }
+
+                if (data.toChain === "STACKS" && this.govInfo.chain === "STACKS") {
+                    data.toChain = "STACKS_LAYER_1";
+                }
+
+                if (this.chainName === 'KLAYTN' && data.fromAddr.toLowerCase() === "0xdfcb0861d3cb75bb09975dce98c4e152823c1a0b") {
+                    this.logger.info("[GUARD] BLOCK bridge");
+                    continue;
+                }
+
+                await this.validateRelayedData(data);
+            }
+        } catch (e) {
+            logger.evm.error('lock-relay api call error: ' + e.message, this.loggerOpt);
+        } finally {
+            this.intervalSet(this.intervals.getLockRelay);
         }
     }
 
@@ -194,7 +306,6 @@ class EVMValidator {
     }
 
     async validateRelayedData(data) {
-        const orbitHub = instances.hub.getOrbitHub();
         const govInfo = this.govInfo;
         const loggerOpt = this.loggerOpt;
 
@@ -302,16 +413,13 @@ class EVMValidator {
         }
         await toInstance.validateSwap(data, params);
     }
-
+    
     async validateSwap(_, params){
         const validator = {address: this.account.address, pk: this.account.pk};
 
-        const orbitHub = instances.hub.getOrbitHub();
         const chainName = this.chainName;
-        const govInfo = this.govInfo;
         const loggerOpt = this.loggerOpt;
         const hashMap = this.hashMap;
-        const multisigABI = this.multisigABI;
 
         if(chainName !== params.toChain){
             logger.evm.error(`Invalid toChain. ${chainName} : ${params.toChain}`, loggerOpt);
@@ -323,33 +431,11 @@ class EVMValidator {
             return;
         }
 
-        let gateKeeperAddr;
-        try {
-            gateKeeperAddr = await orbitHub.contract.methods.gateKeeper().call();
-        } catch (e) {}
-        if(!gateKeeperAddr || gateKeeperAddr === "0x0000000000000000000000000000000000000000"){
-            await valid(params);
-            return;
-        }
+        await valid(params, this.orbitHub);
 
-        let gateKeeper = new orbitHub.web3.eth.Contract(orbitHub.gateKeeperABI, gateKeeperAddr);
-        let isApplied = await gateKeeper.methods.isApplied(params.fromChain, params.toChain, params.token, params.bytes32s, params.uints).call();
-        if(!isApplied){
-            await applyLimitation(gateKeeper, params);
-        }
-        else{
-            await valid(params);
-        }
-
-        async function valid(data) {
-            let sender = Britto.getRandomPkAddress();
-            if(!sender || !sender.pk || !sender.address){
-                logger.evm.error("Cannot Generate account", {chain: chainName});
-                return;
-            }
-
+        async function valid(data, orbitHubAddress) {
             let hash = Britto.sha256sol(packer.packSwapData({
-                hubContract: orbitHub.address,
+                hubContract: orbitHubAddress,
                 fromChain: data.fromChain,
                 toChain: data.toChain,
                 fromAddr: data.fromAddr,
@@ -364,348 +450,41 @@ class EVMValidator {
                 return;
             }
 
-            let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
-            let contract = new orbitHub.web3.eth.Contract(multisigABI, toChainMig);
-
-            let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
-            for(var i = 0; i < validators.length; i++){
-                if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                    logger.evm.error(`Already signed. validated swapHash: ${hash}`, {chain: chainName});
-                    return;
+            let res = await api.orbit.get(`/info/hash-info`, {whash: hash.toString('hex').add0x()})
+            if(res.status === "success") {
+                if(res.data.validators) {
+                    for(var i = 0; i < res.data.validators.length; i++){
+                        if(res.data.validators[i].toLowerCase() === validator.address.toLowerCase()){
+                            logger.evm.error(`Already signed. validated swapHash: ${hash}`, {chain: chainName});
+                            return;
+                        }   
+                    }
                 }
-            }
 
-            let signature = Britto.signMessage(hash, validator.pk);
-            let sigs = EVMValidator.makeSigs(validator.address, signature);
-
-            let params = [
-                data.fromChain,
-                data.toChain,
-                data.fromAddr,
-                data.toAddr,
-                data.token,
-                data.bytes32s,
-                data.uints,
-                data.data,
-                sigs
-            ];
-
-            let txOptions = {
-                gasPrice: orbitHub.web3.utils.toHex('0'),
-                from: sender.address,
-                to: orbitHub.address
-            };
-
-            let gasLimit = await orbitHub.contract.methods.validateSwap(...params).estimateGas(txOptions).catch(e => {
-                logger.evm.error('validateSwap estimateGas error: ' + e.message, {chain: chainName})
-            });
-
-            if (!gasLimit)
-                return;
-
-            txOptions.gasLimit = orbitHub.web3.utils.toHex(FIX_GAS);
-
-            let txData = {
-                method: 'validateSwap',
-                args: params,
-                options: txOptions
-            };
-
-            await txSender.sendTransaction(orbitHub, txData, {address: sender.address, pk: sender.pk, timeout: 1}).then(thash => {
+                let signature = Britto.signMessage(hash, validator.pk);
+                let sigs = EVMValidator.makeSigs(validator.address, signature);
+                sigs[1] = parseInt(sigs[1],16)
+    
+                await api.validator.post(`/governance/validate`, {
+                    from_chain: data.fromChain,
+                    to_chain: data.toChain,
+                    from_addr: data.fromAddr,
+                    to_addr: data.toAddr,
+                    token: data.token,
+                    bytes32s: data.bytes32s,
+                    uints: data.uints,
+                    data: data.data,
+                    hash,
+                    v: sigs[1],
+                    r: sigs[2],
+                    s: sigs[3]
+                });
+    
                 hashMap.set(hash.toString('hex').add0x(), {
-                    txHash: thash,
+                    txHash: hash,
                     timestamp: parseInt(Date.now() / 1000),
                 })
-            });
-        }
-
-        async function applyLimitation(gateKeeper, data) {
-            let sender = Britto.getRandomPkAddress();
-            if(!sender || !sender.pk || !sender.address){
-                logger.evm.error("Cannot Generate account", {chain: chainName});
-                return;
             }
-
-            let hash = Britto.sha256WithEncode(packer.packLimitationData({
-                fromChain: data.fromChain,
-                toChain: data.toChain,
-                token: data.token,
-                bytes32s: data.bytes32s,
-                uints: data.uints
-            }));
-            if(hashMap.has(hash.toString('hex').add0x())){
-                logger.evm.error(`Already signed. validated limitationHash: ${hash.toString('hex').add0x()}`, {chain: chainName});
-                return;
-            }
-
-            let hubMig = await orbitHub.contract.methods.getBridgeMig("HUB", govInfo.id).call();
-            let migCon = new orbitHub.web3.eth.Contract(multisigABI, hubMig);
-
-            let validators = await migCon.methods.getHashValidators(hash.toString('hex').add0x()).call();
-            for(var i = 0; i < validators.length; i++){
-                if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                    logger.evm.error(`Already signed. applyLimitation: ${hash}`, {chain: chainName});
-                    return;
-                }
-            }
-
-            let signature = Britto.signMessage(hash, validator.pk);
-            let sigs = EVMValidator.makeSigs(validator.address, signature);
-
-            let params = [
-                data.fromChain,
-                data.toChain,
-                data.fromAddr,
-                data.toAddr,
-                data.token,
-                data.bytes32s,
-                data.uints,
-                sigs
-            ];
-
-            let gasLimit = await gateKeeper.methods.applyLimitation(...params).estimateGas({
-                from: sender.address,
-                to: gateKeeper._address
-            }).catch((e) => {});
-            if(!gasLimit) return;
-
-            let applyData = gateKeeper.methods.applyLimitation(...params).encodeABI();
-            if(!applyData) return;
-
-            let txData = {
-                nonce: orbitHub.web3.utils.toHex(0),
-                from: sender.address,
-                to: gateKeeper._address,
-                value: orbitHub.web3.utils.toHex(0),
-                gasLimit: orbitHub.web3.utils.toHex(FIX_GAS),
-                data: applyData
-            };
-
-            let signedTx = await orbitHub.web3.eth.accounts.signTransaction(txData, "0x"+sender.pk.toString('hex'));
-            let tx = await orbitHub.web3.eth.sendSignedTransaction(signedTx.rawTransaction, async (err, thash) => {
-                if(err) {
-                    logger.evm.error(`applyLimitation error: ${err.message}`, {chain: chainName});
-                    return;
-                }
-
-                hashMap.set(hash.toString('hex').add0x(), {
-                    txHash: thash,
-                    timestamp: parseInt(Date.now() / 1000),
-                })
-
-                logger.evm.info(`applyLimitation: ${thash}`, {chain: chainName});
-            });
-        }
-    }
-
-    async validateRelayedNFTData(data) {
-        const orbitHub = instances.hub.getOrbitHub();
-        const govInfo = this.govInfo;
-        const loggerOpt = this.loggerOpt;
-
-        const chainName = this.chainName;
-        if(data.fromChain !== chainName){
-            logger.evm.error(`Invalid request. ${data.fromChain}`, loggerOpt);
-            return;
-        }
-
-        const nodes = await this.rpcAggregator.getNodes();
-        if(!nodes || nodes.length === 0){
-            logger.evm.error(`rpcAggregator getNodes error`, loggerOpt);
-            return;
-        }
-
-        let functionSig = (govInfo.chain === chainName) ? "DepositNFT" : "SwapRequestNFT";
-
-        let res = [];
-        for(let node of nodes){
-            let target = await this.getParams(node, functionSig, data.bytes32s[1], data.uints[2]);
-            if(!target || !target.toChain || !target.fromAddr || !target.toAddr || !target.token || !target.amount || !target.depositId || !target.tokenId || !target.receiptBlock || !target.currentBlock){
-                logger.evm.error("Invalid Transaction (event params)", loggerOpt);
-                continue;
-            }
-            if(!target.data) target.data = "0x";
-            res.push(target);
-        }
-        if(res.length === 0){
-            logger.evm.error("getParams error", loggerOpt);
-            return;
-        }
-
-        let len = res.length;
-        for(let i = 0; i < len; i++){
-            for(let j = i+1; j < len; j++){
-                if(res[i].toChain === res[j].toChain
-                    && res[i].fromAddr === res[j].fromAddr
-                    && res[i].toAddr === res[j].toAddr
-                    && res[i].token === res[j].token
-                    && res[i].amount === res[j].amount
-                    && res[i].depositId === res[j].depositId
-                    && res[i].tokenId === res[j].tokenId
-                    && res[i].data === res[j].data
-                    && res[i].receiptBlock === res[j].receiptBlock
-                ) {
-                    res[i].eqCnt = res[i].eqCnt + 1;
-                    res[j].eqCnt = res[j].eqCnt + 1;
-                }
-            }
-        }
-        res.sort((a,b) => { return b.eqCnt - a.eqCnt });
-
-        let maxCnt = res[0].eqCnt;
-        let requireCnt = parseInt(nodes.length/2) + 1;
-        if(maxCnt < requireCnt){
-            logger.evm.error("malicious rpc returns.", loggerOpt);
-            return;
-        }
-
-        let params = {...res[0]};
-
-        // Check deposit block confirmed
-        const confirmCount = config.system[`${this.chainLower}ConfirmCount`] || 24;
-        let isConfirmed = parseInt(params.currentBlock.number) - parseInt(params.receiptBlock) >= confirmCount;
-
-        if(chainName === "ETH"){
-            let difficulty = params.currentBlock.difficulty;
-            let currentTotalDifficulty = params.currentBlock.totalDifficulty;
-            let terminalTotalDifficulty = config.info.eth.ETH_TERMINAL_TOTAL_DIFFICULTY;
-            if(!currentTotalDifficulty || !terminalTotalDifficulty || difficulty === undefined
-                || (currentTotalDifficulty).dcomp(terminalTotalDifficulty) === -1
-                || parseInt(difficulty) !== 0
-            ){
-                logger.evm.error(`currentTotalDifficulty is invalid. ${currentTotalDifficulty}`, loggerOpt);
-                return;
-            }
-
-            let beaconBlock = await bridgeUtils.getBeaconBlock().catch(e => {
-                logger.evm.error('getBeaconBlock() execute error: ' + e.message, loggerOpt);
-            });
-            if (!beaconBlock || !beaconBlock.data || !beaconBlock.data.message || !beaconBlock.data.message.body || !beaconBlock.data.message.body.execution_payload) return;
-
-            let finalizedBlockNumber = parseInt(beaconBlock.data.message.body.execution_payload.block_number);
-            if (isNaN(finalizedBlockNumber) || finalizedBlockNumber === 0) {
-                logger.eth.error('get finalized block number error.');
-                return;
-            }
-
-            isConfirmed = parseInt(params.receiptBlock) <= finalizedBlockNumber;
-        }
-
-        if(!isConfirmed){
-            logger.evm.error(`depositId(${data.uints[2]}) is invalid. isConfirmed: ${isConfirmed}`, loggerOpt);
-            return;
-        }
-
-        params.fromChain = chainName;
-        params.uints = [params.amount, params.tokenId, params.depositId];
-        params.bytes32s = [govInfo.id, data.bytes32s[1]];
-
-        const toInstance = instances[params.toChain.toLowerCase()];
-        if(!toInstance){
-            logger.evm.error(`${params.toChain} instance is not exist`, loggerOpt);
-            return;
-        }
-        await toInstance.validateSwapNFT(data, params);
-    }
-
-    async validateSwapNFT(_, params){
-        const validator = {address: this.account.address, pk: this.account.pk};
-
-        const orbitHub = instances.hub.getOrbitHub();
-        const chainName = this.chainName;
-        const govInfo = this.govInfo;
-        const loggerOpt = this.loggerOpt;
-        const hashMap = this.hashMap;
-        const multisigABI = this.multisigABI;
-
-        if(chainName !== params.toChain){
-            logger.evm.error(`Invalid toChain. ${chainName} : ${params.toChain}`, loggerOpt);
-            return;
-        }
-
-        if(!this.isValidAddress(params.toAddr)){
-            logger.evm.error(`Invalid toAddr. ${params.toAddr}`, loggerOpt);
-            return;
-        }
-
-        await valid(params);
-
-        async function valid(data) {
-            let sender = Britto.getRandomPkAddress();
-            if(!sender || !sender.pk || !sender.address){
-                logger.evm.error("Cannot Generate account", loggerOpt);
-                return;
-            }
-
-            let hash = Britto.sha256sol(packer.packSwapNFTData({
-                hubContract: orbitHub.address,
-                fromChain: data.fromChain,
-                toChain: data.toChain,
-                fromAddr: data.fromAddr,
-                toAddr: data.toAddr,
-                token: data.token,
-                bytes32s: data.bytes32s,
-                uints: data.uints,
-                data: data.data
-            }));
-            if(hashMap.has(hash.toString('hex').add0x())){
-                logger.evm.error(`Already signed. validated swapHash: ${hash}`, loggerOpt);
-                return;
-            }
-
-            let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
-            let contract = new orbitHub.web3.eth.Contract(multisigABI, toChainMig);
-
-            let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
-            for(var i = 0; i < validators.length; i++){
-                if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                    logger.evm.error(`Already signed. validated swapHash: ${hash}`, loggerOpt);
-                    return;
-                }
-            }
-
-            let signature = Britto.signMessage(hash, validator.pk);
-            let sigs = EVMValidator.makeSigs(validator.address, signature);
-
-            let params = [
-                data.fromChain,
-                data.toChain,
-                data.fromAddr,
-                data.toAddr,
-                data.token,
-                data.bytes32s,
-                data.uints,
-                data.data,
-                sigs
-            ];
-
-            let txOptions = {
-                gasPrice: orbitHub.web3.utils.toHex('0'),
-                from: sender.address,
-                to: orbitHub.address
-            };
-
-            let gasLimit = await orbitHub.contract.methods.validateSwapNFT(...params).estimateGas(txOptions).catch(e => {
-                logger.evm.error('validateSwapNFT estimateGas error: ' + e.message, loggerOpt)
-            });
-
-            if (!gasLimit)
-                return;
-
-            txOptions.gasLimit = orbitHub.web3.utils.toHex(FIX_GAS);
-
-            let txData = {
-                method: 'validateSwapNFT',
-                args: params,
-                options: txOptions
-            };
-
-            await txSender.sendTransaction(orbitHub, txData, {address: sender.address, pk: sender.pk, timeout: 1}).then(thash => {
-                hashMap.set(hash.toString('hex').add0x(), {
-                    txHash: thash,
-                    timestamp: parseInt(Date.now() / 1000),
-                })
-            });
         }
     }
 
@@ -716,16 +495,13 @@ class EVMValidator {
     ///////////////////////////////////////////////////////////////
     ///////// Governance Function
 
-    async getTransaction(multisig, transactionId, decoder) {
-        const orbitHub = instances.hub.getOrbitHub();
+    async getTransaction(transactionId, decoder) {
         const govInfo = this.govInfo;
         const info = config.info[this.chainLower];
         const mainnet = await this.rpcAggregator.select();
         const chainName = this.chainName;
 
-        if(multisig.length !== 42) return "Invalid input";
-
-        const mig = new mainnet.web3.eth.Contract(this.multisigABI, multisig);
+        const mig = new mainnet.web3.eth.Contract(this.multisigABI, this.migAddress);
 
         let transaction = await mig.methods.transactions(transactionId).call().catch(e => {return;});
         if(!transaction || transaction.destination === "0x0000000000000000000000000000000000000000") return "GetTransaction Error";
@@ -768,16 +544,17 @@ class EVMValidator {
         return transaction;
     }
 
-    async confirmTransaction(multisig, transactionId, gasPrice, chainId) {
-        const orbitHub = instances.hub.getOrbitHub();
+    async confirmTransaction(transactionId, gasPrice, chainId) {
         const info = config.info[this.chainLower];
         const mainnet = await this.rpcAggregator.select();
         const validator = {address: this.account.address, pk: this.account.pk};
 
-        const mig = new mainnet.web3.eth.Contract(this.multisigABI, multisig);
+
+        const mig = new mainnet.web3.eth.Contract(this.multisigABI, this.migAddress);
 
         let transaction = await mig.methods.transactions(transactionId).call().catch(e => {return;});
         if(!transaction || transaction.destination === "0x0000000000000000000000000000000000000000") return "GetTransaction Error";
+        if(transaction.executed) return "Already Confirmed Proposal"
 
         let confirmedList = await mig.methods.getConfirmations(transactionId).call().catch(e => {return;});
         if(!confirmedList) return "GetConfirmations Error";
@@ -796,7 +573,10 @@ class EVMValidator {
             value: mainnet.web3.utils.toHex(0)
         }
 
-        let gasLimit = await mig.methods.confirmTransaction(transactionId).estimateGas(txData).catch(e => {return;});
+        let gasLimit = await mig.methods.confirmTransaction(transactionId).estimateGas(txData).catch(e => {
+            console.log(e)
+            return e.message;;
+        });
         if(!gasLimit) return "EstimateGas Error";
 
         let data = mig.methods.confirmTransaction(transactionId).encodeABI();
@@ -820,12 +600,17 @@ class EVMValidator {
         if(parseInt(chainId) !== 0) txData.chainId = chainId;
 
         let signedTx = await mainnet.web3.eth.accounts.signTransaction(txData, "0x"+validator.pk.toString('hex'));
-        let tx = await mainnet.web3.eth.sendSignedTransaction(signedTx.rawTransaction).catch(e => {console.log(e)});
+        let tx = await mainnet.web3.eth.sendSignedTransaction(signedTx.rawTransaction).catch(e => {
+            console.log(e)
+            return e.message;
+        });
         if(!tx) return "SendTransaction Error";
 
         return tx.transactionHash;
     }
 
+    // deprecated
+    /*
     async validateSigHash(multisig, sigHash) {
         if(this.chainName !== "ORBIT") return "Invalid Chain";
         if(multisig.length !== 42 || sigHash.length !== 66) return "Invalid Input";
@@ -947,6 +732,7 @@ class EVMValidator {
 
         return tx.transactionHash;
     }
+    */
     ///////////////////////////////////////////////////////////////
 }
 

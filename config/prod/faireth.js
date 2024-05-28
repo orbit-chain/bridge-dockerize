@@ -1,25 +1,9 @@
 module.exports = {
-    chain_list: ["faireth", "orbit", "klaytn", "matic"],
+    chain_list: ["faireth", "klaytn", "matic"],
     bridge_address: {
-        orbit_hub: "0xb5680a55d627c52de992e3ea52a86f19da475399",
-        faireth_bridge: "0xd01c3EFa0d27d0Dc1Cc33d4b4c28635F8e362359",
-        orbit_bridge: "0x77a49649964a186Fd2b8754758c39c9438a6E9aB",
-        klaytn_bridge: "0x1af95905bb0042803f90e36d79d13aea6cd58969",
-        matic_bridge: "0x1Fc5A2cE72c71563E6EFC1fc35F326D4CCd23B93",
-        multisig: {
-            hub: "0x03338A261E924c72E6A15A889dB69206265645F8",
-            faireth: "0x03338A261E924c72E6A15A889dB69206265645F8",
-            klaytn: "0x03338A261E924c72E6A15A889dB69206265645F8",
-            orbit: "0x03338A261E924c72E6A15A889dB69206265645F8",
-            matic: "0x03338A261E924c72E6A15A889dB69206265645F8",
-        },
         faireth: {
             vault: "0x1Bf68A9d1EaEe7826b3593C20a0ca93293cb489a",
             multisig: "0x1Bf68A9d1EaEe7826b3593C20a0ca93293cb489a",
-        },
-        orbit: {
-            minter: "0xE230fC1FC25C23a251A0aa2629A21fcB4E605Ccd",
-            multisig: "0x03338A261E924c72E6A15A889dB69206265645F8",
         },
         klaytn: {
             minter: "0x193E27F9781cA3E830EC08e2E4fd85E3a3431367",

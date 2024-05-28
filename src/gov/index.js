@@ -14,7 +14,6 @@ const errmInvalidChain = {
     "data": "NotFoundError: Invalid Chain"
 };
 
-// TODO: non-evm chain
 const invalidChainList = ["xrp", "stacks", "stacks_layer_1"];
 
 class Governance {
@@ -34,36 +33,36 @@ class Governance {
         return monitor.address[chain.toUpperCase()];
     }
 
-    async getTransaction(chain, multisig, transactionId) {
+    async getTransaction(chain, transactionId) {
         if(!this.initialized) return errmBeforeInitialize;
 
-        logger.gov.info(`GetTransaction: ${chain}, ${multisig}, ${transactionId}`);
+        logger.gov.info(`GetTransaction: ${chain}, ${transactionId}`);
 
         chain = chain.toLowerCase();
         if(invalidChainList.includes(chain) || !instances[chain]) return errmInvalidChain;
 
         const instance = instances[chain];
-        const res = await instance.getTransaction(multisig, transactionId, abiDecoder);
+        const res = await instance.getTransaction(transactionId, abiDecoder);
         return res;
     }
 
-    async confirmTransaction(chain, multisig, transactionId, gasPrice, chainId) {
+    async confirmTransaction(chain, transactionId, gasPrice, chainId) {
         if(!this.initialized) return errmBeforeInitialize;
 
-        logger.gov.info(`ConfirmTransaction: ${chain}, ${multisig}, ${transactionId}, ${gasPrice}, ${chainId}`);
+        logger.gov.info(`ConfirmTransaction: ${chain}, ${transactionId}, ${gasPrice}, ${chainId}`);
 
         chain = chain.toLowerCase();
         if(invalidChainList.includes(chain) || !instances[chain]) return errmInvalidChain;
 
         const instance = instances[chain];
-        const res = await instance.confirmTransaction(multisig, transactionId, gasPrice, chainId);
+        const res = await instance.confirmTransaction(transactionId, gasPrice, chainId);
         return res;
     }
 
-    async confirmTransactionByRange(chain, multisig, start, end, gasPrice, chainId) {
+    async confirmTransactionByRange(chain, start, end, gasPrice, chainId) {
         if(!this.initialized) return errmBeforeInitialize;
 
-        logger.gov.info(`ConfirmTransactionRange: ${chain}, ${multisig}, ${start}, ${end}, ${gasPrice}, ${chainId}`);
+        logger.gov.info(`ConfirmTransactionRange: ${chain}, ${start}, ${end}, ${gasPrice}, ${chainId}`);
 
         chain = chain.toLowerCase();
         if(invalidChainList.includes(chain) || !instances[chain]) return errmInvalidChain;
@@ -72,7 +71,7 @@ class Governance {
 
         let res = [];
         for(let i = parseInt(start); i <= parseInt(end); i++){
-            let txHash = await instance.confirmTransaction(multisig, i, gasPrice, chainId);
+            let txHash = await instance.confirmTransaction(i, gasPrice, chainId);
             res.push({
                 transactionId: i,
                 res: txHash
@@ -82,27 +81,36 @@ class Governance {
         return JSON.stringify(res, null, '    ');
     }
 
-    async validateSigHash(multisig, sigHash) {
+    async validateSigHash(sigHash) {
         if(!this.initialized) return errmBeforeInitialize;
-        if(!instances["orbit"]) return errmInvalidChain;
 
-        logger.gov.info(`ValidateSigHash: ${multisig}, ${sigHash}`)
+        logger.gov.info(`ValidateSigHash: ${sigHash}`)
 
-        const instance = instances["orbit"];
-        const res = await instance.validateSigHash(multisig, sigHash);
-        return res;
+        if(sigHash.length !== 66) return "Invalid Input Hash";
+        let signature = Britto.signMessage(sigHash, process.env.VALIDATOR_PK);
+
+        return {
+            validator: monitor.validatorAddress,
+            sigHash,
+            v: signature.v,
+            r: signature.r,
+            s: signature.s,
+        };
     }
 
-    async validateEd25519SigHash(multisig, sigHash) {
+    // deprecated
+    /*
+    async validateEd25519SigHash(sigHash) {
         if(!this.initialized) return errmBeforeInitialize;
         if(!instances["orbit"]) return errmInvalidChain;
 
-        logger.gov.info(`validateEd25519SigHash: ${multisig}, ${sigHash}`)
+        logger.gov.info(`validateEd25519SigHash: ${sigHash}`)
 
         const instance = instances["orbit"];
         const res = await instance.validateEd25519SigHash(multisig, sigHash);
         return res;
     }
+    */
 }
 
 module.exports = Governance;

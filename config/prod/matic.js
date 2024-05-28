@@ -5,11 +5,8 @@ module.exports = {
         'celo',
         'heco',
         'fantom',
-        'harmony',
         'klaytn',
         'matic',
-        'moonriver',
-        'orbit',
         'oec',
         'xdai',
         'eth',
@@ -19,30 +16,6 @@ module.exports = {
 
     // Bridge Addresses
     bridge_address: {
-        orbit_hub: "0xb5680a55d627c52de992e3ea52a86f19da475399",
-        bsc_bridge: "0x89c527764f03BCb7dC469707B23b79C1D7Beb780",
-        heco_bridge: "0xE7688F64e96A733EaDdCb5850392347e67Bb197f",
-        klaytn_bridge: "0x1af95905bb0042803f90e36d79d13aea6cd58969",
-        orbit_bridge: "0x77a49649964a186Fd2b8754758c39c9438a6E9aB",
-        stacks_bridge: "0x77d50F8e3A95DC0FE71057E54E4Ee9C86147d861",
-        ton_bridge: "0x25605C6247fDBC95D91275025ed3dc2632936c3a",
-        multisig: {
-            hub: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            orbit: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            stacks: "0x892E83F7A157Af28271365b59ca0AbC2fe4c1264",
-            ton: "0xab53b08dA0454279EEbc8CDa9F5ed0CDBC1821eB",
-            avax: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            bsc: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            celo: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            fantom: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            harmony: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            heco: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            klaytn: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            matic: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            moonriver: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            oec: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            xdai: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-        },
         avax: {
             minter: "0x506DC4c6408813948470a06ef6e4a1DaF228dbd5",
             multisig: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
@@ -68,11 +41,6 @@ module.exports = {
             multisig: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
             admin: "0x3b31c980598f9237d9C14bB44118773b92174720",
         },
-        harmony: {
-            minter: "0x506DC4c6408813948470a06ef6e4a1DaF228dbd5",
-            multisig: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            admin: "0x3b31c980598f9237d9C14bB44118773b92174720",
-        },
         heco: {
             minter: "0x506DC4c6408813948470a06ef6e4a1DaF228dbd5",
             multisig: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
@@ -84,11 +52,6 @@ module.exports = {
         },
         matic: {
             vault: "0x506DC4c6408813948470a06ef6e4a1DaF228dbd5",
-            multisig: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
-            admin: "0x3b31c980598f9237d9C14bB44118773b92174720",
-        },
-        moonriver: {
-            minter: "0x506DC4c6408813948470a06ef6e4a1DaF228dbd5",
             multisig: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
             admin: "0x3b31c980598f9237d9C14bB44118773b92174720",
         },
@@ -111,10 +74,6 @@ module.exports = {
             minter: "0x506DC4c6408813948470a06ef6e4a1DaF228dbd5",
             multisig: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
             admin: "0x3b31c980598f9237d9C14bB44118773b92174720",
-        },
-        orbit: {
-            minter: "0x506DC4c6408813948470a06ef6e4a1DaF228dbd5",
-            multisig: "0x98d729f9bD84AAC94639700e71B7916018A708B1",
         },
         governance: {
             chain: "MATIC",

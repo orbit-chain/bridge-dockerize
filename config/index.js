@@ -4,3 +4,4 @@ exports.system = require(`./${process.env.PROFILE}/system.js`);
 exports.chain = require(`./chain.json`);
 exports.governance = require(`./governance.js`);
 exports.info = require(`./info.js`);
+exports.orbitHub = require(`./${process.env.PROFILE}/hub.js`);

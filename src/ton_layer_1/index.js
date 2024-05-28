@@ -4,6 +4,7 @@ const config = require(ROOT + '/config');
 
 const Britto = require(ROOT + '/lib/britto');
 const txSender = require(ROOT + '/lib/txsender');
+const api = require(ROOT + '/lib/api');
 
 const BridgeUtils = require(ROOT + '/lib/bridgeutils');
 const bridgeUtils = new BridgeUtils();
@@ -50,6 +51,9 @@ class TONLayer1Validator {
     }
 
     constructor(chain, _account) {
+
+        this.chainIds = {};
+
         if(chain.toLowerCase() !== "ton_layer_1")
             throw 'Invalid chain symbol';
 
@@ -68,26 +72,19 @@ class TONLayer1Validator {
         if(!govInfo || !govInfo.chain || !govInfo.address || !govInfo.bytes || !govInfo.id)
             throw 'Empty Governance Info';
 
+        this.orbitHub = config.orbitHub.address
         const info = config.info[this.chainLower];
+        this.tonMultisig = info.CONTRACT_ADDRESS.multisig
 
         const ton = this.ton = new Ton(info.ENDPOINT);
         if(!ton) throw 'Invalid Ton Endpoint';
 
         const addressBook = this.addressBook = Britto.getNodeConfigBase('tonAddressBook');
-        addressBook.rpc = config.info.orbit.ENDPOINT.rpc;
-        addressBook.address = info.CONTRACT_ADDRESS.AddressBook;
-        addressBook.abi = Britto.getJSONInterface({filename: 'addressbook/Ton'});
-
-        this.addressBookEventList = [
-            {
-                name: 'RelayTag',
-                callback: this.receiveAddressBookRelay.bind(this),
-            }
-        ];
+        addressBook.rpc = config.endpoints.silicon.rpc;
+        addressBook.address = config.settings.silicon.addressbook;
+        addressBook.abi = Britto.getJSONInterface({filename: 'AddressBook'});
 
         addressBook.onconnect = async () => {
-            instances.hub.registerSubscriber(addressBook, this.addressBookEventList);
-
             if(monitor.address[chainName]) return;
             monitor.address[chainName] = await this.ton.getTonAccount(this.account.pk);
         };
@@ -96,12 +93,64 @@ class TONLayer1Validator {
         this.multisigABI = Britto.getJSONInterface({filename: 'multisig/Ed25519'});
         this.depositTokenABI = {"event":"DepositToken","data":[[{"name":"opCode","type":"uint32","value":"hex"}],[{"name":"fromAddr","type":"uint256","value":"hex"},{"name":"jettonHash","type":"uint256","value":"hex"}],[{"name":"toChain","type":"uint256","value":"hex"},{"name":"toAddr","type":"uint160","value":"hex"},{"name":"amount","type":"uint256","value":"uint32"},{"name":"token","type":"uint160","value":"hex"},{"name":"decimal","type":"uint8","value":"uint32"},{"name":"depositId","type":"uint64","value":"uint32"}]]};
 
-        addressBook.multisig.wallet = info.CONTRACT_ADDRESS.BridgeMultiSigWallet;
+        addressBook.multisig.wallet = config.settings.silicon.multisig;
         addressBook.multisig.abi = this.multisigABI;
         addressBook.multisig.contract = new addressBook.web3.eth.Contract(addressBook.multisig.abi, addressBook.multisig.wallet);
 
+        this.workerStarted = false;
+        this.intervals = {
+            getLockRelay: {
+                handler: this.getLockRelay.bind(this),
+                timeout: 1000 * 10,
+                interval: null,
+            },
+            getTagRelay: {
+                handler: this.getTagRelay.bind(this),
+                timeout: 1000 * 1,
+                interval: null,
+            },
+        };
+
         this.hashMap = new Map();
         this.flushHashMap();
+        
+        this.init()
+        this.startIntervalWorker();
+    }
+
+    async init() {
+        try {
+            for(let chain of Object.keys(config.info)) {
+                const res = await api.orbit.get(`/tool/hub-chain-id`, {chain});
+                if(res.status === 'success') {
+                    this.chainIds[chain.toUpperCase()] = res.data
+                } else {
+                    throw new Error()
+                }
+            }
+        } catch (e) {
+            logger.ton_layer_1.error(`/tool/hub-chain-id api error: ${e.message}`);
+        }
+    }
+
+    startIntervalWorker() {
+        if (this.workerStarted) {
+            return;
+        }
+        this.workerStarted = true;
+
+        this.getLockRelay();
+        this.getTagRelay();
+    }
+
+    intervalSet(obj) {
+        if (obj.interval) return;
+        obj.interval = setInterval(obj.handler.bind(this), obj.timeout);
+    }
+
+    intervalClear(obj) {
+        clearInterval(obj.interval);
+        obj.interval = null;
     }
 
     flushHashMap() {
@@ -115,9 +164,70 @@ class TONLayer1Validator {
         }
     }
 
+    async getLockRelay() {
+        this.intervalClear(this.intervals.getLockRelay);
+
+        try {
+            const response = await api.bible.get("/v1/api/ton/lock-relay");
+            if (response.success !== "success") {
+                logger.ton_layer_1.error(`lock-relay api error: ${response}`);
+                return;
+            }
+            let info = response.info;
+            if (!Array.isArray(info)) {
+                logger.ton_layer_1.error('Received data is not array.');
+                return;
+            }
+            info = info.filter(i => parseInt(i.type) === 0);
+
+            logger.ton_layer_1.info(`LockRelay list ${info.length === 0 ? 'is empty.' : 'length: ' + info.length.toString()}`);
+
+            for (let result of info) {
+                let data = {
+                    fromChain: this.chainName.toUpperCase(),
+                    toChain: result.toChain,
+                    fromAddr: result.fromAddr,
+                    toAddr: result.toAddr,
+                    token: result.token,
+                    bytes32s: [this.govInfo.id, result.fromThash],
+                    uints: [result.amount, result.decimals, result.lt],
+                    data: result.data
+                };
+
+                const ton = this.ton;
+                const govInfo = this.govInfo;
+
+                let txHash = data.bytes32s[1];
+                txHash = Buffer.from(txHash.replace("0x",""), 'hex').toString('base64');
+                let lt = data.uints[2];
+
+                let tx = await ton.getTransaction(govInfo.address, txHash, lt);
+                if(!tx){
+                    logger.ton_layer_1.error(`Skip relay ${data.bytes32s[1]}:${data.uints[2]}`);
+                    continue;
+                }
+
+                if(!bridgeUtils.isValidAddress(data.toChain, data.toAddr)){
+                    logger.ton_layer_1.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
+                    continue;
+                }
+
+                if(data.data && !bridgeUtils.isValidData(data.toChain, data.data)){
+                    logger.ton_layer_1.error(`Invalid data ( ${data.toChain}, ${data.data} )`);
+                    continue;
+                }
+
+                await this.validateRelayedData(data);
+            }
+        } catch (e) {
+            logger.ton_layer_1.error(`lock-relay api error: ${e.message}`);
+        } finally {
+            this.intervalSet(this.intervals.getLockRelay);
+        }
+    }
+
     async validateRelayedData(data) {
-        const orbitHub = instances.hub.getOrbitHub();
-        const chainIds = instances.hub.getChainIds();
+        const chainIds = this.chainIds;
         const ton = this.ton;
         const addressBook = this.addressBook;
         const chainName = this.chainName;
@@ -179,7 +289,7 @@ class TONLayer1Validator {
             let msgBody = inMessage.body.beginParse();
             opCode = msgBody.readUint(32);
             opCode = `0x${opCode.toString('hex').padStart(8,"0")}`.toLowerCase();
-        } catch (e) { console.log(e); }
+        } catch (e) {}
         if(!opCode){
             logger.ton_layer_1.error(`parse opCode error`);
             return;
@@ -284,19 +394,12 @@ class TONLayer1Validator {
             let confirmed = 0;
             for(let i = 0; i < validators.length; i++){
                 let va = validators[i]
-                let vaPub = await addressBook.multisig.contract.methods.publicKeys(va).call();
-                if(vaPub === "0x0000000000000000000000000000000000000000000000000000000000000000"
-                    || !publicKeys.find(pub => pub.toLowerCase() === vaPub.toLowerCase())) continue;
+                const v = await addressBook.multisig.contract.methods.vSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
+                const r = await addressBook.multisig.contract.methods.rSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
+                const s = await addressBook.multisig.contract.methods.sSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
 
-                let edR = await addressBook.multisig.contract.methods.edRSigs(tagHash, i).call().catch(e => {});
-                let edS = await addressBook.multisig.contract.methods.edSSigs(tagHash, i).call().catch(e => {});
-                if(!edR || !edS) continue;
-
-                vaPub = vaPub.remove0x();
-                edR = edR.remove0x();
-                edS = edS.remove0x();
-
-                if(!Britto.verifyEd25519(tagHash, `${edR}${edS}`, vaPub)) continue;
+                let recoveredAddr = Britto.ecrecoverHash(tagHash, v, r, s)
+                if(va.toLowerCase() !== recoveredAddr.toLowerCase()) continue
 
                 confirmed = confirmed + 1;
             }
@@ -464,8 +567,7 @@ class TONLayer1Validator {
     async validateSwap(_, params){
         const validator = {address: this.account.address, pk: this.account.pk};
 
-        const orbitHub = instances.hub.getOrbitHub();
-        const chainIds = instances.hub.getChainIds();
+        const chainIds = this.chainIds;
         const chainName = this.chainName;
         const govInfo = this.govInfo;
         const hashMap = this.hashMap;
@@ -486,23 +588,7 @@ class TONLayer1Validator {
             return;
         }
 
-        let gateKeeperAddr;
-        try {
-            gateKeeperAddr = await orbitHub.contract.methods.gateKeeper().call();
-        } catch (e) {}
-        if(!gateKeeperAddr || gateKeeperAddr === "0x0000000000000000000000000000000000000000"){
-            await valid(params);
-            return;
-        }
-
-        let gateKeeper = new orbitHub.web3.eth.Contract(orbitHub.gateKeeperABI, gateKeeperAddr);
-        let isApplied = await gateKeeper.methods.isApplied(params.fromChain, params.toChain, params.token, params.bytes32s, params.uints).call();
-        if(!isApplied){
-            await applyLimitation(gateKeeper, params);
-        }
-        else{
-            await valid(params);
-        }
+        await valid(params);
 
         async function valid(data) {
             let sender = Britto.getRandomPkAddress();
@@ -519,7 +605,7 @@ class TONLayer1Validator {
             }
 
             let swapData = {
-                hubContract: orbitHub.address,
+                hubContract: this.orbitHub,
                 fromChainId: fromChainId,
                 toChainId: toChainId,
                 fromAddr: data.fromAddr,
@@ -544,138 +630,44 @@ class TONLayer1Validator {
                 return;
             }
 
-            let toChainMig = await orbitHub.contract.methods.getBridgeMig(data.toChain, govInfo.id).call();
-            let contract = new orbitHub.web3.eth.Contract(multisigABI, toChainMig);
-
-            let validators = await contract.methods.getHashValidators(hash.toString('hex').add0x()).call();
-            for(var i = 0; i < validators.length; i++){
-                if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                    logger.ton_layer_1.error(`Already signed. validated swapHash: ${hash}`);
-                    return;
+            let res = await api.orbit.get(`/info/hash-info`, {whash: hash.toString('hex').add0x()});
+            if(res.status === "success") {
+                if(res.data.validators) {
+                    for(var i = 0; i < res.data.validators.length; i++){
+                        if(res.data.validators[i].toLowerCase() === validator.address.toLowerCase()){
+                            logger.ton_layer_1.error(`Already signed. validated swapHash: ${hash}`);
+                            return;
+                        }
+                    }
                 }
-            }
 
-            let ecSig = Britto.signMessage(hash, validator.pk);
-            let edSig = Britto.signEd25519(hash, validator.pk);
-            let sigs = TONLayer1Validator.makeSigsWithED(validator.address, ecSig, edSig);
-
-            let params = [
-                data.fromChain,
-                data.toChain,
-                data.fromAddr,
-                data.toAddr,
-                data.token,
-                data.bytes32s,
-                data.uints,
-                data.data,
-                sigs
-            ];
-
-            let txOptions = {
-                gasPrice: orbitHub.web3.utils.toHex('0'),
-                from: sender.address,
-                to: orbitHub.address
-            };
-
-            let gasLimit = await orbitHub.contract.methods.validateSwap(...params).estimateGas(txOptions).catch(e => {
-                logger.ton_layer_1.error('validateSwap estimateGas error: ' + e.message)
-            });
-
-            if (!gasLimit)
-                return;
-
-            txOptions.gasLimit = orbitHub.web3.utils.toHex(FIX_GAS);
-
-            let txData = {
-                method: 'validateSwap',
-                args: params,
-                options: txOptions
-            };
-
-            await txSender.sendTransaction(orbitHub, txData, {address: sender.address, pk: sender.pk, timeout: 1}).then(thash => {
+                let ecSig = Britto.signMessage(hash, validator.pk);
+                let edSig = Britto.signEd25519(hash, validator.pk);
+                let sigs = TONLayer1Validator.makeSigsWithED(validator.address, ecSig, edSig);
+                sigs[1] = parseInt(sigs[1],16)
+    
+                await api.validator.post(`/governance/validate`, {
+                    from_chain: data.fromChain,
+                    to_chain: data.toChain,
+                    from_addr: data.fromAddr,
+                    to_addr: data.toAddr,
+                    token: data.token,
+                    bytes32s: data.bytes32s,
+                    uints: data.uints,
+                    data: data.data,
+                    hash,
+                    v: sigs[1],
+                    r: sigs[2],
+                    s: sigs[3],
+                    ed_r: sigs[4],
+                    ed_s: sigs[5]
+                });
+    
                 hashMap.set(hash.toString('hex').add0x(), {
-                    txHash: thash,
+                    txHash: hash,
                     timestamp: parseInt(Date.now() / 1000),
                 })
-            });
-        }
-
-        async function applyLimitation(gateKeeper, data) {
-            let sender = Britto.getRandomPkAddress();
-            if(!sender || !sender.pk || !sender.address){
-                logger.ton_layer_1.error("Cannot Generate account");
-                return;
             }
-
-            let hash = Britto.sha256WithEncode(packer.packLimitationData({
-                fromChain: data.fromChain,
-                toChain: data.toChain,
-                token: data.token,
-                bytes32s: data.bytes32s,
-                uints: data.uints
-            }));
-            if(hashMap.has(hash.toString('hex').add0x())){
-                logger.ton_layer_1.error(`Already signed. validated limitationHash: ${hash.toString('hex').add0x()}`);
-                return;
-            }
-
-            let hubMig = await orbitHub.contract.methods.getBridgeMig("HUB", govInfo.id).call();
-            let migCon = new orbitHub.web3.eth.Contract(multisigABI, hubMig);
-
-            let validators = await migCon.methods.getHashValidators(hash.toString('hex').add0x()).call();
-            for(var i = 0; i < validators.length; i++){
-                if(validators[i].toLowerCase() === validator.address.toLowerCase()){
-                    logger.ton_layer_1.error(`Already signed. applyLimitation: ${hash}`);
-                    return;
-                }
-            }
-
-            let signature = Britto.signMessage(hash, validator.pk);
-            let sigs = TONLayer1Validator.makeSigs(validator.address, signature);
-
-            let params = [
-                data.fromChain,
-                data.toChain,
-                data.fromAddr,
-                data.toAddr,
-                data.token,
-                data.bytes32s,
-                data.uints,
-                sigs
-            ];
-
-            let gasLimit = await gateKeeper.methods.applyLimitation(...params).estimateGas({
-                from: sender.address,
-                to: gateKeeper._address
-            }).catch((e) => {});
-            if(!gasLimit) return;
-
-            let applyData = gateKeeper.methods.applyLimitation(...params).encodeABI();
-            if(!applyData) return;
-
-            let txData = {
-                nonce: orbitHub.web3.utils.toHex(0),
-                from: sender.address,
-                to: gateKeeper._address,
-                value: orbitHub.web3.utils.toHex(0),
-                gasLimit: orbitHub.web3.utils.toHex(FIX_GAS),
-                data: applyData
-            };
-
-            let signedTx = await orbitHub.web3.eth.accounts.signTransaction(txData, "0x"+sender.pk.toString('hex'));
-            let tx = await orbitHub.web3.eth.sendSignedTransaction(signedTx.rawTransaction, async (err, thash) => {
-                if(err) {
-                    logger.ton_layer_1.error(`applyLimitation error: ${err.message}`);
-                    return;
-                }
-
-                hashMap.set(hash.toString('hex').add0x(), {
-                    txHash: thash,
-                    timestamp: parseInt(Date.now() / 1000),
-                })
-
-                logger.ton_layer_1.info(`applyLimitation: ${thash}`);
-            });
         }
     }
 
@@ -687,29 +679,53 @@ class TONLayer1Validator {
         return Buffer.from(data.replace("0x",""),'hex').length < 124;
     }
 
-    receiveAddressBookRelay(event) {
-        if(event.address.toLowerCase() !== this.addressBook.address.toLowerCase()) return;
+    async getTagRelay() {
+        this.intervalClear(this.intervals.getTagRelay);
 
-        let returnValues = {
-            toChain: event.returnValues.toChain,
-            toAddress: event.returnValues.toAddr,
-            data: event.returnValues.data,
-        };
+        try {
+            const response = await api.bible.get("/v1/api/ton/tag-relay");
+            if (response.result !== "success") {
+                logger.ton_layer_1.error(`tag-relay api error: ${response}`);
+                return;
+            }
+            let info = response.info;
+            if (!Array.isArray(info)) {
+                logger.ton_layer_1.error('Received data is not array.');
+                return;
+            }
 
-        this.validateTagRequest({
-            block: event.blockNumber,
-            validator: {address: this.account.address, pk: this.account.pk},
-            ...returnValues
-        });
+            logger.ton_layer_1.info(`TagRelay list ${info.length === 0 ? 'is empty.' : 'length: ' + info.length.toString()}`);
+
+            for (let result of info) {
+                let data = {
+                    toChain: result.to_chain,
+                    toAddr: result.to_address,
+                    data: result.data
+                };
+
+                if(!bridgeUtils.isValidAddress(data.toChain, data.toAddr)){
+                    logger.ton_layer_1.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
+                    continue;
+                }
+
+                if(data.data && !bridgeUtils.isValidData(data.toChain, data.data)){
+                    logger.ton_layer_1.error(`Invalid data ( ${data.toChain}, ${data.data} )`);
+                    continue;
+                }
+
+                await this.validateTagRequest(data);
+            }
+        } catch (e) {
+            logger.ton_layer_1.error(`tag-relay api error: ${e.message}`);
+        } finally {
+            this.intervalSet(this.intervals.getTagRelay);
+        }
     }
 
     async validateTagRequest(data) {
-        let validator = {...data.validator} || {};
-        delete data.validator;
 
         const addressBook = this.addressBook;
         const chainName = this.chainName;
-        const govInfo = this.govInfo;
 
 
         let toChain = data.toChain;
@@ -718,7 +734,7 @@ class TONLayer1Validator {
             return;
         }
 
-        let toAddress = data.toAddress;
+        let toAddress = data.toAddr;
         if (!toAddress || toAddress.length === 0) {
             logger.ton_layer_1.error(`validateTagRequest error: toAddr or toChain is not defined.`);
             return;
@@ -745,72 +761,48 @@ class TONLayer1Validator {
         };
 
         let tagHash = Britto.sha256sol(packer.packTagHash(packerData));
-
-        let validators = await addressBook.multisig.contract.methods.getHashValidators(tagHash.toString('hex').add0x()).call();
-        for(var i = 0; i < validators.length; i++){
-            if(validators[i].toLowerCase() === validator.address.toLowerCase()){
+ 
+        const validator = {address: this.account.address, pk: this.account.pk};
+        let validators = await api.orbit.get(`/info/tag-signatures`, {
+            version,
+            chain: "TON",
+            to_chain: toChain,
+            to_address: toAddress
+        });
+        
+        for(let v of validators.data) {
+            if(v.validator.toLowerCase() === validator.address.toLowerCase()) {
                 logger.ton_layer_1.error(`Already signed. validated tagHash: ${tagHash}`);
                 return;
             }
         }
 
-        let ecSig = Britto.signMessage(tagHash, validator.pk);
-        let edSig = Britto.signEd25519(tagHash, validator.pk);
+        let signature = Britto.signMessage(tagHash, validator.pk);
+        signature.v = parseInt(signature.v, 16)
 
-        valid();
-
-        async function valid() {
-            let sender = Britto.getRandomPkAddress();
-            if(!sender || !sender.pk || !sender.address){
-                logger.ton_layer_1.error("Cannot Generate account");
-                return;
-            }
-
-            let params = [
-                packerData.toChain,
-                packerData.toAddress,
-                packerData.transfortData,
-                validator.address,
-                ecSig.v,
-                [ecSig.r, edSig.r],
-                [ecSig.s, edSig.s]
-            ];
-
-            let txOptions = {
-                gasPrice: addressBook.web3.utils.toHex('0'),
-                from: sender.address,
-                to: addressBook.address
-            };
-
-            let gasLimit = await addressBook.contract.methods.setTag(...params).estimateGas(txOptions).catch(e => {
-                logger.ton_layer_1.error('validateTagRequest estimateGas error: ' + e.message)
-            });
-            if (!gasLimit) {
-                return;
-            }
-
-            txOptions.gasLimit = addressBook.web3.utils.toHex(FIX_GAS);
-
-            let txData = {
-                method: 'setTag',
-                args: params,
-                options: txOptions
-            };
-
-            await txSender.sendTransaction(addressBook, txData, {address: sender.address, pk: sender.pk, timeout: 1});
-        }
+        await api.validator.post(`/governance/validate-tag`, {
+            version,
+            chain: "TON",
+            to_chain: packerData.toChain,
+            to_addr: packerData.toAddress,
+            data: packerData.transfortData,
+            validator: validator.address,
+            hash: tagHash,
+            v: signature.v,
+            r: signature.r,
+            s: signature.s
+        });
     }
 
     ///////////////////////////////////////////////////////////////
     ///////// Governance Function
-    async getTransaction(multisig, transactionId, decoder) {
+    async getTransaction(transactionId, decoder) {
         const ton = this.ton;
         const govInfo = this.govInfo;
         const info = config.info[this.chainLower];
         const chainName = this.chainName;
-        const account = this.account;
 
-        let transactionAddress = await ton.getTransactionAddress(multisig, transactionId);
+        let transactionAddress = await ton.getTransactionAddress(this.tonMultisig, transactionId);
         if(!transactionAddress) return "GetTransactionContract Error";
 
         let transaction = await ton.getTransactionData(transactionAddress);
@@ -836,13 +828,13 @@ class TONLayer1Validator {
         return transaction;
     }
 
-    async confirmTransaction(multisig, transactionId, gasPrice, chainId) {
+    async confirmTransaction(transactionId, gasPrice, chainId) {
         const ton = this.ton;
         const chainName = this.chainName;
         const account = this.account;
         const address = monitor.address[chainName].address;
 
-        let transactionAddress = await ton.getTransactionAddress(multisig, transactionId);
+        let transactionAddress = await ton.getTransactionAddress(this.tonMultisig, transactionId);
         if(!transactionAddress) return "GetTransactionContract Error";
 
         let transactionConfig = await ton.getTransactionConfig(transactionAddress);
@@ -855,7 +847,7 @@ class TONLayer1Validator {
 
         let seq;
         try {
-            seq = await ton.confirmTransaction(account.pk, multisig, parseInt(transactionId));
+            seq = await ton.confirmTransaction(account.pk, this.tonMultisig, parseInt(transactionId));
         } catch(e) {
             return "SendTransaction Error";
         }

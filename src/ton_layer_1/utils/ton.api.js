@@ -80,10 +80,15 @@ class TonAPI {
     }
 
     async getTransaction(address, hash, lt) {
-        let res = await this.tonWeb.getTransactions(address, 1, lt, hash, undefined).catch(e => {console.log(e)});
-        if(res.length !== 1) return;
+        let tx;
+        try{
+            let res = await this.tonWeb.getTransactions(address, 1, lt, hash, undefined).catch(e => {});
+            if(!res || res.length !== 1) return;
 
-        return res[0];
+            tx = res[0];
+        } catch(e) {}
+
+        return tx;
     }
 
     async getCurrentBlock() {
@@ -105,7 +110,7 @@ class TonAPI {
     }
 
     async getTransactionBlock(address, lt) {
-        let addrInfo = await this.tonWeb.provider.getAddressInfo(address).catch(e => {console.log(e)});
+        let addrInfo = await this.tonWeb.provider.getAddressInfo(address).catch(e => {});
         if(!addrInfo || !addrInfo.block_id || !addrInfo.block_id.shard) {
             logger.ton_layer_1.error("getAddressInfo error.");
             return;
