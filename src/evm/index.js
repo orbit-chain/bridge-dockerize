@@ -569,7 +569,7 @@ class EVMValidator {
 
         let txData = {
             from: validator.address,
-            to: multisig,
+            to: this.migAddress,
             value: mainnet.web3.utils.toHex(0)
         }
 
