@@ -3,14 +3,14 @@ module.exports = {
         'avax',
         'bsc',
         'celo',
-        'heco',
+        // 'heco',
         'fantom',
         'klaytn',
         'matic',
         'oec',
         'xdai',
         'eth',
-        'stacks',
+        // 'stacks',
         'ton'
     ],
 

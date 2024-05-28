@@ -2,7 +2,7 @@ module.exports = {
     // Node Endpoints
     endpoints : {
         avax: {
-            rpc: ["https://api.avax.network/ext/bc/C/rpc", "https://rpc.ankr.com/avalanche", "https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc", "http://prd-avax-mainnet.node.ozys.work:8545/ext/bc/C/rpc"],
+            rpc: ["https://rpc.ankr.com/avalanche", "https://avalanche.public-rpc.com", "https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc", "http://prd-avax-mainnet.node.ozys.work:8545/ext/bc/C/rpc"],
             chain_id: '0xa86a',
             confirm: 10
         },
@@ -57,7 +57,7 @@ module.exports = {
             confirm: 10
         },
         matic: {
-            rpc : ["https://polygon-rpc.com", "http://prd-matic-bor-mainnet-rpc.node.ozys.work:8545", "https://rpc.ankr.com/polygon"],
+            rpc : ["https://polygon-rpc.com", "https://polygon-bor-rpc.publicnode.com", "http://prd-matic-bor-mainnet-rpc.node.ozys.work:8545", "https://rpc.ankr.com/polygon"],
             chain_id: '0x89',
             confirm: 10
         },

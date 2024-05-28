@@ -3,13 +3,13 @@ module.exports = {
     chain_list: [
         'klaytn',
         'bsc',
-        'heco',
+        // 'heco',
         'matic',
         'avax',
-        'celo',
+        // 'celo',
         'fantom',
-        'oec',
-        'xdai',
+        // 'oec',
+        // 'xdai',
         'ton',
         'wemix',
         'metadium'

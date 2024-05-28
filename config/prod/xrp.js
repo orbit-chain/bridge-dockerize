@@ -5,13 +5,13 @@ module.exports = {
         'xrp',
         'avax',
         'bsc',
-        'celo',
-        'heco',
+        // 'celo',
+        // 'heco',
         'fantom',
         'matic',
-        'oec',
+        // 'oec',
         "wemix",
-        'xdai',
+        // 'xdai',
     ],
 
     // Bridge Addresses
