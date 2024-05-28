@@ -2,13 +2,8 @@ module.exports = {
     chain_list: [
         "avax",
         "bsc",
-        // "celo",
-        // "heco",
-        "fantom",
         "klaytn",
         "matic",
-        // "oec",
-        // "xdai",
         "eth",
         "ton_layer_1",
     ],
@@ -29,23 +24,8 @@ module.exports = {
             multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
             admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",
         },
-        celo: {
-            minter: "0x58A42330c0984babD5DEc2C943eAA345B7f41e44",
-            multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
-            admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",
-        },
         eth: {
             minter: "0x5Cc6a1Dc39E523eFd6C42534a478942Cadd24f8C",
-            multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
-            admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",
-        },
-        fantom: {
-            minter: "0x58A42330c0984babD5DEc2C943eAA345B7f41e44",
-            multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
-            admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",
-        },
-        heco: {
-            minter: "0x58A42330c0984babD5DEc2C943eAA345B7f41e44",
             multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
             admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",
         },
@@ -54,16 +34,6 @@ module.exports = {
             multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
         },
         matic: {
-            minter: "0x58A42330c0984babD5DEc2C943eAA345B7f41e44",
-            multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
-            admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",
-        },
-        oec: {
-            minter: "0x58A42330c0984babD5DEc2C943eAA345B7f41e44",
-            multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
-            admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",
-        },
-        xdai: {
             minter: "0x58A42330c0984babD5DEc2C943eAA345B7f41e44",
             multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
             admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",

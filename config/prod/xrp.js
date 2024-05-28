@@ -5,13 +5,8 @@ module.exports = {
         'xrp',
         'avax',
         'bsc',
-        // 'celo',
-        // 'heco',
-        'fantom',
         'matic',
-        // 'oec',
         "wemix",
-        // 'xdai',
     ],
 
     // Bridge Addresses
@@ -30,27 +25,7 @@ module.exports = {
             multisig: "0xfa50391705D2FA7ac47Dd211B78378825bc763e6",
             admin: "0x009071058740276327A393B084eC447b8F0Fc6Ae",
         },
-        celo: {
-            minter: "0xE38ca00A6FD34B793012Bb9c1471Adc4E98386cF",
-            multisig: "0xfa50391705D2FA7ac47Dd211B78378825bc763e6",
-            admin: "0x009071058740276327A393B084eC447b8F0Fc6Ae",
-        },
-        fantom: {
-            minter: "0xE38ca00A6FD34B793012Bb9c1471Adc4E98386cF",
-            multisig: "0xfa50391705D2FA7ac47Dd211B78378825bc763e6",
-            admin: "0x009071058740276327A393B084eC447b8F0Fc6Ae",
-        },
-        heco: {
-            minter: "0xE38ca00A6FD34B793012Bb9c1471Adc4E98386cF",
-            multisig: "0xfa50391705D2FA7ac47Dd211B78378825bc763e6",
-            admin: "0x009071058740276327A393B084eC447b8F0Fc6Ae",
-        },
         matic: {
-            minter: "0xE38ca00A6FD34B793012Bb9c1471Adc4E98386cF",
-            multisig: "0xfa50391705D2FA7ac47Dd211B78378825bc763e6",
-            admin: "0x009071058740276327A393B084eC447b8F0Fc6Ae",
-        },
-        oec: {
             minter: "0xE38ca00A6FD34B793012Bb9c1471Adc4E98386cF",
             multisig: "0xfa50391705D2FA7ac47Dd211B78378825bc763e6",
             admin: "0x009071058740276327A393B084eC447b8F0Fc6Ae",
@@ -59,11 +34,6 @@ module.exports = {
             minter: "0x3fc270534bBEEF400777B587D03fc66D8Ddd716E",
             multisig: "0x60D85ED151CBdE337019263A54AD2fb6b495547C",
             admin: "0xC9bD6dE100b923C275e74dC75F895B50c7488eD3",
-        },
-        xdai: {
-            minter: "0xE38ca00A6FD34B793012Bb9c1471Adc4E98386cF",
-            multisig: "0xfa50391705D2FA7ac47Dd211B78378825bc763e6",
-            admin: "0x009071058740276327A393B084eC447b8F0Fc6Ae",
         },
         governance: {
             chain: "XRP",
