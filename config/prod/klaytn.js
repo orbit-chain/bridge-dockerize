@@ -10,8 +10,8 @@ module.exports = {
         'oec',
         'xdai',
         'eth',
-        // 'stacks',
-        'ton'
+        'ton',
+        'wemix'
     ],
 
     // Bridge Addresses
@@ -60,11 +60,10 @@ module.exports = {
             multisig: "0xcAA1B50341ad8Eb69A7bb1985bf39224044B1d48",
             admin: "0x3060E2fbDB75663b50bf9e629693DC39A4418736",
         },
-        stacks: {
-            deploy_address: "SP2JWSZAKDEVADF2FADKS0DF8S01CY5WP61YXAV71",
-            multisig: "gov-matic",
-            "0x0000000000000000000000000000000000000000": "orbit-klay",
-            "0xc6a2ad8cc6e4a7e08fc37cc5954be07d499e7654": "orbit-ksp",
+        wemix: {
+            minter: "0xCd3698A1392A1Dd66a4934b69CCf800964817CA1",
+            multisig: "0x58A42330c0984babD5DEc2C943eAA345B7f41e44",
+            admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",
         },
         ton: {
             minter: "EQAlMRLTYOoG6kM0d3dLHqgK30ol3qIYwMNtEelktzXP_pD5",
