@@ -15,18 +15,13 @@ for(let chain of settings.chain_list){
 
     let ENDPOINT = endpoints[key];
     let CONTRACT_ADDRESS = settings.bridge_address[key] || {};
-    CONTRACT_ADDRESS["OrbitHubContract"] = settings.bridge_address.orbit_hub;
-    CONTRACT_ADDRESS["OrbitHubMultiSigWallet"] = settings.bridge_address.multisig.hub;
-    CONTRACT_ADDRESS["BridgeContract"] = settings.bridge_address[`${key}_bridge`];
-    CONTRACT_ADDRESS["BridgeMultiSigWallet"] = settings.bridge_address.multisig[key];
-    CONTRACT_ADDRESS["AddressBook"] = settings.bridge_address[`${key}_address_book`];
 
     let CHAIN_ID = ENDPOINT.chain_id;
     let GAS_PRICE = ENDPOINT.gas_price;
 
     obj[chain] = { ENDPOINT, CONTRACT_ADDRESS, CHAIN_ID, GAS_PRICE };
 
-    if(key === "eth") obj[chain].ETH_TERMINAL_TOTAL_DIFFICULTY = settings.ETH_TERMINAL_TOTAL_DIFFICULTY || "58750000000000000000000";
+    if(key === "eth") obj[chain].ETH_TERMINAL_TOTAL_DIFFICULTY = ENDPOINT.terminal_total_difficulty || "58750000000000000000000";
 }
-
+obj.ADDRESS_BOOK = settings.silicon
 module.exports = Object.assign({}, obj);

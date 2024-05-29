@@ -60,7 +60,7 @@ exports.packLimitationData = function(data) {
 exports.packTagHash = function(data) {
     let result = [];
 
-    result.push({t: 'string', v: 'TON_LAYER_1'});
+    result.push({t: 'string', v: 'TON'});
     result.push({t: 'string', v: 'AddressBook'});
     result.push({t: 'uint256', v: data.version});
     result.push({t: 'string', v: data.toChain});

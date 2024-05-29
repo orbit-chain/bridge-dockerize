@@ -36,12 +36,9 @@ class Monitor {
         }
 
         for (const [key, value] of Object.entries(VALIDATOR_MONITOR) ) {
-            if (!value.Interval) {
-                value.Interval = 10 * 1000;
-            }
             setInterval(() => {
                 this.reportMonitorStatus(key, value);
-            }, value.Interval);
+            }, 600 * 1000);
         }
     }
 
@@ -71,7 +68,6 @@ class Monitor {
             ICON_V1: 'icon-v1',
             ICON_V2: 'icon-v2',
             ICON_MAINNET: 'icon_mainnet',
-            ORBIT: 'orbit',
             XRP: 'xrp',
             BSC: 'bsc',
             HECO: 'heco',
@@ -88,15 +84,13 @@ class Monitor {
         try {
             switch (method) {
                 case "ozys":
-                    ozysReport(data.endpoint, this.json());
+                    ozysReport(data.monitor, this.json());
                     break;
                 default:
                     console.log(`unknown monitor method offered: ${method}`);
                     break;
             }
-        } catch (e) {
-            //console.log(e);
-        }
+        } catch (e) {}
     }
 
     setNodeConnectStatus (chain, address, connectionStatus) {
@@ -104,14 +98,12 @@ class Monitor {
             return;
         }
 
-        chain = Monitor.getChainFullName(chain);
+        chain = Monitor.getChainFullName(chain);    
         if (!chain) {
             return;
         }
 
-        this.nodeConnect[chain] = this.nodeConnect[chain] || {};
-        this.nodeConnect[chain][address] = this.nodeConnect[chain][address] || {};
-        this.nodeConnect[chain][address].connectionStatus = connectionStatus;
+        this.nodeConnect[chain] = connectionStatus;
     }
 
     setNodeElectionStatus (chain, address, electedBlock) {
@@ -169,8 +161,6 @@ class Monitor {
             chain: this.chain,
             address: this.address,
             nodeConnection: this.nodeConnect,
-            orbitBlockNumber: this.blockNumber,
-            ibc: this.ibc,
             lastBlockTime: this.lastBlockTime,
         }
     }

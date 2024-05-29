@@ -43,6 +43,9 @@ exports.packSigningHash = function(data) {
 exports.packXrpTagHash = function(data) {
     let result = [];
 
+    result.push({t: 'string', v: 'XRP'});
+    result.push({t: 'string', v: 'AddressBook'});
+    result.push({t: 'uint256', v: data.version});
     result.push({t: 'string', v: data.toChain});
     result.push({t: 'bytes', v: toHexBuffer(data.toAddress)});
     result.push({t: 'bytes', v: toHexBuffer(data.transfortData)});

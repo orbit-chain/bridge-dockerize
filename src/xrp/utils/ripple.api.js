@@ -1,7 +1,7 @@
 const RippleAPI = require('ripple-lib').RippleAPI;
 const config = require(ROOT + '/config');
 const info = config.info.xrp;
-const api = new RippleAPI({ server: info.ENDPOINT.socket });
+const api = new RippleAPI({ server: info.ENDPOINT.socket, connectionTimeout: 60000 });
 
 module.exports = api;
 module.exports.getSequence = async address => {
