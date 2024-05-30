@@ -396,15 +396,9 @@ class TONValidator {
             return;
         }
 
-        await valid(params);
+        await valid(params, chainIds, this.orbitHub);
 
-        async function valid(data) {
-            let sender = Britto.getRandomPkAddress();
-            if(!sender || !sender.pk || !sender.address){
-                logger.ton.error("Cannot Generate account");
-                return;
-            }
-
+        async function valid(data, chainIds, orbitHubAddress) {
             let fromChainId = chainIds[data.fromChain.toLowerCase()];
             let toChainId = chainIds[data.toChain.toLowerCase()];
             if(!fromChainId || !toChainId){
@@ -413,7 +407,7 @@ class TONValidator {
             }
 
             let swapData = {
-                hubContract: this.orbitHub,
+                hubContract: orbitHubAddress,
                 fromChainId: fromChainId,
                 toChainId: toChainId,
                 fromAddr: data.fromAddr,
