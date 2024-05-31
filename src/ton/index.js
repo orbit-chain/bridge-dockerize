@@ -447,6 +447,8 @@ class TONValidator {
                 await api.validator.post(`/governance/validate`, {
                     from_chain: data.fromChain,
                     to_chain: data.toChain,
+                    from_chain_id: fromChainId,
+                    to_chain_id: toChainId,
                     from_addr: data.fromAddr,
                     to_addr: data.toAddr,
                     token: data.token,

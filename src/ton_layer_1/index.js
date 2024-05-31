@@ -588,15 +588,9 @@ class TONLayer1Validator {
             return;
         }
 
-        await valid(params);
+        await valid(params, chainIds, this.orbitHub);
 
-        async function valid(data) {
-            let sender = Britto.getRandomPkAddress();
-            if(!sender || !sender.pk || !sender.address){
-                logger.ton_layer_1.error("Cannot Generate account");
-                return;
-            }
-
+        async function valid(data, chainIds, orbitHubAddress) {
             let fromChainId = chainIds[data.fromChain];
             let toChainId = chainIds[data.toChain];
             if(!fromChainId || !toChainId){
@@ -605,7 +599,7 @@ class TONLayer1Validator {
             }
 
             let swapData = {
-                hubContract: this.orbitHub,
+                hubContract: orbitHubAddress,
                 fromChainId: fromChainId,
                 toChainId: toChainId,
                 fromAddr: data.fromAddr,
@@ -649,6 +643,8 @@ class TONLayer1Validator {
                 await api.validator.post(`/governance/validate`, {
                     from_chain: data.fromChain,
                     to_chain: data.toChain,
+                    from_chain_id: fromChainId,
+                    to_chain_id: toChainId,
                     from_addr: data.fromAddr,
                     to_addr: data.toAddr,
                     token: data.token,
