@@ -3,6 +3,7 @@ module.exports = {
     chain_list: [
         'klaytn',
         'bsc',
+        'eth',
         'matic',
         'avax',
         'ton',
@@ -35,6 +36,11 @@ module.exports = {
             minter: "0x9DC1cb0a52fC34659D18B0F31e26582a8Db609b5",
             multisig: "0xDf4f362E6C3Baa3Fc8Fb0179498e6c80c35Cf547",
             admin: "0xa37581EDC6135585287675Ee6E517897E3c42D38"
+        },
+        eth: {
+            minter: "0x166E514c465EF0DB69246e14C6bA866F91B1e061",
+            multisig: "0x3DE5098FBdb858567542A949B1CE22C61eae14FB",
+            admin: "0xE3b4270592E217d1122ddCAeBa22Ac415D718A39",
         },
         ton: {
             minter: "EQDABRjlDIBMx_BTNp-TvVjQZXjqfxq2y50jmhyZSJ58bB0R",
