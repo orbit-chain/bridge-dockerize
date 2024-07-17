@@ -53,7 +53,7 @@ module.exports = {
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
                 chain_id: 8217
             },
-            rpc: ["https://public-en-cypress.klaytn.net", "https://klaytn-mainnet.g.allthatnode.com/full/evm", "https://public-node-api.klaytnapi.com/v1/cypress"],
+            rpc: ["https://public-en-cypress.klaytn.net", "https://rpc.ankr.com/klaytn", "https://1rpc.io/klay", "https://klaytn.blockpi.network/v1/rpc/public"],
             confirm: 10
         },
         matic: {
