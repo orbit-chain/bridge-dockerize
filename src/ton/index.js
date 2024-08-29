@@ -50,7 +50,8 @@ class TONValidator {
     }
 
     constructor(chain, _account) {
-        this.chainIds = {};
+        this.chainIds = config.chainIds;
+
         if(chain.toLowerCase() !== "ton")
             throw 'Invalid chain symbol';
 
@@ -94,19 +95,7 @@ class TONValidator {
 
         this.workerStarted = false;
 
-        this.init();
         this.startIntervalWorker();
-    }
-
-    async init() {
-        for(let chain of config.settings.chain_list){
-            let chainId = (await api.orbit.get(`/tool/hub-chain-id`,{"chain": chain}));
-            if(chainId.status != "success"){
-                logger.ton.error(`hub-chain-id not found`);
-                return;
-            }
-            this.chainIds[chain] = chainId.data;
-        }
     }
 
     startIntervalWorker() {
@@ -267,9 +256,7 @@ class TONValidator {
             let opCode = null
             try {
                 opCode = "0x"+slice.readUint(32).toString('hex'); // BN return
-            } catch (e) {
-                console.log(e);
-            }
+            } catch (e) {}
             if(!opCode || opCode !== "0x3afd461c") continue;
 
             let obj = {};
@@ -497,7 +484,7 @@ class TONValidator {
             let addr = knownContract[key];
             if(!addr) continue;
 
-            if(addr.toLowerCase() === transaction.destination.toLowerCase()){
+            if(addr === transaction.destination){
                 destinationContract = key;
                 break;
             }

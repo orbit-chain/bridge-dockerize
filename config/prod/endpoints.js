@@ -56,6 +56,11 @@ module.exports = {
             rpc: ["https://public-en-cypress.klaytn.net", "https://rpc.ankr.com/klaytn", "https://1rpc.io/klay", "https://klaytn.blockpi.network/v1/rpc/public"],
             confirm: 10
         },
+        silicon: {
+            rpc: "https://rpc.silicon.network",
+            chain_id: 2355,
+            confirm: 10
+        },
         matic: {
             rpc : ["https://polygon-rpc.com", "https://polygon-bor-rpc.publicnode.com", "http://prd-matic-bor-mainnet-rpc.node.ozys.work:8545", "https://rpc.ankr.com/polygon"],
             chain_id: '0x89',

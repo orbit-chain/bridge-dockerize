@@ -2,16 +2,21 @@ module.exports = {
     chain_list: [
         "avax",
         "bsc",
+        "eth",
         "klaytn",
         "matic",
         "eth",
         "ton_layer_1",
+        "silicon",
     ],
-
+    silicon: {
+        addressbook: "0xd0B3ac7326FDf78DEc838451E031cf69933F6faF",
+        multisig: "0x2baF90197b3C034282Dd6cdC29a9902B7f8789A4",
+    },
     // Bridge Addresses
     bridge_address: {
         ton: {
-            vault: "EQAtkbV8ysI75e7faO8Ihu0mFtmsg-osj7gmrTg_mljVRccy",
+            vault: "EQDXbWI3jClPS510by25zTA8SUKMa4XSD2K7DbZb0jincPGw",
             multisig: "EQB8mNTgoG5QxqhOdVFi6X0MOjkmGNd33ct-RGBT9ZT5oDAX",
         },
         avax: {
@@ -38,11 +43,16 @@ module.exports = {
             multisig: "0x4dd5c30ae4a140d3B9180c778bD2e74c8e64E38A",
             admin: "0x8966c07b38dcb277f1e5264368Cafb289DBCab4f",
         },
+        silicon: {
+            minter: "0x4358fFeDCAE2e0BC7F21F2aF882bB1d723e30069",
+            multisig: "0x2baF90197b3C034282Dd6cdC29a9902B7f8789A4",
+            admin: "0x0461393F1cC22dE0E25939920Dceb798a94bb405",
+        },
         governance: {
             chain: "TON_LAYER_1",
-            address: "EQAtkbV8ysI75e7faO8Ihu0mFtmsg-osj7gmrTg_mljVRccy",
-            bytes: "0x8a140d51b86267680a943c55c780ac4b3a785c2ff6a62020d158c39f6512374f",
-            id: "0xc25b710f269dfffd6f045756d330b084451c6a0db366309b7f400859a1b76db4",
+            address: "EQDXbWI3jClPS510by25zTA8SUKMa4XSD2K7DbZb0jincPGw",
+            bytes: "0xd76d62378c294f4b9d746f2db9cd303c49428c6b85d20f62bb0db65bd238a770",
+            id: "0x0925ffa9907f762541218b8a1b7a76ada0effdc7354d5dfbaace28d6f7ffae6d",
         },
     }
 }

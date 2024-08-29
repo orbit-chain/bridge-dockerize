@@ -420,7 +420,7 @@ class ICONValidator {
             return "Already Confirmed"
 
         let from = vaAddress;
-        let to = this.migAddress;
+        let to = multisig;
         let method = "confirmTransaction";
 
         let params = {

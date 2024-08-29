@@ -9,12 +9,14 @@ const errmBeforeInitialize = {
     "data": "Error: Before Initialized"
 };
 
-const errmInvalidChain = {
-    "errm": "Invalid Chain",
-    "data": "NotFoundError: Invalid Chain"
+const errmInvalidChain = (chain) => {
+    return {
+        "errm": "Invalid Chain",
+        "data": `NotFoundError: Invalid Chain Name ${chain}`
+    }
 };
 
-const invalidChainList = ["xrp", "stacks", "stacks_layer_1"];
+const invalidChainList = ["gov", "xrp", "stacks", "stacks_layer_1"];
 
 class Governance {
     constructor(){
@@ -39,7 +41,7 @@ class Governance {
         logger.gov.info(`GetTransaction: ${chain}, ${transactionId}`);
 
         chain = chain.toLowerCase();
-        if(invalidChainList.includes(chain) || !instances[chain]) return errmInvalidChain;
+        if(invalidChainList.includes(chain) || !instances[chain]) return errmInvalidChain(chain);
 
         const instance = instances[chain];
         const res = await instance.getTransaction(transactionId, abiDecoder);
@@ -48,11 +50,11 @@ class Governance {
 
     async confirmTransaction(chain, transactionId, gasPrice, chainId) {
         if(!this.initialized) return errmBeforeInitialize;
+        
+        chain = chain.toLowerCase();
+        if(invalidChainList.includes(chain) || !instances[chain]) return errmInvalidChain(chain);
 
         logger.gov.info(`ConfirmTransaction: ${chain}, ${transactionId}, ${gasPrice}, ${chainId}`);
-
-        chain = chain.toLowerCase();
-        if(invalidChainList.includes(chain) || !instances[chain]) return errmInvalidChain;
 
         const instance = instances[chain];
         const res = await instance.confirmTransaction(transactionId, gasPrice, chainId);
@@ -65,7 +67,7 @@ class Governance {
         logger.gov.info(`ConfirmTransactionRange: ${chain}, ${start}, ${end}, ${gasPrice}, ${chainId}`);
 
         chain = chain.toLowerCase();
-        if(invalidChainList.includes(chain) || !instances[chain]) return errmInvalidChain;
+        if(invalidChainList.includes(chain) || !instances[chain]) return errmInvalidChain(chain);
 
         const instance = instances[chain];
 

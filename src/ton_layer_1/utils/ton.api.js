@@ -82,7 +82,9 @@ class TonAPI {
     async getTransaction(address, hash, lt) {
         let tx;
         try{
-            let res = await this.tonWeb.getTransactions(address, 1, lt, hash, undefined).catch(e => {});
+            let res = await this.tonWeb.getTransactions(address, 1, lt, hash, undefined).catch(e => {
+                console.log(e)
+            });
             if(!res || res.length !== 1) return;
 
             tx = res[0];
@@ -134,7 +136,9 @@ class TonAPI {
     }
 
     async getMultisigData(vault) {
-        let res = await this.tonWeb.provider.call(vault, 'get_multisig_data', []).catch(e => {});
+        let res = await this.tonWeb.provider.call(vault, 'get_multisig_data', []).catch(e => {
+            console.log(e)
+        });
         if(!res || res.exit_code !== 0) return;
 
         const stack = res.stack;
