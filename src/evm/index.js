@@ -1,10 +1,8 @@
 global.logger.evm = require('./logger');
 
 const config = require(ROOT + '/config');
-
 const Britto = require(ROOT + '/lib/britto');
 const RPCAggregator = require(ROOT + '/lib/rpcAggregator');
-const txSender = require(ROOT + '/lib/txsender');
 const api = require(ROOT + '/lib/api');
 const packer = require('./utils/packer');
 
@@ -135,6 +133,24 @@ class EVMValidator {
 
         this.workerStarted = false;
         this.startIntervalWorker();
+
+        this.init();
+    }
+
+    async init() {
+        // L2 chain이면 L1 web3 obj도 추가(L1 block finality 검증)
+        if(config.l2[this.chainLower]) {
+            let l1Chain = config.l2[this.chainLower].l1_chain
+            const l1 = this.l1 = Britto.getNodeConfigBase('l1');
+            l1.rpc = config.endpoints[l1Chain].rpc[0];
+            l1.abi = Britto.getJSONInterface({filename: 'zkevm/PolygonValidiumEtrog'});
+            l1.address = config.l2[this.chainLower].PolygonValidiumEtrog
+            new Britto(l1, l1Chain).connectWeb3();
+
+            l1.rollup.address = config.l2[this.chainLower].PolygonRollupManager
+            l1.rollup.abi = Britto.getJSONInterface({filename: 'zkevm/PolygonRollupManager'});
+            l1.rollup.contract = new this.l1.web3.eth.Contract(this.l1.rollup.abi, this.l1.rollup.address);
+        }
     }
 
     startIntervalWorker() {
@@ -195,7 +211,6 @@ class EVMValidator {
                     fromAddr: bridgeUtils.str2hex(result.fromAddr),
                     toAddr: bridgeUtils.str2hex(result.toAddr),
                     token: bridgeUtils.str2hex(result.token) || "0x0000000000000000000000000000000000000000",
-                    // relayThash: result.relayThash,  // stacks용...사용X
                     bytes32s: [this.govInfo.id, result.fromThash],
                     uints: [result.amount, result.decimals, result.depositId],
                     data: result.data
@@ -210,25 +225,10 @@ class EVMValidator {
                     logger.evm.error(`Invalid data ( ${data.toChain}, ${data.data} )`, this.loggerOpt);
                     continue;
                 }
-        
-                // TODO: bypass 처리 OK
-                // operator's relaySwap
-                
                 const nodes = await this.rpcAggregator.getNodes();
-                if (!(await bridgeUtils.checkTransaction(nodes[0], data.bytes32s[1]))) continue;
-
-                // stacks만 사용
-                if (data.relayThash) {
-                    const resp = await api.bible.get(`/v1/api/txevent/${data.toChain}/${data.relayThash}`);
-                    const eventData = JSON.parse(resp.info.data);
-                    const addSwapId = eventData.data.dataId;
-                    data.bytes32s.push(data.relayThash);
-                    data.uints.push(addSwapId);
-                }
-
-                if (data.toChain === "STACKS" && this.govInfo.chain === "STACKS") {
-                    data.toChain = "STACKS_LAYER_1";
-                }
+                const functionSig = (this.govInfo.chain === this.chainName) ? "Deposit" : "SwapRequest";
+                if (!(await bridgeUtils.checkTransaction(nodes[0], data, functionSig))) continue;
+                if (this.l1 && !(await this.isFinalized(nodes[0], data.bytes32s[1]))) continue;
 
                 if (this.chainName === 'KLAYTN' && data.fromAddr.toLowerCase() === "0xdfcb0861d3cb75bb09975dce98c4e152823c1a0b") {
                     this.logger.info("[GUARD] BLOCK bridge");
@@ -241,6 +241,47 @@ class EVMValidator {
             logger.evm.error('lock-relay api call error: ' + e.message, this.loggerOpt);
         } finally {
             this.intervalSet(this.intervals.getLockRelay);
+        }
+    }
+
+    // from chain이 L2인 경우(silicon) L1 block finality 먼저 검증
+    async isFinalized(l2, txhash) {
+        let response = await api.bible.get(`/v1/api/l2/finality/${this.chainLower}/${txhash}`)
+        if (!response.success) {
+            logger.evm.error(`L2 finality api error: ${response}`);
+            return;
+        }
+        if (!response.isFinalized) {
+            logger.evm.info(`L2 tx is not finalized ${response.batch}: ${txhash}`);
+            return;
+        } else {
+            // bible data와 실제 batch 조회 data 확인
+            let { batchL2Data, sendSequencesTxHash, verifyBatchTxHash } = await l2.web3.zkevm.getBatchByNumber(response.batch);
+            if(sendSequencesTxHash.toLowerCase() !== response.sequenceBatchTx.toLowerCase() || verifyBatchTxHash.toLowerCase() !== response.verifyBatchTx) {
+                logger.evm.error(`Batch tx not matched`);
+                return;
+            }
+
+            // l2 transactionsHash
+            let transactionsHash = l2.web3.utils.keccak256(batchL2Data).toLowerCase();
+
+            // check sequence tx
+            let sequenceTxData = await this.l1.web3.eth.getTransaction(sendSequencesTxHash)
+            let sequenceTxReceipt = await this.l1.web3.eth.getTransactionReceipt(sendSequencesTxHash)
+            
+            let lastBatchSequenced = this.l1.web3.utils.hexToNumber(sequenceTxReceipt.logs[1].data);
+            if(lastBatchSequenced < parseInt(response.batch)) return;
+            
+            let txInputData = this.l1.web3.eth.abi.decodeParameters(this.l1.abi[1].inputs, sequenceTxData.input.slice(10))
+            let batchTxs = txInputData.batches.map(x => x[0].toLowerCase())
+            if(!batchTxs.includes(transactionsHash)) return;
+
+            // check verify tx
+            let verifyTxReceipt = await this.l1.web3.eth.getTransactionReceipt(verifyBatchTxHash);
+            let latestFinalizedBlock = (await this.l1.web3.eth.getBlock("finalized")).number;
+            if (verifyTxReceipt.number < latestFinalizedBlock) return;
+
+            return true;
         }
     }
 
@@ -569,7 +610,7 @@ class EVMValidator {
 
         let txData = {
             from: validator.address,
-            to: this.migAddress,
+            to: multisig,
             value: mainnet.web3.utils.toHex(0)
         }
 
@@ -584,12 +625,12 @@ class EVMValidator {
 
         txData.data = data;
 
-        gasLimit = this.chainName === "ORBIT" ? FIX_GAS : (parseInt(gasLimit) * 2).toString();
+        gasLimit = (parseInt(gasLimit) * 2).toString();
         txData.gasLimit = mainnet.web3.utils.toHex(gasLimit);
 
         let web3GasPrice = await mainnet.web3.eth.getGasPrice().catch(e => {return;});
         if(web3GasPrice) gasPrice = parseInt(web3GasPrice) > parseInt(gasPrice) ? web3GasPrice : gasPrice;
-        gasPrice = this.chainName === "ORBIT" ? 0 : parseInt(gasPrice * 1.2);
+        gasPrice = parseInt(gasPrice * 1.2);
         txData.gasPrice = mainnet.web3.utils.toHex(gasPrice);
 
         let nonce = await mainnet.web3.eth.getTransactionCount(validator.address, 'pending').catch(e => {return;});

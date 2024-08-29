@@ -1,0 +1,76 @@
+[
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint64",
+                "name": "numBatch",
+                "type": "uint64"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "l1InfoRoot",
+                "type": "bytes32"
+            }
+        ],
+        "name": "SequenceBatches",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "transactionsHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "forcedGlobalExitRoot",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "forcedTimestamp",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "forcedBlockHashL1",
+                        "type": "bytes32"
+                    }
+                ],
+                "internalType": "struct PolygonValidiumEtrog.ValidiumBatchData[]",
+                "name": "batches",
+                "type": "tuple[]"
+            },
+            {
+                "internalType": "uint64",
+                "name": "maxSequenceTimestamp",
+                "type": "uint64"
+            },
+            {
+                "internalType": "uint64",
+                "name": "initSequencedBatch",
+                "type": "uint64"
+            },
+            {
+                "internalType": "address",
+                "name": "l2Coinbase",
+                "type": "address"
+            },
+            {
+                "internalType": "bytes",
+                "name": "dataAvailabilityMessage",
+                "type": "bytes"
+            }
+        ],
+        "name": "sequenceBatchesValidium",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]

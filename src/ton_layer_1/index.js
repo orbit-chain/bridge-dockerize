@@ -51,8 +51,7 @@ class TONLayer1Validator {
     }
 
     constructor(chain, _account) {
-
-        this.chainIds = {};
+        this.chainIds = config.chainIds;
 
         if(chain.toLowerCase() !== "ton_layer_1")
             throw 'Invalid chain symbol';
@@ -106,7 +105,7 @@ class TONLayer1Validator {
             },
             getTagRelay: {
                 handler: this.getTagRelay.bind(this),
-                timeout: 1000 * 1,
+                timeout: 1000 * 10,
                 interval: null,
             },
         };
@@ -114,23 +113,7 @@ class TONLayer1Validator {
         this.hashMap = new Map();
         this.flushHashMap();
         
-        this.init()
         this.startIntervalWorker();
-    }
-
-    async init() {
-        try {
-            for(let chain of Object.keys(config.info)) {
-                const res = await api.orbit.get(`/tool/hub-chain-id`, {chain});
-                if(res.status === 'success') {
-                    this.chainIds[chain.toUpperCase()] = res.data
-                } else {
-                    throw new Error()
-                }
-            }
-        } catch (e) {
-            logger.ton_layer_1.error(`/tool/hub-chain-id api error: ${e.message}`);
-        }
     }
 
     startIntervalWorker() {
@@ -391,7 +374,7 @@ class TONLayer1Validator {
             })).toString('hex').add0x();
 
             const validators = await addressBook.multisig.contract.methods.getHashValidators(tagHash).call();
-            let confirmed = 0;
+            let confirmed = 0; // check validator address and public key
             for(let i = 0; i < validators.length; i++){
                 let va = validators[i]
                 const v = await addressBook.multisig.contract.methods.vSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
@@ -399,9 +382,10 @@ class TONLayer1Validator {
                 const s = await addressBook.multisig.contract.methods.sSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
 
                 let recoveredAddr = Britto.ecrecoverHash(tagHash, v, r, s)
-                if(va.toLowerCase() !== recoveredAddr.toLowerCase()) continue
-
-                confirmed = confirmed + 1;
+                let pubkey = await addressBook.multisig.contract.methods.publicKeys(recoveredAddr).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
+                if(va.toLowerCase() == recoveredAddr.toLowerCase() && publicKeys.includes(pubkey)) {
+                    confirmed = confirmed + 1;
+                }
             }
             if(confirmed < parseInt(required)) {
                 logger.ton_layer_1.error(`validated address not matched in vault signer addresses. ${txHash}, ${lt}, ${tag}`);

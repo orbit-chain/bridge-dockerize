@@ -122,7 +122,7 @@ class XRPValidator {
             },
             getTagRelay: {
                 handler: this.getTagRelay.bind(this),
-                timeout: 1000 * 1,
+                timeout: 1000 * 3,
                 interval: null,
             },
             getSuggestRelay: {
@@ -764,22 +764,34 @@ class XRPValidator {
             return;
         }
 
-        // Check suggestHash is validated
-        const suggestHash = Britto.sha256sol(packer.packSuggestHash({
-            contract: xrpBridge.address,
-            govId: govInfo.id,
-            suggestIndex: selectionIndex,
-            swapIndex: selection.swapIndex,
-            validators: selection.validators,
-            signatureHashs: selection.signatureHashs,
-            fee: selection.fee,
-            seq: selection.seq
-        }));
+        // TODO: orbit api에서 검증
+        let response = await api.orbit.get(`/info/hash-info`, {whash: mySignatureHash})
+        if(response.status === "success") {
+            if(response.data.validators.length !== 0) {
+                if(response.data.validators[0].toLowerCase() === validator.address.toLowerCase()){
+                    logger.evm.error(`Already signed. validated mySignatureHash: ${mySignatureHash}`);
+                    return;
+                }   
+            }
+            let signature = Britto.signMessage(mySignatureHash, validator.pk);
+            let sigs = XRPValidator.makeSigs(validator.address, signature);
+            sigs[1] = parseInt(sigs[1],16)
 
-        const validateCount = parseInt(await this.addressBook.multisig.contract.methods.isValidatedHash(suggestHash).call().catch(e => logger.xrp.info(`validateTransactionSelected call mig fail. ${e}`)));
-        if (validateCount < quorumCount) {
-            logger.xrp.error(`validateTransactionSelected error: selection validatedCount(${validateCount}) less than vault wanted.`);
-            return;
+            await api.validator.post(`/governance/validate-xrp-signature`, {
+                contract: xrpBridge.address,
+                govId: govInfo.id,
+                selectionIndex,
+                signatureHashs: selection.signatureHashs,
+                hash: mySignatureHash,
+                v: sigs[1],
+                r: sigs[2],
+                s: sigs[3]
+            });
+
+            hashMap.set(mySignatureHash.toString('hex').add0x(), {
+                txHash: mySignatureHash,
+                timestamp: parseInt(Date.now() / 1000),
+            })
         }
 
         const signingHash = Britto.sha256sol(packer.packSigningHash({
@@ -818,8 +830,8 @@ class XRPValidator {
                 s: sigs[3]
             });
 
-            hashMap.set(suggestHash.toString('hex').add0x(), {
-                txHash: suggestHash,
+            hashMap.set(signingHash.toString('hex').add0x(), {
+                txHash: signingHash,
                 timestamp: parseInt(Date.now() / 1000),
             })
         }
