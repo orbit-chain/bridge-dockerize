@@ -1,253 +1,20 @@
 [
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_newImp",
-				"type": "address"
-			}
-		],
-		"name": "_setImplementation",
-		"outputs": [],
-		"payable": false,
+		"inputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "govId",
-				"type": "bytes32"
-			},
-			{
-				"name": "uints",
-				"type": "uint256[]"
-			},
-			{
-				"name": "bytes32s",
-				"type": "bytes32[]"
-			},
-			{
-				"name": "comment",
-				"type": "bytes"
-			}
-		],
-		"name": "addBridgeInfo",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "govId",
-				"type": "bytes32"
-			},
-			{
-				"name": "selectionIndex",
-				"type": "uint256"
-			}
-		],
-		"name": "relayTransactionSelected",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "govId",
-				"type": "bytes32"
-			},
-			{
-				"name": "suggestIndex",
-				"type": "uint256"
-			}
-		],
-		"name": "relayTransactionSuggested",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "govId",
-				"type": "bytes32"
-			}
-		],
-		"name": "removeBridgeInfo",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_hubContract",
-				"type": "address"
-			}
-		],
-		"name": "setHubContract",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "govId",
-				"type": "bytes32"
-			},
-			{
-				"name": "swapIndex",
-				"type": "uint256"
-			},
-			{
-				"name": "validators",
-				"type": "address[]"
-			},
-			{
-				"name": "sigHashs",
-				"type": "bytes32[]"
-			},
-			{
-				"name": "fee",
-				"type": "uint256"
-			},
-			{
-				"name": "seq",
-				"type": "uint256"
-			}
-		],
-		"name": "suggestTransaction",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "sigs",
-				"type": "bytes32[]"
-			}
-		],
-		"name": "validateSwap",
-		"outputs": [
-			{
-				"name": "major",
-				"type": "bool"
-			},
-			{
-				"name": "vaList",
-				"type": "address[]"
-			}
-		],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "govId",
-				"type": "bytes32"
-			},
-			{
-				"name": "selectionIndex",
-				"type": "uint256"
-			},
-			{
-				"name": "validator",
-				"type": "address"
-			},
-			{
-				"name": "vSigs",
-				"type": "uint8[]"
-			},
-			{
-				"name": "rSigs",
-				"type": "bytes32[]"
-			},
-			{
-				"name": "sSigs",
-				"type": "bytes32[]"
-			}
-		],
-		"name": "validateTransactionSelected",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "govId",
-				"type": "bytes32"
-			},
-			{
-				"name": "suggestIndex",
-				"type": "uint256"
-			},
-			{
-				"name": "validator",
-				"type": "address"
-			},
-			{
-				"name": "vSig",
-				"type": "uint8"
-			},
-			{
-				"name": "rSig",
-				"type": "bytes32"
-			},
-			{
-				"name": "sSig",
-				"type": "bytes32"
-			}
-		],
-		"name": "validateTransactionSuggested",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
+		"type": "constructor"
 	},
 	{
 		"anonymous": false,
 		"inputs": [
 			{
 				"indexed": false,
-				"name": "govId",
-				"type": "bytes32"
-			},
-			{
-				"indexed": false,
-				"name": "swapIndex",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"name": "suggestIndex",
-				"type": "uint256"
+				"internalType": "bool",
+				"name": "activate",
+				"type": "bool"
 			}
 		],
-		"name": "XrpTransactionSuggested",
+		"name": "ChangeActivate",
 		"type": "event"
 	},
 	{
@@ -255,11 +22,63 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"name": "govId",
+				"internalType": "string",
+				"name": "message",
+				"type": "string"
+			}
+		],
+		"name": "Log",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "dataIndex",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "fromChain",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32[]",
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256[]",
+				"name": "uints",
+				"type": "uint256[]"
+			},
+			{
+				"indexed": false,
+				"internalType": "address[]",
+				"name": "vaList",
+				"type": "address[]"
+			}
+		],
+		"name": "SwapValidated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "governanceId",
 				"type": "bytes32"
 			},
 			{
 				"indexed": false,
+				"internalType": "uint256",
 				"name": "selectionIndex",
 				"type": "uint256"
 			}
@@ -272,26 +91,56 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"name": "govId",
+				"internalType": "bytes32",
+				"name": "governanceId",
 				"type": "bytes32"
 			},
 			{
 				"indexed": false,
+				"internalType": "uint256",
+				"name": "swapIndex",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "suggestIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "XrpTransactionSuggested",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "governanceId",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
 				"name": "selectionIndex",
 				"type": "uint256"
 			},
 			{
 				"indexed": false,
+				"internalType": "string",
 				"name": "fromChain",
 				"type": "string"
 			},
 			{
 				"indexed": false,
+				"internalType": "bytes32[]",
 				"name": "bytes32s",
 				"type": "bytes32[]"
 			},
 			{
 				"indexed": false,
+				"internalType": "uint256[]",
 				"name": "uints",
 				"type": "uint256[]"
 			}
@@ -300,104 +149,184 @@
 		"type": "event"
 	},
 	{
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "fallback"
-	},
-	{
-		"inputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "chain",
-		"outputs": [
-			{
-				"name": "",
-				"type": "string"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
 		"inputs": [
 			{
-				"name": "govId",
-				"type": "bytes32"
-			}
-		],
-		"name": "getGovInfoArray",
-		"outputs": [
+				"internalType": "address",
+				"name": "hubContract",
+				"type": "address"
+			},
 			{
+				"internalType": "string",
+				"name": "fromChain",
+				"type": "string"
+			},
+			{
+				"internalType": "bytes",
+				"name": "fromAddr",
+				"type": "bytes"
+			},
+			{
+				"internalType": "bytes",
+				"name": "toAddr",
+				"type": "bytes"
+			},
+			{
+				"internalType": "bytes",
+				"name": "token",
+				"type": "bytes"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "bytes32s",
+				"type": "bytes32[]"
+			},
+			{
+				"internalType": "uint256[]",
 				"name": "uints",
 				"type": "uint256[]"
 			},
 			{
-				"name": "bytes32s",
+				"internalType": "bytes",
+				"name": "data",
+				"type": "bytes"
+			},
+			{
+				"internalType": "address[]",
+				"name": "validators",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint8[]",
+				"name": "v",
+				"type": "uint8[]"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "r",
+				"type": "bytes32[]"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "s",
 				"type": "bytes32[]"
 			}
 		],
-		"payable": false,
+		"name": "addSwapData",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "vaList",
+				"type": "address[]"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "admin_",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
+		"inputs": [],
+		"name": "chain",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
-				"name": "govId",
+				"internalType": "bool",
+				"name": "activate",
+				"type": "bool"
+			}
+		],
+		"name": "changeActivate",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_chain",
+				"type": "string"
+			}
+		],
+		"name": "getChainId",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "chainId",
 				"type": "bytes32"
 			}
 		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "getStepStatus",
 		"outputs": [
 			{
+				"internalType": "bool",
 				"name": "needSuggest",
 				"type": "bool"
 			},
 			{
+				"internalType": "bool",
 				"name": "needRelaySuggestion",
 				"type": "bool"
 			},
 			{
+				"internalType": "bool",
 				"name": "needRelaySelection",
 				"type": "bool"
 			},
 			{
+				"internalType": "uint256",
 				"name": "dataIndex",
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256",
 				"name": "suggestIndex",
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256",
 				"name": "selectionIndex",
 				"type": "uint256"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [
 			{
+				"internalType": "uint256",
 				"name": "types",
 				"type": "uint256"
 			},
 			{
-				"name": "govId",
-				"type": "bytes32"
-			},
-			{
+				"internalType": "uint256",
 				"name": "index",
 				"type": "uint256"
 			}
@@ -405,38 +334,38 @@
 		"name": "getSuggestion",
 		"outputs": [
 			{
+				"internalType": "uint256",
 				"name": "swapIndex",
 				"type": "uint256"
 			},
 			{
+				"internalType": "address[]",
 				"name": "validators",
 				"type": "address[]"
 			},
 			{
+				"internalType": "bytes32[]",
 				"name": "signatureHashs",
 				"type": "bytes32[]"
 			},
 			{
+				"internalType": "uint256",
 				"name": "fee",
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256",
 				"name": "seq",
 				"type": "uint256"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [
 			{
-				"name": "govId",
-				"type": "bytes32"
-			},
-			{
+				"internalType": "uint256",
 				"name": "dataIndex",
 				"type": "uint256"
 			}
@@ -444,83 +373,75 @@
 		"name": "getSwapDataArray",
 		"outputs": [
 			{
+				"internalType": "bytes32[]",
 				"name": "bytes32s",
 				"type": "bytes32[]"
 			},
 			{
+				"internalType": "uint256[]",
 				"name": "uints",
 				"type": "uint256[]"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [],
-		"name": "getVersion",
+		"name": "governanceId",
 		"outputs": [
 			{
-				"name": "",
-				"type": "string"
-			}
-		],
-		"payable": false,
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
+				"internalType": "bytes32",
 				"name": "",
 				"type": "bytes32"
 			}
 		],
-		"name": "govInfo",
-		"outputs": [
-			{
-				"name": "comment",
-				"type": "bytes"
-			}
-		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [],
-		"name": "hubContract",
+		"name": "governance_",
 		"outputs": [
 			{
+				"internalType": "address",
 				"name": "",
 				"type": "address"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
-		"inputs": [],
-		"name": "implementation",
-		"outputs": [
-			{
-				"name": "",
-				"type": "address"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "_sequence",
+				"type": "uint256"
+			}
+		],
+		"name": "initialize",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "isActivated",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
 				"name": "",
 				"type": "bytes32"
 			}
@@ -528,88 +449,224 @@
 		"name": "isConfirmed",
 		"outputs": [
 			{
+				"internalType": "bool",
 				"name": "",
 				"type": "bool"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [
 			{
+				"internalType": "address",
 				"name": "",
-				"type": "bytes32"
+				"type": "address"
 			}
 		],
-		"name": "isValidGovId",
+		"name": "isOperator",
 		"outputs": [
 			{
+				"internalType": "bool",
 				"name": "",
 				"type": "bool"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "isSuggest",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
 				"name": "",
 				"type": "bytes32"
 			}
 		],
+		"name": "isValidChain",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "lastSelectionCursor",
 		"outputs": [
 			{
+				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [],
-		"name": "relaySwap",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
+		"name": "policyAdmin",
+		"outputs": [
 			{
+				"internalType": "address",
 				"name": "",
-				"type": "bytes32"
+				"type": "address"
 			}
 		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "quorum",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "selectionIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "relayTransactionSelected",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "swapIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address[]",
+						"name": "validators",
+						"type": "address[]"
+					},
+					{
+						"internalType": "bytes32[]",
+						"name": "signatureHashs",
+						"type": "bytes32[]"
+					},
+					{
+						"internalType": "uint256",
+						"name": "fee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "seq",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct XrpBridge.Suggestion",
+				"name": "selection",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "suggestIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "relayTransactionSuggested",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "swapIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address[]",
+						"name": "validators",
+						"type": "address[]"
+					},
+					{
+						"internalType": "bytes32[]",
+						"name": "signatureHashs",
+						"type": "bytes32[]"
+					},
+					{
+						"internalType": "uint256",
+						"name": "fee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "seq",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct XrpBridge.Suggestion",
+				"name": "suggestion",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "selectionCursor",
 		"outputs": [
 			{
+				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [
 			{
-				"name": "",
-				"type": "bytes32"
-			},
-			{
+				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
@@ -617,49 +674,175 @@
 		"name": "selections",
 		"outputs": [
 			{
+				"internalType": "uint256",
 				"name": "swapIndex",
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256",
 				"name": "fee",
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256",
 				"name": "seq",
 				"type": "uint256"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"name": "suggestCount",
+		"inputs": [],
+		"name": "sequence",
 		"outputs": [
 			{
+				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [
 			{
-				"name": "",
+				"internalType": "bytes32",
+				"name": "_governanceId",
 				"type": "bytes32"
+			}
+		],
+		"name": "setGovernanceId",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_policyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "setPolicyAdmin",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_chain",
+				"type": "string"
 			},
 			{
+				"internalType": "bool",
+				"name": "isValid",
+				"type": "bool"
+			}
+		],
+		"name": "setValidChain",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_operator",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "isValid",
+				"type": "bool"
+			}
+		],
+		"name": "setValidOperator",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "skipIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "skipSelectionCursor",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "skipSeq",
+				"type": "uint256"
+			}
+		],
+		"name": "skipSequence",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "suggestCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "swapIndex",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "validators",
+				"type": "address[]"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "sigHashs",
+				"type": "bytes32[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "fee",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "seq",
+				"type": "uint256"
+			}
+		],
+		"name": "suggestTransaction",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
@@ -667,49 +850,41 @@
 		"name": "suggestions",
 		"outputs": [
 			{
+				"internalType": "uint256",
 				"name": "swapIndex",
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256",
 				"name": "fee",
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256",
 				"name": "seq",
 				"type": "uint256"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "",
-				"type": "bytes32"
-			}
-		],
+		"inputs": [],
 		"name": "swapCount",
 		"outputs": [
 			{
+				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": true,
 		"inputs": [
 			{
-				"name": "",
-				"type": "bytes32"
-			},
-			{
+				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
@@ -717,32 +892,121 @@
 		"name": "swapData",
 		"outputs": [
 			{
+				"internalType": "string",
 				"name": "fromChain",
 				"type": "string"
 			},
 			{
+				"internalType": "string",
 				"name": "toChain",
 				"type": "string"
 			},
 			{
+				"internalType": "bytes",
 				"name": "fromAddr",
 				"type": "bytes"
 			},
 			{
+				"internalType": "bytes",
 				"name": "toAddr",
 				"type": "bytes"
 			},
 			{
+				"internalType": "bytes",
 				"name": "token",
 				"type": "bytes"
 			},
 			{
+				"internalType": "bytes",
 				"name": "executionData",
 				"type": "bytes"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "selectionIndex",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint8[]",
+				"name": "vSigs0",
+				"type": "uint8[]"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "rSigs0",
+				"type": "bytes32[]"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "sSigs0",
+				"type": "bytes32[]"
+			},
+			{
+				"internalType": "uint8[]",
+				"name": "vSigs1",
+				"type": "uint8[]"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "rSigs1",
+				"type": "bytes32[]"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "sSigs1",
+				"type": "bytes32[]"
+			}
+		],
+		"name": "validateTransactionSelected",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "suggestIndex",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint8[]",
+				"name": "vSig",
+				"type": "uint8[]"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "rSig",
+				"type": "bytes32[]"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "sSig",
+				"type": "bytes32[]"
+			}
+		],
+		"name": "validateTransactionSuggested",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "version",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "pure",
 		"type": "function"
 	}
 ]
