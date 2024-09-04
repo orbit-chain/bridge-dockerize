@@ -167,9 +167,7 @@ class TonAPI {
 
             const txAddrSlice = new TupleSlice(txAddrStack.stack);
             transactionAddress = txAddrSlice.readCell().beginParse().readAddress()?.toFriendly();
-        } catch (e) {
-            console.log(e);
-        }
+        } catch (e) {}
 
         return transactionAddress;
     }
@@ -187,9 +185,7 @@ class TonAPI {
             const payload = tupleSlice.readCell().toString();
 
             data = { destination, amount, payload };
-        } catch (e) {
-            console.log(e);
-        }
+        } catch (e) {}
 
         return data;
     }
@@ -219,9 +215,7 @@ class TonAPI {
             }
 
             config = { required, confirmation, confirmedValidators };
-        } catch (e) {
-            console.log(e);
-        }
+        } catch (e) {}
 
         return config;
     }

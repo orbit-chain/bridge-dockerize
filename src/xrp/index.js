@@ -492,6 +492,14 @@ class XRPValidator {
         return parseInt(data) <= 4294967295;
     }
 
+    async checkValidSuggestion(suggestIndex, dataIndex) {
+        let suggestion = await xrpBridge.contract.methods.getSuggestion(0, suggestIndex).call().catch(e => {return;});
+        if(suggestion && parseInt(suggestion.fee) !== 0 && parseInt(suggestion.swapIndex) === parseInt(dataIndex)) {
+            return suggestion;
+        }
+        return;
+    }
+
     async getSuggestRelay() {
         this.intervalClear(this.intervals.getSuggestRelay);
     
@@ -539,8 +547,16 @@ class XRPValidator {
 
         let suggestion = await xrpBridge.contract.methods.getSuggestion(0, data.suggestIndex).call().catch(e => {return;});
         if (!suggestion || parseInt(suggestion.fee) === 0 || parseInt(suggestion.swapIndex) !== parseInt(data.dataIndex)){
-            logger.xrp.error('validateTransactionSuggested error: invalid suggestion');
-            return;
+            let validSuggestion
+            for(let i = data.suggestIndex - 1; i >= 0; i--) {
+                validSuggestion = this.checkValidSuggestion(i, dataIndex);
+            }
+            if(validSuggestion) {
+                suggestion = validSuggestion
+            } else {
+                logger.xrp.error('validateTransactionSuggested error: invalid suggestion');
+                return;
+            }
         }
 
         let validators = await xrpBridge.multisig.contract.methods.getOwners().call();

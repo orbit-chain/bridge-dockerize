@@ -142,7 +142,7 @@ class EVMValidator {
         if(config.l2[this.chainLower]) {
             let l1Chain = config.l2[this.chainLower].l1_chain
             const l1 = this.l1 = Britto.getNodeConfigBase('l1');
-            l1.rpc = config.endpoints[l1Chain].rpc[0];
+            l1.rpc = config.endpoints[l1Chain].rpc;
             l1.abi = Britto.getJSONInterface({filename: 'zkevm/PolygonValidiumEtrog'});
             l1.address = config.l2[this.chainLower].PolygonValidiumEtrog
             new Britto(l1, l1Chain).connectWeb3();

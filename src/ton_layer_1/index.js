@@ -409,9 +409,7 @@ class TONLayer1Validator {
                 let opCode = null
                 try {
                     opCode = "0x"+slice.readUint(32).toString('hex'); // BN return
-                } catch (e) {
-                    console.log(e);
-                }
+                } catch (e) {}
                 if(!opCode || opCode !== "0x7362d09c") continue;
 
                 let obj = {};
@@ -575,6 +573,12 @@ class TONLayer1Validator {
         await valid(params, chainIds, this.orbitHub);
 
         async function valid(data, chainIds, orbitHubAddress) {
+            let sender = Britto.getRandomPkAddress();
+            if(!sender || !sender.pk || !sender.address){
+                logger.ton_layer_1.error("Cannot Generate account");
+                return;
+            }
+
             let fromChainId = chainIds[data.fromChain];
             let toChainId = chainIds[data.toChain];
             if(!fromChainId || !toChainId){
