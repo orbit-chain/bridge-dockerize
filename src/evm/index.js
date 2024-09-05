@@ -268,10 +268,10 @@ class EVMValidator {
             // check sequence tx
             let sequenceTxData = await this.l1.web3.eth.getTransaction(sendSequencesTxHash)
             let sequenceTxReceipt = await this.l1.web3.eth.getTransactionReceipt(sendSequencesTxHash)
-            
+
             let lastBatchSequenced = this.l1.web3.utils.hexToNumber(sequenceTxReceipt.logs[1].data);
             if(lastBatchSequenced < parseInt(response.batch)) return;
-            
+
             let txInputData = this.l1.web3.eth.abi.decodeParameters(this.l1.abi[1].inputs, sequenceTxData.input.slice(10))
             let batchTxs = txInputData.batches.map(x => x[0].toLowerCase())
             if(!batchTxs.includes(transactionsHash)) return;
@@ -454,7 +454,7 @@ class EVMValidator {
         }
         await toInstance.validateSwap(data, params);
     }
-    
+
     async validateSwap(_, params){
         const validator = {address: this.account.address, pk: this.account.pk};
 
@@ -498,14 +498,14 @@ class EVMValidator {
                         if(res.data.validators[i].toLowerCase() === validator.address.toLowerCase()){
                             logger.evm.error(`Already signed. validated swapHash: ${hash}`, {chain: chainName});
                             return;
-                        }   
+                        }
                     }
                 }
 
                 let signature = Britto.signMessage(hash, validator.pk);
                 let sigs = EVMValidator.makeSigs(validator.address, signature);
                 sigs[1] = parseInt(sigs[1],16)
-    
+
                 await api.validator.post(`/governance/validate`, {
                     from_chain: data.fromChain,
                     to_chain: data.toChain,
@@ -520,7 +520,7 @@ class EVMValidator {
                     r: sigs[2],
                     s: sigs[3]
                 });
-    
+
                 hashMap.set(hash.toString('hex').add0x(), {
                     txHash: hash,
                     timestamp: parseInt(Date.now() / 1000),
@@ -610,7 +610,7 @@ class EVMValidator {
 
         let txData = {
             from: validator.address,
-            to: multisig,
+            to: this.migAddress,
             value: mainnet.web3.utils.toHex(0)
         }
 
