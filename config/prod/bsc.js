@@ -8,7 +8,8 @@ module.exports = {
         'avax',
         'ton',
         'wemix',
-        'metadium'
+        'metadium',
+        'silicon',
     ],
 
     // Bridge Addresses
@@ -32,11 +33,6 @@ module.exports = {
             multisig: "0xD5afF4221b353Ab0A3dd6ad7C1FB97e582DC0C9c",
             admin: "0xe1bbfc002714bede0f9ee84e5d1cb4cf3a3a9e75"
         },
-        celo: {
-            minter: "0x9DC1cb0a52fC34659D18B0F31e26582a8Db609b5",
-            multisig: "0xDf4f362E6C3Baa3Fc8Fb0179498e6c80c35Cf547",
-            admin: "0xa37581EDC6135585287675Ee6E517897E3c42D38"
-        },
         eth: {
             minter: "0x166E514c465EF0DB69246e14C6bA866F91B1e061",
             multisig: "0x3DE5098FBdb858567542A949B1CE22C61eae14FB",
@@ -55,6 +51,11 @@ module.exports = {
             minter: "0x9DC1cb0a52fC34659D18B0F31e26582a8Db609b5",
             multisig: "0xDf4f362E6C3Baa3Fc8Fb0179498e6c80c35Cf547",
             admin: "0xa37581EDC6135585287675Ee6E517897E3c42D38"
+        },
+        silicon: {
+            minter: "0xE82b8C388E0bcF7C01D05B2cE678f6d012c9B7D9",
+            multisig: "0xFf46d621318Dcaf14f09cc7A50a68230f3562e11",
+            admin: "0x406134c9B11dcc132d4cB810D283FbE6E31874De",
         },
         governance: {
             chain: "BSC",
