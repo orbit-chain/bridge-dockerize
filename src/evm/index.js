@@ -414,12 +414,10 @@ class EVMValidator {
 
         let params = {...res[0]};
 
-        // govId 변경의 사유로 SILICON(구 eth), TON, XRP validator는 특정 timestamp 이후의 브릿지 건만 validate 가능
-        if(["SILICON", "XRP", "TON_LAYER_1"].includes(this.govInfo.chain)) {
-            if(params.txTimestamp < 1726876800) {
-                logger.evm.info(`Invalid Transaction (too old to validate): ${data.bytes32s[1]}`, loggerOpt);
-                return;
-            }
+        // 특정 timestamp 이후의 브릿지 건만 validate 가능
+        if(params.txTimestamp < 1726876800) {
+            logger.evm.info(`Invalid Transaction (too old to validate): ${data.bytes32s[1]}`, loggerOpt);
+            return;
         }
 
         // Check deposit block confirmed
