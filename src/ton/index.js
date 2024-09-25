@@ -157,7 +157,7 @@ class TONValidator {
                     uints: [result.amount, result.decimals, result.depositId, result.lt], // result.lt?
                     data: result.data || '0x'
                 };
-
+                
                 const tonMinter = this.tonMinter;
                 const ton = this.ton;
 
@@ -386,8 +386,8 @@ class TONValidator {
         await valid(params, chainIds, this.orbitHub);
 
         async function valid(data, chainIds, orbitHubAddress) {
-            let fromChainId = chainIds[data.fromChain.toUpperCase()];
-            let toChainId = chainIds[data.toChain.toUpperCase()];
+            let fromChainId = chainIds[data.fromChain.toLowerCase()];
+            let toChainId = chainIds[data.toChain.toLowerCase()];
             if(!fromChainId || !toChainId){
                 logger.ton.error(`Cannot get chainId. ${data.fromChain}, ${data.toChain}`);
                 return;
@@ -425,12 +425,12 @@ class TONValidator {
                         }
                     }
                 }
-
+                
                 let ecSig = Britto.signMessage(hash, validator.pk);
                 let edSig = Britto.signEd25519(hash, validator.pk);
                 let sigs = TONValidator.makeSigsWithED(validator.address, ecSig, edSig);
                 sigs[1] = parseInt(sigs[1],16)
-
+    
                 await api.validator.post(`/governance/validate`, {
                     from_chain: data.fromChain,
                     to_chain: data.toChain,
@@ -449,7 +449,7 @@ class TONValidator {
                     ed_r: sigs[4],
                     ed_s: sigs[5]
                 });
-
+                
                 hashMap.set(hash.toString('hex').add0x(), {
                     txHash: hash,
                     timestamp: parseInt(Date.now() / 1000),

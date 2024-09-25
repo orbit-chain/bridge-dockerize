@@ -268,10 +268,10 @@ class EVMValidator {
             // check sequence tx
             let sequenceTxData = await this.l1.web3.eth.getTransaction(sendSequencesTxHash)
             let sequenceTxReceipt = await this.l1.web3.eth.getTransactionReceipt(sendSequencesTxHash)
-
+            
             let lastBatchSequenced = this.l1.web3.utils.hexToNumber(sequenceTxReceipt.logs[1].data);
             if(lastBatchSequenced < parseInt(response.batch)) return;
-
+            
             let txInputData = this.l1.web3.eth.abi.decodeParameters(this.l1.abi[1].inputs, sequenceTxData.input.slice(10))
             let batchTxs = txInputData.batches.map(x => x[0].toLowerCase())
             if(!batchTxs.includes(transactionsHash)) return;
@@ -308,7 +308,6 @@ class EVMValidator {
     }
 
     async getParams(mainnet, functionSig, tx, depositId) {
-        const govInfo = this.govInfo;
         const loggerOpt = this.loggerOpt;
 
         let receipt = await mainnet.web3.eth.getTransactionReceipt(tx).catch(e => {});
@@ -342,6 +341,12 @@ class EVMValidator {
         });
         if(!currentBlock || !currentBlock.number) return;
         params.currentBlock = currentBlock;
+
+        let txBlock = await mainnet.web3.eth.getBlock(receipt.blockNumber).catch(e => {
+            logger.evm.error(`getBlock(${receipt.blockNumber}) execute error: ` + e.message, loggerOpt);
+        });
+        if(!txBlock || !txBlock.timestamp) return;
+        params.txTimestamp = txBlock.timestamp;
 
         return params;
     }
@@ -391,6 +396,7 @@ class EVMValidator {
                     && res[i].depositId === res[j].depositId
                     && res[i].data === res[j].data
                     && res[i].receiptBlock === res[j].receiptBlock
+                    && res[i].txTimestamp === res[j].txTimestamp
                 ) {
                     res[i].eqCnt = res[i].eqCnt + 1;
                     res[j].eqCnt = res[j].eqCnt + 1;
@@ -407,6 +413,14 @@ class EVMValidator {
         }
 
         let params = {...res[0]};
+
+        // govId 변경의 사유로 SILICON(구 eth), TON, XRP validator는 특정 timestamp 이후의 브릿지 건만 validate 가능
+        if(["SILICON", "XRP", "TON_LAYER_1"].includes(this.govInfo.chain)) {
+            if(params.txTimestamp < 1726876800) {
+                logger.evm.info(`Invalid Transaction (too old to validate): ${data.bytes32s[1]}`, loggerOpt);
+                return;
+            }
+        }
 
         // Check deposit block confirmed
         const confirmCount = config.system[`${this.chainLower}ConfirmCount`] || 24;
@@ -454,7 +468,7 @@ class EVMValidator {
         }
         await toInstance.validateSwap(data, params);
     }
-
+    
     async validateSwap(_, params){
         const validator = {address: this.account.address, pk: this.account.pk};
 
@@ -498,14 +512,14 @@ class EVMValidator {
                         if(res.data.validators[i].toLowerCase() === validator.address.toLowerCase()){
                             logger.evm.error(`Already signed. validated swapHash: ${hash}`, {chain: chainName});
                             return;
-                        }
+                        }   
                     }
                 }
 
                 let signature = Britto.signMessage(hash, validator.pk);
                 let sigs = EVMValidator.makeSigs(validator.address, signature);
                 sigs[1] = parseInt(sigs[1],16)
-
+    
                 await api.validator.post(`/governance/validate`, {
                     from_chain: data.fromChain,
                     to_chain: data.toChain,
@@ -520,7 +534,7 @@ class EVMValidator {
                     r: sigs[2],
                     s: sigs[3]
                 });
-
+    
                 hashMap.set(hash.toString('hex').add0x(), {
                     txHash: hash,
                     timestamp: parseInt(Date.now() / 1000),

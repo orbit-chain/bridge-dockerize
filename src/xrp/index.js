@@ -549,6 +549,7 @@ class XRPValidator {
         if (!suggestion || parseInt(suggestion.fee) === 0 || parseInt(suggestion.swapIndex) !== parseInt(data.dataIndex)){
             let validSuggestion
             for(let i = data.suggestIndex - 1; i >= 0; i--) {
+                if (validSuggestion) break;
                 validSuggestion = this.checkValidSuggestion(i, dataIndex);
             }
             if(validSuggestion) {
