@@ -386,8 +386,8 @@ class TONValidator {
         await valid(params, chainIds, this.orbitHub);
 
         async function valid(data, chainIds, orbitHubAddress) {
-            let fromChainId = chainIds[data.fromChain.toLowerCase()];
-            let toChainId = chainIds[data.toChain.toLowerCase()];
+            let fromChainId = chainIds[data.fromChain.toUpperCase()];
+            let toChainId = chainIds[data.toChain.toUpperCase()];
             if(!fromChainId || !toChainId){
                 logger.ton.error(`Cannot get chainId. ${data.fromChain}, ${data.toChain}`);
                 return;
