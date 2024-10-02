@@ -53,7 +53,7 @@ module.exports = {
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
                 chain_id: 8217
             },
-            rpc: ["https://public-en.node.kaia.io", "https://kaia.blockpi.network/v1/rpc/public", "https://1rpc.io/klay", "https://klaytn.api.onfinality.io/public"],
+            rpc: ["https://public-en.node.kaia.io", "https://kaia.blockpi.network/v1/rpc/public", "https://1rpc.io/klay"],
             confirm: 10
         },
         silicon: {
