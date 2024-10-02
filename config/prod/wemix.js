@@ -9,6 +9,7 @@ module.exports = {
         "metadium",
         "ton",
         "wemix",
+        "silicon",
     ],
 
     // Bridge Addresses
@@ -50,6 +51,11 @@ module.exports = {
             vault: "0x445F863df0090f423A6D7005581e30d5841e4D6d",
             multisig: "0x775b772Bd879931433C95047aF46113E97083614",
             admin: "0x9CE4E2B920DdEe58158704A47650a13123907749"
+        },
+        silicon: {
+            minter: "0xc8ab468c4F94E954acC2D60a328DEd74bF315CB6",
+            multisig: "0xe938Ff16C04C06E04AEF710F7682b437D9d47065",
+            admin: "0x18d8037c2F2af01B5eA232175E051910C0d01812"
         },
         governance: {
             chain: "WEMIX",

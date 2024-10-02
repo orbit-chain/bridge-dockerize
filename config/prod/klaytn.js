@@ -6,7 +6,8 @@ module.exports = {
         'matic',
         'eth',
         'ton',
-        'wemix'
+        'wemix',
+        'silicon',
     ],
 
     // Bridge Addresses
@@ -43,6 +44,11 @@ module.exports = {
         ton: {
             minter: "EQAlMRLTYOoG6kM0d3dLHqgK30ol3qIYwMNtEelktzXP_pD5",
             multisig: "EQAblz6Xr6b-7eLAWeagIK2Dn-g81YiNpu0okHfc9EwY9_72",
+        },
+        silicon: {
+            minter: "0x53ab0acE2f5245297917687F2a0380cf82055C57",
+            multisig: "0x0e892b6119864592e86117d17Ef49db2f7C92258",
+            admin: "0xE0273bDF3A45BbbB2506fDBBae96871D49d5FD19",
         },
         governance: {
             chain: "KLAYTN",
