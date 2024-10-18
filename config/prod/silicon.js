@@ -42,8 +42,8 @@ module.exports = {
             admin: "0xe62Fa6C59AD14B46d4e7791FA817030732953b79",
         },
         ton: {
-            minter: "EQAihs8RdUgLANjNypV5LgaUHfdoUsMVL5o06K2F-qFSki00",
-            multisig: "EQBbAqI1eVJ8PbZpKXA5njk6hq8Q6ZUxwXLZf-ntG1wf90Tm",
+            minter: "EQCVcKobt9eK6KgKdpkVp_xK23My7U0DHJUrko_WuH5dm_qu",
+            multisig: "EQDeOV9RZZA4dwS39S0YWQbmsEEfjxIT7F0BhylWTqL9jLiD",
         },
         wemix: {
             minter: "0x6BD8E3beEC87176BA9c705c9507Aa5e6F0E6706f",
