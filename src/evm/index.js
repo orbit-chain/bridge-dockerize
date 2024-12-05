@@ -425,29 +425,8 @@ class EVMValidator {
         let isConfirmed = parseInt(params.currentBlock.number) - parseInt(params.receiptBlock) >= confirmCount;
 
         if(chainName === "ETH"){
-            let difficulty = params.currentBlock.difficulty;
-            let currentTotalDifficulty = params.currentBlock.totalDifficulty;
-            let terminalTotalDifficulty = config.info.eth.ETH_TERMINAL_TOTAL_DIFFICULTY;
-            if(!currentTotalDifficulty || !terminalTotalDifficulty || difficulty === undefined
-                || (currentTotalDifficulty).dcomp(terminalTotalDifficulty) === -1
-                || parseInt(difficulty) !== 0
-            ){
-                logger.evm.error(`currentTotalDifficulty is invalid. ${currentTotalDifficulty}`, loggerOpt);
-                return;
-            }
-
-            let beaconBlock = await bridgeUtils.getBeaconBlock().catch(e => {
-                logger.evm.error('getBeaconBlock() execute error: ' + e.message, loggerOpt);
-            });
-            if (!beaconBlock || !beaconBlock.data || !beaconBlock.data.message || !beaconBlock.data.message.body || !beaconBlock.data.message.body.execution_payload) return;
-
-            let finalizedBlockNumber = parseInt(beaconBlock.data.message.body.execution_payload.block_number);
-            if (isNaN(finalizedBlockNumber) || finalizedBlockNumber === 0) {
-                logger.eth.error('get finalized block number error.');
-                return;
-            }
-
-            isConfirmed = parseInt(params.receiptBlock) <= finalizedBlockNumber;
+            let latestFinalizedBlock = (await nodes[0].web3.eth.getBlock("finalized")).number;
+            isConfirmed = parseInt(params.receiptBlock) <= latestFinalizedBlock;
         }
 
         if(!isConfirmed){
