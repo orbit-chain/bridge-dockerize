@@ -16,6 +16,11 @@ module.exports = {
     },
     // Bridge Addresses
     bridge_address: {
+        avax: {
+            minter: "0xE38ca00A6FD34B793012Bb9c1471Adc4E98386cF",
+            multisig: "0xfa50391705D2FA7ac47Dd211B78378825bc763e6",
+            admin: "0x009071058740276327A393B084eC447b8F0Fc6Ae",
+        },
         klaytn: {
             minter: "0x917655B6C27A3D831b4193CE18ECe6bfcC806BF8",
             multisig: "0x22Bef83bABcC1169855D748D13523CA10aD87dF7",
