@@ -79,7 +79,7 @@ class XRPValidator {
         monitor.address[chainName] = bridgeUtils.getKeyPair(this.account.pk).address;
 
         const addressBook = this.addressBook = Britto.getNodeConfigBase('xrpAddressBook');
-        addressBook.rpc = config.endpoints.silicon.rpc;
+        addressBook.rpc = config.endpoints.silicon.rpc[0];
         addressBook.address = config.settings.silicon.addressbook;
         addressBook.abi = Britto.getJSONInterface({filename: 'AddressBook'});
         new Britto(addressBook, chainName).connectWeb3();
@@ -89,7 +89,7 @@ class XRPValidator {
         addressBook.multisig.contract = new addressBook.web3.eth.Contract(addressBook.multisig.abi, addressBook.multisig.wallet);
 
         const xrpBridge = this.xrpBridge = Britto.getNodeConfigBase('xrpBridge');
-        xrpBridge.rpc = config.endpoints.silicon.rpc;
+        xrpBridge.rpc = config.endpoints.silicon.rpc[0];
         xrpBridge.address = config.settings.silicon.xrpBridge;
         xrpBridge.abi = Britto.getJSONInterface({filename: 'bridge/Xrp'});
         new Britto(xrpBridge, 'silicon').connectWeb3();

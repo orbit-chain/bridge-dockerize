@@ -3,7 +3,6 @@ global.logger.ton_layer_1 = require('./logger');
 const config = require(ROOT + '/config');
 
 const Britto = require(ROOT + '/lib/britto');
-const txSender = require(ROOT + '/lib/txsender');
 const api = require(ROOT + '/lib/api');
 
 const BridgeUtils = require(ROOT + '/lib/bridgeutils');
@@ -11,8 +10,6 @@ const bridgeUtils = new BridgeUtils();
 
 const packer = require("./utils/packer");
 const Ton = require("./utils/ton.api");
-
-const FIX_GAS = 99999999;
 
 const UINT64_MAX = "18446744073709551616";
 const NumberFormat = /^[0-9]+$/;
@@ -79,7 +76,7 @@ class TONLayer1Validator {
         if(!ton) throw 'Invalid Ton Endpoint';
 
         const addressBook = this.addressBook = Britto.getNodeConfigBase('tonAddressBook');
-        addressBook.rpc = config.endpoints.silicon.rpc;
+        addressBook.rpc = config.endpoints.silicon.rpc[0];
         addressBook.address = config.settings.silicon.addressbook;
         addressBook.abi = Britto.getJSONInterface({filename: 'AddressBook'});
 
