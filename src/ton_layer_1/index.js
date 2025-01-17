@@ -4,7 +4,7 @@ const config = require(ROOT + '/config');
 
 const Britto = require(ROOT + '/lib/britto');
 const api = require(ROOT + '/lib/api');
-
+const RPCAggregator = require(ROOT + '/lib/rpcAggregator');
 const BridgeUtils = require(ROOT + '/lib/bridgeutils');
 const bridgeUtils = new BridgeUtils();
 
@@ -75,23 +75,34 @@ class TONLayer1Validator {
         const ton = this.ton = new Ton(info.ENDPOINT);
         if(!ton) throw 'Invalid Ton Endpoint';
 
-        const addressBook = this.addressBook = Britto.getNodeConfigBase('tonAddressBook');
-        addressBook.rpc = config.endpoints.silicon.rpc[0];
-        addressBook.address = config.settings.silicon.addressbook;
-        addressBook.abi = Britto.getJSONInterface({filename: 'AddressBook'});
+        let rpc = config.endpoints.silicon.rpc;
+        if(!Array.isArray(rpc) && typeof rpc !== "string") {
+            throw `Unsupported Silicon Endpoints: ${rpc}, Endpoints must be array or string.`;
+        }
 
-        addressBook.onconnect = async () => {
-            if(monitor.address[chainName]) return;
-            monitor.address[chainName] = await this.ton.getTonAccount(this.account.pk);
-        };
-        new Britto(addressBook, chainName).connectWeb3();
+        rpc = Array.isArray(rpc) ? rpc : [ rpc ]
+        let expandedNode = process.env.SILICON ? JSON.parse(process.env.SILICON) : undefined
+        if(expandedNode && expandedNode.length > 0) {
+            rpc = rpc.concat(expandedNode)
+        }
+
 
         this.multisigABI = Britto.getJSONInterface({filename: 'multisig/Ed25519'});
-        this.depositTokenABI = {"event":"DepositToken","data":[[{"name":"opCode","type":"uint32","value":"hex"}],[{"name":"fromAddr","type":"uint256","value":"hex"},{"name":"jettonHash","type":"uint256","value":"hex"}],[{"name":"toChain","type":"uint256","value":"hex"},{"name":"toAddr","type":"uint160","value":"hex"},{"name":"amount","type":"uint256","value":"uint32"},{"name":"token","type":"uint160","value":"hex"},{"name":"decimal","type":"uint8","value":"uint32"},{"name":"depositId","type":"uint64","value":"uint32"}]]};
+        const addressBook = this.addressBook = new RPCAggregator("SILICON", config.endpoints.silicon.chain_id);
+        for (const url of rpc) {
+            addressBook.addRpc(url, {
+                name: "tonAddressBook",
+                address: config.settings.silicon.addressbook,
+                abi: Britto.getJSONInterface({filename: 'AddressBook'}),
+                multisig: {
+                    address: config.settings.silicon.multisig,
+                    abi: this.multisigABI,
+                },
+                onconnect: this.setTonAccount.bind(this),
+            });
+        }
 
-        addressBook.multisig.wallet = config.settings.silicon.multisig;
-        addressBook.multisig.abi = this.multisigABI;
-        addressBook.multisig.contract = new addressBook.web3.eth.Contract(addressBook.multisig.abi, addressBook.multisig.wallet);
+        this.depositTokenABI = {"event":"DepositToken","data":[[{"name":"opCode","type":"uint32","value":"hex"}],[{"name":"fromAddr","type":"uint256","value":"hex"},{"name":"jettonHash","type":"uint256","value":"hex"}],[{"name":"toChain","type":"uint256","value":"hex"},{"name":"toAddr","type":"uint160","value":"hex"},{"name":"amount","type":"uint256","value":"uint32"},{"name":"token","type":"uint160","value":"hex"},{"name":"decimal","type":"uint8","value":"uint32"},{"name":"depositId","type":"uint64","value":"uint32"}]]};
 
         this.workerStarted = false;
         this.intervals = {
@@ -109,8 +120,13 @@ class TONLayer1Validator {
 
         this.hashMap = new Map();
         this.flushHashMap();
-        
+
         this.startIntervalWorker();
+    }
+
+    async setTonAccount() {
+        if(monitor.address[this.chainName]) return;
+        monitor.address[this.chainName] = await this.ton.getTonAccount(this.account.pk);
     }
 
     startIntervalWorker() {
@@ -209,7 +225,6 @@ class TONLayer1Validator {
     async validateRelayedData(data) {
         const chainIds = this.chainIds;
         const ton = this.ton;
-        const addressBook = this.addressBook;
         const chainName = this.chainName;
         const govInfo = this.govInfo;
         const DEPOSIT_TOKEN = this.depositTokenABI;
@@ -277,6 +292,66 @@ class TONLayer1Validator {
 
         let out_msgs = tx.out_msgs;
 
+        let ctx = { logger, txHash, lt, ton, vault };
+        async function validateAddressBook(node) {
+            const logger = this.logger;
+            const txHash = this.txHash;
+            const lt = this.lt;
+
+            const addrData = await node.contract.methods.getTag(this.tag).call().catch(e => {return;});
+            if(!addrData){
+                logger.ton_layer_1.error(`Invalid tag. ${txHash}, ${lt}`);
+                return;
+            }
+
+            const toChain = addrData[0];
+            const toAddr = addrData[1];
+            const transfortData = addrData[2] || '0x';
+            if (!toAddr || toAddr.length === 0 || !toChain || toChain.length === 0) {
+                logger.ton_layer_1.error(`toAddr or toChain is not defined. ${txHash}, ${lt}`);
+                return;
+            }
+
+            const version = await node.contract.methods.versionCount().call().catch(e => {});
+            if(!version){
+                logger.ton_layer_1.error(`getAddressBookVersionCount error.`);
+                return;
+            }
+
+            const tagHash = Britto.sha256sol(packer.packTagHash({
+                version,
+                toChain,
+                toAddress: toAddr,
+                transfortData
+            })).toString('hex').add0x();
+
+            const publicKeys = this.vaultInfo.pubkeys;
+            const required = this.vaultInfo.required;
+            const validators = await node.multisig.contract.methods.getHashValidators(tagHash).call();
+            let confirmed = 0; // check validator address and public key
+            for(let i = 0; i < validators.length; i++){
+                let va = validators[i]
+                const v = await node.multisig.contract.methods.vSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
+                const r = await node.multisig.contract.methods.rSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
+                const s = await node.multisig.contract.methods.sSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
+
+                let recoveredAddr = Britto.ecrecoverHash(tagHash, v, r, s)
+                let pubkey = await node.multisig.contract.methods.publicKeys(recoveredAddr).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
+                if(va.toLowerCase() == recoveredAddr.toLowerCase() && publicKeys.includes(pubkey)) {
+                    confirmed = confirmed + 1;
+                }
+            }
+            if(confirmed < parseInt(required)) {
+                logger.ton_layer_1.error(`validated address not matched in vault signer addresses. ${txHash}, ${lt}, ${this.tag}`);
+                return;
+            }
+
+            return {
+                toChain,
+                toAddr,
+                transfortData,
+            };
+        }
         let toChain;
         let fromAddr;
         let toAddr;
@@ -332,62 +407,23 @@ class TONLayer1Validator {
                 logger.ton_layer_1.error(`Invalid tag. ${txHash}, ${lt}, ${tag}`);
                 return;
             }
-
-            let addrData = await addressBook.contract.methods.getTag(tag).call().catch(e => {return;});
-            if(!addrData){
-                logger.ton_layer_1.error(`Invalid tag. ${txHash}, ${lt}`);
-                return;
-            }
-
-            toChain = addrData[0];
-            toAddr = addrData[1];
-            token = "0x0000000000000000000000000000000000000000";
-            transfortData = addrData[2] || '0x';
-            decimal = "9";
-            if (!toAddr || toAddr.length === 0 || !toChain || toChain.length === 0) {
-                logger.ton_layer_1.error(`toAddr or toChain is not defined. ${txHash}, ${lt}`);
-                return;
-            }
+            ctx.tag = tag;
 
             const vaultInfo = await ton.getMultisigData(vault);
             if(!vaultInfo || !vaultInfo.pubkeys || !vaultInfo.required){
                 logger.ton_layer_1.error(`getVaultInfo error. ${txHash}, ${lt}`);
                 return;
             }
-            const publicKeys = vaultInfo.pubkeys;
-            const required = vaultInfo.required;
+            ctx.vaultInfo = vaultInfo;
 
-            let version = await addressBook.contract.methods.versionCount().call().catch(e => {});
-            if(!version){
-                logger.ton_layer_1.error(`getAddressBookVersionCount error.`);
+            const res = await this.addressBook.majorityCheckForDatasInRpcs(validateAddressBook.bind(ctx));
+            if (!res) {
+                logger.ton_layer_1.error(`validateSwap error: The tag validation failed to pass the majority of nodes`);
                 return;
             }
-
-            const tagHash = Britto.sha256sol(packer.packTagHash({
-                version,
-                toChain,
-                toAddress: toAddr,
-                transfortData
-            })).toString('hex').add0x();
-
-            const validators = await addressBook.multisig.contract.methods.getHashValidators(tagHash).call();
-            let confirmed = 0; // check validator address and public key
-            for(let i = 0; i < validators.length; i++){
-                let va = validators[i]
-                const v = await addressBook.multisig.contract.methods.vSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
-                const r = await addressBook.multisig.contract.methods.rSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
-                const s = await addressBook.multisig.contract.methods.sSigs(tagHash, i).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
-
-                let recoveredAddr = Britto.ecrecoverHash(tagHash, v, r, s)
-                let pubkey = await addressBook.multisig.contract.methods.publicKeys(recoveredAddr).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
-                if(va.toLowerCase() == recoveredAddr.toLowerCase() && publicKeys.includes(pubkey)) {
-                    confirmed = confirmed + 1;
-                }
-            }
-            if(confirmed < parseInt(required)) {
-                logger.ton_layer_1.error(`validated address not matched in vault signer addresses. ${txHash}, ${lt}, ${tag}`);
-                return;
-            }
+            ({ toChain, toAddr, transfortData } = res);
+            token = "0x0000000000000000000000000000000000000000";
+            decimal = "9";
         }
         else if(opCode === "0x7362d09c"){
             if(!out_msgs || out_msgs.length === 0){
@@ -618,7 +654,7 @@ class TONLayer1Validator {
                 let edSig = Britto.signEd25519(hash, validator.pk);
                 let sigs = TONLayer1Validator.makeSigsWithED(validator.address, ecSig, edSig);
                 sigs[1] = parseInt(sigs[1],16)
-    
+
                 await api.validator.post(`/governance/validate`, {
                     from_chain: data.fromChain,
                     to_chain: data.toChain,
@@ -637,7 +673,7 @@ class TONLayer1Validator {
                     ed_r: sigs[4],
                     ed_s: sigs[5]
                 });
-    
+
                 hashMap.set(hash.toString('hex').add0x(), {
                     txHash: hash,
                     timestamp: parseInt(Date.now() / 1000),
@@ -698,8 +734,6 @@ class TONLayer1Validator {
     }
 
     async validateTagRequest(data) {
-
-        const addressBook = this.addressBook;
         const chainName = this.chainName;
 
 
@@ -722,11 +756,18 @@ class TONLayer1Validator {
 
         let transfortData = data.data || '0x';
 
-        let version = await addressBook.contract.methods.versionCount().call().catch(e => {});
-        if(!version){
+        async function getVersionCount(node) {
+            return {
+                version: await node.contract.methods.versionCount().call().catch(e => {})
+            }
+        }
+
+        const res = await this.addressBook.majorityCheckForDatasInRpcs(getVersionCount);
+        if(!res || !res.version){
             logger.ton_layer_1.error(`getAddressBookVersionCount error.`);
             return;
         }
+        const version = res.version;
 
         let packerData = {
             version,
@@ -736,7 +777,7 @@ class TONLayer1Validator {
         };
 
         let tagHash = Britto.sha256sol(packer.packTagHash(packerData));
- 
+
         const validator = {address: this.account.address, pk: this.account.pk};
         let validators = await api.orbit.get(`/info/tag-signatures`, {
             version,
@@ -744,7 +785,7 @@ class TONLayer1Validator {
             to_chain: toChain,
             to_address: toAddress
         });
-        
+
         for(let v of validators.data) {
             if(v.validator.toLowerCase() === validator.address.toLowerCase()) {
                 logger.ton_layer_1.error(`Already signed. validated tagHash: ${tagHash}`);
