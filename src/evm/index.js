@@ -141,15 +141,22 @@ class EVMValidator {
         // L2 chain이면 L1 web3 obj도 추가(L1 block finality 검증)
         if(config.l2[this.chainLower]) {
             let l1Chain = config.l2[this.chainLower].l1_chain
-            const l1 = this.l1 = Britto.getNodeConfigBase('l1');
-            l1.rpc = config.endpoints[l1Chain].rpc[0];
+            let endpoint = config.endpoints[l1Chain]
+            const l1 = this.l1 = {};
             l1.abi = Britto.getJSONInterface({filename: 'zkevm/PolygonValidiumEtrog'});
             l1.address = config.l2[this.chainLower].PolygonValidiumEtrog
-            new Britto(l1, l1Chain).connectWeb3();
 
-            l1.rollup.address = config.l2[this.chainLower].PolygonRollupManager
-            l1.rollup.abi = Britto.getJSONInterface({filename: 'zkevm/PolygonRollupManager'});
-            l1.rollup.contract = new this.l1.web3.eth.Contract(this.l1.rollup.abi, this.l1.rollup.address);
+            const rpcAggregator = this.l1RpcAggregator = new RPCAggregator(`(${this.chainName}_L1)${l1Chain.toUpperCase()}`, endpoint.chain_id);
+            let rpc = endpoint.rpc;
+
+            if(!Array.isArray(rpc) && typeof rpc !== "string") {
+                throw `Unsupported ${l1Chain} Endpoints: ${rpc}, Endpoints must be array or string.`;
+            }
+
+            rpc = Array.isArray(rpc) ? rpc : [ rpc ]
+            for (const url of rpc) {
+                rpcAggregator.addRpc(url, l1);
+            }       
         }
     }
 
@@ -225,10 +232,28 @@ class EVMValidator {
                     logger.evm.error(`Invalid data ( ${data.toChain}, ${data.data} )`, this.loggerOpt);
                     continue;
                 }
-                const nodes = await this.rpcAggregator.getNodes();
                 const functionSig = (this.govInfo.chain === this.chainName) ? "Deposit" : "SwapRequest";
-                if (!(await bridgeUtils.checkTransaction(nodes[0], data, functionSig))) continue;
-                if (this.l1 && !(await this.isFinalized(nodes[0], data.bytes32s[1]))) continue;
+                const nodes = await this.rpcAggregator.getNodes();
+                let checkTxCnt = 0;
+                let checkFinalizedCnt = 0;
+                for(let node of nodes){
+                    if(await bridgeUtils.checkTransaction(node, data, functionSig)) checkTxCnt++;
+                    if(this.l1) {
+                        if(await this.isFinalized(node, data.bytes32s[1])) checkFinalizedCnt++;
+                    }
+                }
+
+                let requireCnt = parseInt(nodes.length/2) + 1;
+                if(checkTxCnt < requireCnt){
+                    logger.evm.info(`malicious rpc returns. checkTxCnt:${checkTxCnt}, requireCnt:${requireCnt}`, this.loggerOpt)
+                    continue;
+                }
+                if(this.l1) {
+                    if(checkFinalizedCnt < requireCnt){
+                        logger.evm.info(`checkFinalizedCnt:${checkFinalizedCnt}, requireCnt:${requireCnt}`, this.loggerOpt)
+                        continue;
+                    }
+                }
 
                 if (this.chainName === 'KLAYTN' && data.fromAddr.toLowerCase() === "0xdfcb0861d3cb75bb09975dce98c4e152823c1a0b") {
                     this.logger.info("[GUARD] BLOCK bridge");
@@ -248,41 +273,58 @@ class EVMValidator {
     async isFinalized(l2, txhash) {
         let response = await api.bible.get(`/v1/api/l2/finality/${this.chainLower}/${txhash}`)
         if (!response.success) {
-            logger.evm.error(`L2 finality api error: ${response}`);
+            logger.evm.error(`L2 finality api error: ${response}`, this.loggerOpt);
             return;
         }
         if (!response.isFinalized) {
-            logger.evm.info(`L2 tx is not finalized ${response.batch}: ${txhash}`);
+            logger.evm.info(`L2 tx is not finalized ${response.batch}: ${txhash}`, this.loggerOpt);
             return;
         } else {
             // bible data와 실제 batch 조회 data 확인
             let { batchL2Data, sendSequencesTxHash, verifyBatchTxHash } = await l2.web3.zkevm.getBatchByNumber(response.batch);
             if(sendSequencesTxHash.toLowerCase() !== response.sequenceBatchTx.toLowerCase() || verifyBatchTxHash.toLowerCase() !== response.verifyBatchTx) {
-                logger.evm.error(`Batch tx not matched`);
+                logger.evm.error(`Batch tx not matched`, this.loggerOpt);
                 return;
             }
 
             // l2 transactionsHash
             let transactionsHash = l2.web3.utils.keccak256(batchL2Data).toLowerCase();
+            const nodes = await this.l1RpcAggregator.getNodes();
+            let requireCnt = parseInt(nodes.length/2) + 1;
+            let cnt = 0;
+            for(let node of nodes) {
+                if(await this.checkL1Finality(transactionsHash, response.batch, node, sendSequencesTxHash, verifyBatchTxHash)) {
+                    cnt++;
+                }
+            }
 
-            // check sequence tx
-            let sequenceTxData = await this.l1.web3.eth.getTransaction(sendSequencesTxHash)
-            let sequenceTxReceipt = await this.l1.web3.eth.getTransactionReceipt(sendSequencesTxHash)
-            
-            let lastBatchSequenced = this.l1.web3.utils.hexToNumber(sequenceTxReceipt.logs[1].data);
-            if(lastBatchSequenced < parseInt(response.batch)) return;
-            
-            let txInputData = this.l1.web3.eth.abi.decodeParameters(this.l1.abi[1].inputs, sequenceTxData.input.slice(10))
-            let batchTxs = txInputData.batches.map(x => x[0].toLowerCase())
-            if(!batchTxs.includes(transactionsHash)) return;
-
-            // check verify tx
-            let verifyTxReceipt = await this.l1.web3.eth.getTransactionReceipt(verifyBatchTxHash);
-            let latestFinalizedBlock = (await this.l1.web3.eth.getBlock("finalized")).number;
-            if (verifyTxReceipt.number < latestFinalizedBlock) return;
+            if(cnt < requireCnt){
+                logger.evm.error("malicious L1 rpc returns.", this.loggerOpt);
+                return;
+            }
 
             return true;
         }
+    }
+
+    async checkL1Finality(l2TxHash, batch, l1, sendSequencesTxHash, verifyBatchTxHash) {
+        // check sequence tx
+        let sequenceTxData = await l1.web3.eth.getTransaction(sendSequencesTxHash)
+        let sequenceTxReceipt = await l1.web3.eth.getTransactionReceipt(sendSequencesTxHash)
+        
+        let lastBatchSequenced = l1.web3.utils.hexToNumber(sequenceTxReceipt.logs[1].data);
+        if(lastBatchSequenced < parseInt(batch)) return;
+        
+        let inputFormat = this.l1.abi.find(x => x.name === "sequenceBatchesValidium").inputs
+        let txInputData = l1.web3.eth.abi.decodeParameters(inputFormat, sequenceTxData.input.slice(10))
+        let batchTxs = txInputData.batches.map(x => x[0].toLowerCase())
+        if(!batchTxs.includes(l2TxHash)) return;
+
+        // check verify tx
+        let verifyTxReceipt = await l1.web3.eth.getTransactionReceipt(verifyBatchTxHash);
+        let latestFinalizedBlock = (await l1.web3.eth.getBlock("finalized")).number;
+        if (verifyTxReceipt.number < latestFinalizedBlock) return;
+        return true;
     }
 
     async parseLogs(contract, logs, name) {

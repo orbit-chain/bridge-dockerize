@@ -3,8 +3,8 @@ global.logger.xrp = require('./logger');
 const config = require(ROOT + '/config');
 
 const Britto = require(ROOT + '/lib/britto');
-const txSender = require(ROOT + '/lib/txsender');
 const api = require(ROOT + '/lib/api');
+const RPCAggregator = require(ROOT + '/lib/rpcAggregator');
 
 const packer = require('./utils/packer');
 
@@ -12,8 +12,6 @@ const BridgeUtils = require('./utils/xrp.bridgeutils');
 const bridgeUtils = new BridgeUtils();
 
 const rippleAddr = require('ripple-address-codec');
-
-const FIX_GAS = 99999999;
 
 class XRPValidator {
     static makeSigs(validator, signature) {
@@ -78,26 +76,39 @@ class XRPValidator {
         if(monitor.address[chainName]) return;
         monitor.address[chainName] = bridgeUtils.getKeyPair(this.account.pk).address;
 
-        const addressBook = this.addressBook = Britto.getNodeConfigBase('xrpAddressBook');
-        addressBook.rpc = config.endpoints.silicon.rpc;
-        addressBook.address = config.settings.silicon.addressbook;
-        addressBook.abi = Britto.getJSONInterface({filename: 'AddressBook'});
-        new Britto(addressBook, chainName).connectWeb3();
+        let rpc = config.endpoints.silicon.rpc;
+        if(!Array.isArray(rpc) && typeof rpc !== "string") {
+            throw `Unsupported Silicon Endpoints: ${rpc}, Endpoints must be array or string.`;
+        }
 
-        addressBook.multisig.wallet = config.settings.silicon.multisig;
-        addressBook.multisig.abi = Britto.getJSONInterface({filename: 'multisig/Xrp'});
-        addressBook.multisig.contract = new addressBook.web3.eth.Contract(addressBook.multisig.abi, addressBook.multisig.wallet);
-
-        const xrpBridge = this.xrpBridge = Britto.getNodeConfigBase('xrpBridge');
-        xrpBridge.rpc = config.endpoints.silicon.rpc;
-        xrpBridge.address = config.settings.silicon.xrpBridge;
-        xrpBridge.abi = Britto.getJSONInterface({filename: 'bridge/Xrp'});
-        new Britto(xrpBridge, 'silicon').connectWeb3();
-
-        xrpBridge.multisig.wallet = config.settings.silicon.multisig;
-        xrpBridge.multisig.abi = Britto.getJSONInterface({filename: 'multisig/Xrp'});
-        xrpBridge.multisig.contract = new xrpBridge.web3.eth.Contract(xrpBridge.multisig.abi, xrpBridge.multisig.wallet);
-
+        rpc = Array.isArray(rpc) ? rpc : [ rpc ]
+        let expandedNode = process.env.SILICON ? JSON.parse(process.env.SILICON) : undefined
+        if(expandedNode && expandedNode.length > 0) {
+            rpc = rpc.concat(expandedNode)
+        }
+        const addressBook = this.addressBook = new RPCAggregator("SILICON", config.endpoints.silicon.chain_id);
+        const xrpBridge = this.xrpBridge = new RPCAggregator("SILICON", config.endpoints.silicon.chain_id);
+        const multisigABI = Britto.getJSONInterface({filename: 'multisig/Xrp'});
+        for (const url of rpc) {
+            addressBook.addRpc(url, {
+                name: "xrpAddressBook",
+                address: config.settings.silicon.addressbook,
+                abi: Britto.getJSONInterface({filename: 'AddressBook'}),
+                multisig: {
+                    address: config.settings.silicon.multisig,
+                    abi: multisigABI,
+                }
+            });
+            xrpBridge.addRpc(url, {
+                name: "xrpBridge",
+                address: config.settings.silicon.xrpBridge,
+                abi: Britto.getJSONInterface({filename: 'bridge/Xrp'}),
+                multisig: {
+                    address: config.settings.silicon.multisig,
+                    abi: multisigABI,
+                }
+            });
+        }
 
         ripple.connect().catch(e => {
             logger.xrp.error('Ripple API connection error: ' + e.message);
@@ -147,13 +158,13 @@ class XRPValidator {
             return;
         }
         this.workerStarted = true;
-    
+
         this.getLockRelay();
         this.getTagRelay();
         this.getSuggestRelay();
         this.getSelectRelay();
     }
-        
+
     intervalSet(obj) {
         if (obj.interval) return;
         obj.interval = setInterval(obj.handler.bind(this), obj.timeout);
@@ -209,9 +220,9 @@ class XRPValidator {
                 logger.xrp.error('Received data is not array.');
                 return;
             }
-    
+
             logger.xrp.info(`LockRelay list ${info.length === 0 ? 'is empty.' : 'length: ' + info.length.toString()}`);
-    
+
             for (let result of info) {
                 let data = {
                     fromChain: result.fromChain,
@@ -224,22 +235,22 @@ class XRPValidator {
                     uints: [result.amount, 6],
                     data: result.data,
                 };
-    
+
                 if(!bridgeUtils.isValidAddress(data.toChain, data.toAddr)){
                     logger.xrp.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
                     continue;
                 }
-            
+
                 if(data.data && !bridgeUtils.isValidData(data.toChain, data.data)){
                     logger.xrp.error(`Invalid data ( ${data.toChain}, ${data.data} )`);
                     continue;
                 }
-                
+
                 await this.validateRelayedData(data);
             }
         } catch(e) {
             logger.xrp.error('lock-relay api error: ' + e.message);
-    
+
         } finally {
             this.intervalSet(this.intervals.getLockRelay);
         }
@@ -247,8 +258,6 @@ class XRPValidator {
 
     async validateRelayedData(data) {
         const ripple = this.ripple;
-        const addressBook = this.addressBook;
-        const chainName = this.chainName;
         const govInfo = this.govInfo;
 
         // Get ripple transaction by transaction id
@@ -311,79 +320,96 @@ class XRPValidator {
         }
 
         let destinationTag = transaction.specification.destination.tag;
-
-        let addrData = await addressBook.contract.methods.getTag(destinationTag).call().catch(e => {return;});
-        if (!addrData) {
-            logger.xrp.error(`validateSwap error: toAddr or toChain is not defined.`);
-            return;
-        }
-
-        let toChain = addrData.toChain;
-        let toAddr = addrData.toAddr;
-        let transfortData = addrData.data || '0x';
-        if (!toAddr || toAddr.length === 0 || !toChain || toChain.length === 0) {
-            logger.xrp.error(`validateSwap error: toAddr or toChain is not defined.`);
-            return;
-        }
-
-        let version = await addressBook.contract.methods.versionCount().call().catch(e => {});
-        if(!version){
-            logger.xrp.error(`getAddressBookVersionCount error.`);
-            return;
-        }
-
-        // STEP 4: Tag validating
         const vaultInfo = await ripple.getVaultInfos(xrpWallet);
         if (!vaultInfo || !vaultInfo.SignerEntries) {
             logger.xrp.error(`validateSwap error: vault info not found.`);
             return;
         }
         const quorumCnt = parseInt(vaultInfo.SignerQuorum);
-        const tagHash = Britto.sha256sol(packer.packXrpTagHash({
-            version,
-            toChain,
-            toAddress: toAddr,
-            transfortData,
-        }));
-        const validateCount = parseInt(await addressBook.multisig.contract.methods.validateCount(tagHash).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`)));
-        if (validateCount < quorumCnt) {
-            logger.xrp.error(`validateSwap error: tag validatedCount less than vault wanted.`);
-            return;
+        const ctx = { logger, vaultInfo, quorumCnt, bridgeUtils };
+        async function tagValidateInNode(node) {
+            const logger = this.logger;
+            let addrData = await node.contract.methods.getTag(destinationTag).call().catch(e => {return;});
+            if (!addrData) {
+                logger.xrp.error(`validateSwap error: toAddr or toChain is not defined.`);
+                return;
+            }
+
+            let toChain = addrData.toChain;
+            let toAddr = addrData.toAddr;
+            let transfortData = addrData.data || '0x';
+            if (!toAddr || toAddr.length === 0 || !toChain || toChain.length === 0) {
+                logger.xrp.error(`validateSwap error: toAddr or toChain is not defined.`);
+                return;
+            }
+
+            let version = await node.contract.methods.versionCount().call().catch(e => {});
+            if(!version){
+                logger.xrp.error(`getAddressBookVersionCount error.`);
+                return;
+            }
+
+            const tagHash = Britto.sha256sol(packer.packXrpTagHash({
+                version,
+                toChain,
+                toAddress: toAddr,
+                transfortData,
+            }));
+
+            // STEP 4: Tag validating
+            const validateCount = parseInt(await node.multisig.contract.methods.validateCount(tagHash).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`)));
+            if (validateCount < quorumCnt) {
+                logger.xrp.error(`validateSwap error: tag validatedCount less than vault wanted.`);
+                return;
+            }
+
+            let addressObj = [];
+            this.vaultInfo.SignerEntries.forEach(entry => {
+                addressObj[entry.SignerEntry.Account] = true;
+            });
+            if (parseInt(destinationTag) < 1100081815) {
+                addressObj["rLX7h5xM2cdC69XQVoJTNtpbTcL2QqABEL"] = true;
+            }
+            let cnt = 0;
+            for (let i=0; i < validateCount; i++) {
+                const v = await node.multisig.contract.methods.vSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
+                const r = await node.multisig.contract.methods.rSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
+                const s = await node.multisig.contract.methods.sSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
+                const xrpAddr = this.bridgeUtils.getAddress(this.bridgeUtils.recoverPubKey(tagHash, v, r, s));
+                if (addressObj[xrpAddr]) {
+                    cnt++;
+                }
+                delete addressObj[xrpAddr];
+            }
+            if (cnt < this.quorumCnt) {
+                logger.xrp.error(`validateSwap error: validated address not matched in vault signer addresses`);
+                return;
+            }
+
+            return {
+                cnt,
+                toChain,
+                toAddr,
+                transfortData,
+            };
         }
 
-        let addressObj = [];
-        vaultInfo.SignerEntries.forEach(entry => {
-            addressObj[entry.SignerEntry.Account] = true;
-        });
-        if (parseInt(destinationTag) < 1100081815) {
-            addressObj["rLX7h5xM2cdC69XQVoJTNtpbTcL2QqABEL"] = true;
-        }
-        let cnt = 0;
-        for (let i=0; i < validateCount; i++) {
-            const v = await addressBook.multisig.contract.methods.vSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
-            const r = await addressBook.multisig.contract.methods.rSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
-            const s = await addressBook.multisig.contract.methods.sSigs(tagHash, i).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
-            const xrpAddr = bridgeUtils.getAddress(bridgeUtils.recoverPubKey(tagHash, v, r, s));
-            if (addressObj[xrpAddr]) {
-                cnt++;
-            }
-            delete addressObj[xrpAddr];
-        }
-        if (cnt < quorumCnt) {
-            logger.xrp.error(`validateSwap error: validated address not matched in vault signer addresses`);
+        const res = await this.addressBook.majorityCheckForDatasInRpcs(tagValidateInNode.bind(ctx));
+        if (!res) {
+            logger.xrp.error(`validateSwap error: The tag validation failed to pass the majority of nodes`);
             return;
         }
 
         let params = {
             hubContract: this.orbitHub,
             fromChain: 'XRP',
-            toChain: toChain,
+            toChain: res.toChain,
             fromAddr: fromAddr,
-            toAddr: toAddr,
+            toAddr: res.toAddr,
             token: '0x0000000000000000000000000000000000000000',
             bytes32s: [govInfo.id, data.bytes32s[1]],
             uints: [amount, 6],
-            data: transfortData,
+            data: res.transfortData,
         }
 
         const toInstance = instances[params.toChain.toLowerCase()];
@@ -445,11 +471,11 @@ class XRPValidator {
                         }
                     }
                 }
-                
+
                 let signature = Britto.signMessage(swapHash, validator.pk);
                 let sigs = XRPValidator.makeSigs(validator.address, signature);
                 sigs[1] = parseInt(sigs[1],16)
-    
+
                 await api.validator.post(`/governance/validate`, {
                     from_chain: swapData.fromChain,
                     to_chain: swapData.toChain,
@@ -464,7 +490,7 @@ class XRPValidator {
                     r: sigs[2],
                     s: sigs[3],
                 });
-    
+
                 hashMap.set(swapHash.toString('hex').add0x(), {
                     txHash: swapHash,
                     timestamp: parseInt(Date.now() / 1000),
@@ -492,33 +518,31 @@ class XRPValidator {
         return parseInt(data) <= 4294967295;
     }
 
-    async checkValidSuggestion(suggestIndex, dataIndex) {
-        let suggestion = await xrpBridge.contract.methods.getSuggestion(0, suggestIndex).call().catch(e => {return;});
-        if(suggestion && parseInt(suggestion.fee) !== 0 && parseInt(suggestion.swapIndex) === parseInt(dataIndex)) {
-            return suggestion;
-        }
-        return;
+    async getStepStatus(node) {
+        const stepStatus = await node.contract.methods.getStepStatus().call().catch(e => {return;});
+        return {stepStatus};
     }
 
     async getSuggestRelay() {
         this.intervalClear(this.intervals.getSuggestRelay);
-    
-        this.xrpBridge.contract.methods.getStepStatus().call().then(async status => {
-            if (!status) return;
 
-            if(!status.needRelaySuggestion) return;
-
-            logger.xrp.info('needSuggestRelay data index: ' + status.suggestIndex);
-            await this.validateTransactionSuggested(status);
-        }).catch(e => {
+        try {
+            const res = await this.xrpBridge.majorityCheckForDatasInRpcs(this.getStepStatus);
+            if (!res || !res.stepStatus.needRelaySuggestion) {
+                return;
+            }
+            logger.xrp.info('needSuggestRelay data index: ' + res.stepStatus.suggestIndex);
+            await this.validateTransactionSuggested(res.stepStatus);
+        } catch(e) {
             logger.xrp.error('getSuggestRelay call error: ' + e.message);
-        }).finally(() => {
+        } finally {
             this.intervalSet(this.intervals.getSuggestRelay);
-        });
+        }
     }
 
     async validateTransactionSuggested(data) {
-        await this.xrpBridge.contract.methods.relayTransactionSuggested(data.suggestIndex).estimateGas().catch(() => {
+        const node = (await this.xrpBridge.getNodes())[0];
+        await node.contract.methods.relayTransactionSuggested(data.suggestIndex).estimateGas().catch(() => {
             logger.xrp.error('relayTransactionSuggested estimateGas error');
         });
 
@@ -531,40 +555,60 @@ class XRPValidator {
 
         let xrpWallet = this.xrpWallet
 
-        let swapData = await xrpBridge.contract.methods.swapData(data.dataIndex).call().catch(e => {return;});
-        if (!swapData || swapData.toAddr.length === 0) {
-            logger.xrp.error('validateTransactionSuggested error: swapData is invalid.');
-            return;
-        }
+        let ctx = { data, logger, bridgeUtils, validator };
+        async function getValidSuggestionAndMigInfo(node) {
+            const data = this.data;
+            const logger = this.logger;
 
-        let swapDataArray = await xrpBridge.contract.methods.getSwapDataArray(data.dataIndex).call().catch(e => {return;});
-        if (!swapDataArray || swapDataArray.bytes32s.length === 0){
-            logger.xrp.error('validateTransactionSuggested error: swapData is invalid.');
-            return;
-        }
-
-        let toAddr = bridgeUtils.getAddressFromHex(swapData.toAddr);
-
-        let suggestion = await xrpBridge.contract.methods.getSuggestion(0, data.suggestIndex).call().catch(e => {return;});
-        if (!suggestion || parseInt(suggestion.fee) === 0 || parseInt(suggestion.swapIndex) !== parseInt(data.dataIndex)){
-            let validSuggestion
-            for(let i = data.suggestIndex - 1; i >= 0; i--) {
-                if (validSuggestion) break;
-                validSuggestion = this.checkValidSuggestion(i, dataIndex);
+            const swapData = await node.contract.methods.swapData(data.dataIndex).call().catch(e => {return;});
+            if (!swapData || swapData.toAddr.length === 0) {
+                logger.xrp.error('validateTransactionSuggested error: swapData is invalid.');
+                return;
             }
-            if(validSuggestion) {
-                suggestion = validSuggestion
-            } else {
+
+            const swapDataArray = await node.contract.methods.getSwapDataArray(data.dataIndex).call().catch(e => {return;});
+            if (!swapDataArray || swapDataArray.bytes32s.length === 0){
+                logger.xrp.error('validateTransactionSuggested error: swapData is invalid.');
+                return;
+            }
+
+            let validSuggestion;
+            for (let i = data.suggestIndex; i >= 0; i--) {
+                const suggestion = await node.contract.methods.getSuggestion(0, i).call().catch(e => { return; });
+                if(suggestion && parseInt(suggestion.fee) !== 0 && parseInt(suggestion.swapIndex) === parseInt(data.dataIndex)) {
+                    validSuggestion = suggestion;
+                    break;
+                }
+            }
+            if (!validSuggestion) {
                 logger.xrp.error('validateTransactionSuggested error: invalid suggestion');
                 return;
             }
+
+            const validators = await node.multisig.contract.methods.getOwners().call().catch(e => { return; });
+            if(validSuggestion.validators.length !== validators.length){
+                logger.xrp.error('validateTransactionSuggested error: invalid validator list');
+                return;
+            }
+            const required = await node.multisig.contract.methods.required().call().catch(e => { return; }) || 0;
+
+            return {
+                swapData,
+                swapDataArray,
+                suggestion: validSuggestion,
+                validators,
+                required
+            };
         }
 
-        let validators = await xrpBridge.multisig.contract.methods.getOwners().call();
-        if(suggestion.validators.length !== validators.length){
-            logger.xrp.error('validateTransactionSuggested error: invalid validator list');
+        let res = await xrpBridge.majorityCheckForDatasInRpcs(getValidSuggestionAndMigInfo.bind(ctx));
+        if (!res) {
+            logger.xrp.error(`validateTransactionSuggested error: The suggest validation failed to pass the majority of nodes`);
             return;
         }
+        const swapData = res.swapData;
+        const suggestion = ctx.suggestion = res.suggestion;
+        const validators = ctx.validators = res.validators;
 
         /////////////////////////////////
         // Validating fee and sequence //
@@ -584,8 +628,6 @@ class XRPValidator {
 
         let currentSeq = accountInfo.sequence || 0;
         let quorumCount = accountObj['account_objects'][0].SignerQuorum || 0;
-        let required = await xrpBridge.multisig.contract.methods.required().call() || 0;
-
         if (!validators || validators.length < quorumCount) {
             logger.xrp.error('validateTransactionSuggested validation fail: Validators not enough.');
             return;
@@ -602,7 +644,7 @@ class XRPValidator {
         let networkFee = await ripple.getFee() || 0.000012;
         networkFee = networkFee < 1 ? (networkFee * 10 ** 6) : networkFee; // fee unit is drops. NOT XRP.
 
-        let minFee = networkFee * (1 + Math.max(quorumCount, Number(required))); // expectFee
+        let minFee = networkFee * (1 + Math.max(quorumCount, Number(res.required))); // expectFee
         let maxFee = minFee * 1.25 < 100000 ? 100000 : minFee * 1.25; // expectFee * 1.25 or 0.1 XRP
 
         let suggestionFee = Number(suggestion.fee);
@@ -619,44 +661,26 @@ class XRPValidator {
 
         let memos = bridgeUtils.getReleaseMemo(govInfo.id, data.dataIndex);
 
+        const toAddr = bridgeUtils.getAddressFromHex(swapData.toAddr);
         const paymentTx = {
             TransactionType: 'Payment',
             Account: xrpWallet,
             Destination: toAddr,
-            Amount: swapDataArray.uints[0].toString(),
+            Amount: res.swapDataArray.uints[0].toString(),
             Flags: 2147483648,
             Fee: suggestion.fee,
             Sequence: suggestion.seq,
             SigningPubKey: '',
             Memos: memos
         };
+        ctx.paymentTx = paymentTx;
 
         if (swapData.executionData)
             paymentTx.DestinationTag = parseInt(swapData.executionData);
 
-        ////////////////////////////////
-        // Validating signature hashs //
-        ////////////////////////////////
-
-        for (let va of validators) {
-            let id = await xrpBridge.multisig.contract.methods.xrpAddresses(va).call();
-            if (!id) {
-                logger.xrp.error('validateTransactionSuggested validation fail: No matched xrp address of ' + va);
-                return;
-            }
-
-            let xrpAddress = bridgeUtils.getAddressFromHex(id);
-            let signatureHash = '0x' + bridgeUtils.getSignatureHash(paymentTx, xrpAddress);
-            let index = suggestion.signatureHashs.findIndex(x => x.toLowerCase() === signatureHash.toLowerCase());
-
-            if (index === -1 || suggestion.validators[index].toLowerCase() !== va.toLowerCase()) {
-                logger.xrp.error('validateTransactionSuggested validation fail: No matched signature hash. ' + `Expected hash: ${signatureHash}, validator: ${va}`);
-                return;
-            }
-        }
 
         const suggestHash = Britto.sha256sol(packer.packSuggestHash({
-            contract: xrpBridge.address,
+            contract: node.address,
             govId: govInfo.id,
             suggestIndex: data.suggestIndex,
             swapIndex: suggestion.swapIndex,
@@ -669,15 +693,60 @@ class XRPValidator {
             logger.xrp.error(`Already signed. validated suggestHash: ${suggestHash.toString('hex').add0x()}`);
             return;
         }
+        ctx.suggestHash = suggestHash;
 
-        let res = await api.orbit.get(`/info/hash-info`, {whash: suggestHash.toString('hex').add0x()})
+        async function signatureCheck(node) {
+            const logger = this.logger;
+            const bridgeUtils = this.bridgeUtils;
+            const suggestion = this.suggestion;
+            const validators = this.validators;
+            const suggestHash = this.suggestHash;
+
+            for (let va of validators) {
+                let id = await node.multisig.contract.methods.xrpAddresses(va).call();
+                if (!id) {
+                    logger.xrp.error('validateTransactionSuggested validation fail: No matched xrp address of ' + va);
+                    return;
+                }
+
+                let xrpAddress = bridgeUtils.getAddressFromHex(id);
+                let signatureHash = '0x' + bridgeUtils.getSignatureHash(this.paymentTx, xrpAddress);
+                let index = suggestion.signatureHashs.findIndex(x => x.toLowerCase() === signatureHash.toLowerCase());
+                if (index === -1 || suggestion.validators[index].toLowerCase() !== va.toLowerCase()) {
+                    logger.xrp.error('validateTransactionSuggested validation fail: No matched signature hash. ' + `Expected hash: ${signatureHash}, validator: ${va}`);
+                    return;
+                }
+            }
+
+            const hashValidators = await node.multisig.contract.methods.getHashValidators(suggestHash.toString('hex').add0x()).call();
+            for(var i = 0; i < hashValidators.length; i++){
+                if(hashValidators[i].toLowerCase() === this.validator.address.toLowerCase()){
+                    logger.xrp.error(`Already signed. validated suggestIndex: ${this.data.suggestIndex}`);
+                    return;
+                }
+            }
+
+            return { suggestHash };
+        }
+
+        ////////////////////////////////
+        // Validating signature hashs //
+        ////////////////////////////////
+
+        res = await xrpBridge.majorityCheckForDatasInRpcs(signatureCheck.bind(ctx));
+        if (!res) {
+            logger.xrp.error(`validateTransactionSuggested error: The suggest validation failed to pass the majority of nodes`);
+            return;
+        }
+
+        res = await api.orbit.get(`/info/hash-info`, {whash: suggestHash.toString('hex').add0x()})
         if(res.status === "success") {
             if(res.data.validators) {
                 for(var i = 0; i < res.data.validators.length; i++){
                     if(res.data.validators[i].toLowerCase() === validator.address.toLowerCase()){
                         logger.evm.error(`Already signed. validated suggestHash: ${suggestHash}`);
                         return;
-                    }   
+                    }
                 }
             }
             let signature = Britto.signMessage(suggestHash, validator.pk);
@@ -685,7 +754,7 @@ class XRPValidator {
             sigs[1] = parseInt(sigs[1],16)
 
             await api.validator.post(`/governance/validate-suggested`, {
-                contract: xrpBridge.address,
+                contract: node.address,
                 govId: govInfo.id,
                 suggestIndex: data.suggestIndex,
                 swapIndex: suggestion.swapIndex,
@@ -704,44 +773,35 @@ class XRPValidator {
                 timestamp: parseInt(Date.now() / 1000),
             })
         }
-
-        let hashValidators = await xrpBridge.multisig.contract.methods.getHashValidators(suggestHash.toString('hex').add0x()).call();
-        for(var i = 0; i < hashValidators.length; i++){
-            if(hashValidators[i].toLowerCase() === validator.address.toLowerCase()){
-                logger.xrp.error(`Already signed. validated suggestIndex: ${data.suggestIndex}`);
-                return;
-            }
-        }
     }
 
     async getSelectRelay() {
         this.intervalClear(this.intervals.getSelectRelay);
-    
-        this.xrpBridge.contract.methods.getStepStatus().call().then(async status => {
-            if (!status)
+
+        try {
+            const res = await this.xrpBridge.majorityCheckForDatasInRpcs(this.getStepStatus);
+            if (!res || !res.stepStatus.needRelaySelection) {
                 return;
-    
-            if(!status.needRelaySelection)
-                return;
-    
-            logger.xrp.info('needSelectRelay data index: ' + status.selectionIndex);
-            await this.validateTransactionSelected(status.selectionIndex);
-        }).catch(e => {
+            }
+            const selectionIndex = res.stepStatus.selectionIndex;
+            logger.xrp.info('needSelectRelay data index: ' + selectionIndex);
+            await this.validateTransactionSelected(selectionIndex);
+        } catch (e) {
             logger.xrp.error('getSelectRelay call error: ' + e.message);
-        }).finally(() => {
+        } finally {
             this.intervalSet(this.intervals.getSelectRelay);
-        });
+        }
     }
 
     async validateTransactionSelected(selectionIndex) {
-        await this.xrpBridge.contract.methods.relayTransactionSuggested(selectionIndex).estimateGas().catch(() => {
+        const node = (await this.xrpBridge.getNodes())[0];
+        await node.contract.methods.relayTransactionSuggested(selectionIndex).estimateGas().catch(() => {
             logger.xrp.error('relayTransactionSuggested estimateGas error');
         });
 
         let validator = {address: this.account.address, pk: this.account.pk} || {};
 
         const ripple = this.ripple;
-        const xrpBridge = this.xrpBridge;
         const govInfo = this.govInfo;
         const hashMap = this.hashMap;
 
@@ -756,46 +816,63 @@ class XRPValidator {
 
         let quorumCount = accountObj['account_objects'][0].SignerQuorum || 0;
 
+        const ctx = { selectionIndex, quorumCount, logger };
+        async function getSelectionData(node) {
+            const logger = this.logger;
+
         // Get all validator addresses
-        let validators = await xrpBridge.multisig.contract.methods.getOwners().call();
-        if (!validators || validators.length < quorumCount) {
-            logger.xrp.error('validateTransactionSelected error: Validators not enough.');
-            return;
+        const validators = await node.multisig.contract.methods.getOwners().call();
+            if (!validators || validators.length < this.quorumCount) {
+                logger.xrp.error('validateTransactionSelected error: Validators not enough.');
+                return;
+            }
+
+            const selection = await node.contract.methods.getSuggestion(1, this.selectionIndex).call().catch(e => { return; });
+            if (!selection || parseInt(selection.fee) === 0){
+                logger.xrp.error('validateTransactionSelected error: invalid selection');
+                return;
+            }
+
+            const index = selection.validators.findIndex(x => x.toLowerCase() === validator.address.toLowerCase());
+            if (index === -1) {
+                logger.xrp.error('validateTransactionSelected error: invalid selection');
+                return;
+            }
+
+            return {
+                selection,
+                index,
+            };
         }
 
-        let selection = await xrpBridge.contract.methods.getSuggestion(1, selectionIndex).call().catch(e => {return;});
-        if (!selection || parseInt(selection.fee) === 0){
-            logger.xrp.error('validateTransactionSelected error: invalid selection');
+        let response = await this.xrpBridge.majorityCheckForDatasInRpcs(getSelectionData.bind(ctx));
+        if (!response) {
+            logger.xrp.error(`validateTransactionSelected error: data for selection can't pass the majority of nodes`);
             return;
         }
+        const selection = response.selection;
 
-        let index = selection.validators.findIndex(x => x.toLowerCase() === validator.address.toLowerCase());
-        if (index === -1){
-            logger.xrp.error('validateTransactionSelected error: invalid selection');
-            return;
-        }
-
-        let mySignatureHash = selection.signatureHashs[index];
+        let mySignatureHash = selection.signatureHashs[response.index];
         if (!mySignatureHash || Number(mySignatureHash) === 0) {
             logger.xrp.error('validateTransactionSelected error: Invalid my signature hash. ' + `Validator: ${validator.address} - MySignatureHash: ${mySignatureHash}`);
             return;
         }
 
         // TODO: orbit api에서 검증
-        let response = await api.orbit.get(`/info/hash-info`, {whash: mySignatureHash})
+        response = await api.orbit.get(`/info/hash-info`, {whash: mySignatureHash})
         if(response.status === "success") {
             if(response.data.validators.length !== 0) {
                 if(response.data.validators[0].toLowerCase() === validator.address.toLowerCase()){
                     logger.evm.error(`Already signed. validated mySignatureHash: ${mySignatureHash}`);
                     return;
-                }   
+                }
             }
             let signature = Britto.signMessage(mySignatureHash, validator.pk);
             let sigs = XRPValidator.makeSigs(validator.address, signature);
             sigs[1] = parseInt(sigs[1],16)
 
             await api.validator.post(`/governance/validate-xrp-signature`, {
-                contract: xrpBridge.address,
+                contract: node.address,
                 govId: govInfo.id,
                 selectionIndex,
                 signatureHashs: selection.signatureHashs,
@@ -812,7 +889,7 @@ class XRPValidator {
         }
 
         const signingHash = Britto.sha256sol(packer.packSigningHash({
-            contract: xrpBridge.address,
+            contract: node.address,
             govId: govInfo.id,
             selectionIndex: selectionIndex,
             signatureHashs: selection.signatureHashs
@@ -829,7 +906,7 @@ class XRPValidator {
                     if(res.data.validators[i].toLowerCase() === validator.address.toLowerCase()){
                         logger.evm.error(`Already signed. validated signingHash: ${signingHash}`);
                         return;
-                    }   
+                    }
                 }
             }
             let signature = Britto.signMessage(signingHash, validator.pk);
@@ -837,7 +914,7 @@ class XRPValidator {
             sigs[1] = parseInt(sigs[1],16)
 
             await api.validator.post(`/governance/validate-selected`, {
-                contract: xrpBridge.address,
+                contract: node.address,
                 govId: govInfo.id,
                 selectionIndex,
                 signatureHashs: selection.signatureHashs,
@@ -853,7 +930,7 @@ class XRPValidator {
             })
         }
 
-        let hashValidators = await xrpBridge.multisig.contract.methods.getHashValidators(signingHash.toString('hex').add0x()).call();
+        let hashValidators = await node.multisig.contract.methods.getHashValidators(signingHash.toString('hex').add0x()).call();
         for(var i = 0; i < hashValidators.length; i++){
             if(hashValidators[i].toLowerCase() === validator.address.toLowerCase()){
                 logger.xrp.error(`Already signed. validated selectionIndex: ${selectionIndex}`);
@@ -928,11 +1005,21 @@ class XRPValidator {
 
         let transfortData = data.data || '0x';
 
-        let version = await this.addressBook.contract.methods.versionCount().call().catch(e => {});
-        if(!version){
-            logger.xrp.error(`getAddressBookVersionCount error.`);
+        const ctx = { logger };
+        async function gatherRequestFromNode(node) {
+            const version = await node.contract.methods.versionCount().call().catch(e => {});
+            if(!version){
+                this.logger.xrp.error(`getAddressBookVersionCount error.`);
+            }
+            return { version };
+        }
+
+        const res = await this.addressBook.majorityCheckForDatasInRpcs(gatherRequestFromNode.bind(ctx));
+        if (!res) {
+            logger.xrp.error(`validateSwap error: The tag validation failed to pass the majority of nodes`);
             return;
         }
+        const version = res.version;
 
         let packerData = {
             version,
