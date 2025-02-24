@@ -1,4 +1,4 @@
-FROM node:18 as builder
+FROM node:20 as builder
 
 WORKDIR /workspace
 
@@ -9,7 +9,7 @@ RUN yarn install --immutable --immutable-cache --check-cache
 
 COPY src src
 
-FROM node:18-alpine
+FROM node:20-alpine
 
 RUN npm install -g pm2
 
