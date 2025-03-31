@@ -16,7 +16,7 @@ module.exports = {
             confirm: 10
         },
         eth: {
-            rpc: ["http://prd-eth-mainnet-erpc.node.ozys.work:8545", "https://rpc.ankr.com/eth"],
+            rpc: ["http://prd-eth-mainnet-erpc.node.ozys.work:8545", "https://ethereum-rpc.publicnode.com"],
             beacon: "http://prd-eth-mainnet-brpc.node.ozys.work:8545",
             chain_id: '0x1',
             terminal_total_difficulty: "58750000000000000000000",
