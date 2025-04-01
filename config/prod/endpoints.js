@@ -2,12 +2,12 @@ module.exports = {
     // Node Endpoints
     endpoints : {
         avax: {
-            rpc: ["https://rpc.ankr.com/avalanche", "https://avalanche.public-rpc.com", "https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc", "http://prd-avax-mainnet.node.ozys.work:8545/ext/bc/C/rpc"],
+            rpc: ["https://avalanche-c-chain-rpc.publicnode.com", "https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc", "http://prd-avax-mainnet.node.ozys.work:8545/ext/bc/C/rpc"],
             chain_id: '0xa86a',
             confirm: 10
         },
         bsc: {
-            rpc : ["https://bsc-dataseed.binance.org", "https://bsc-dataseed1.binance.org", "https://rpc.ankr.com/bsc", "http://prd-bsc-mainnet-rpc.node.ozys.work:8545"],
+            rpc : ["https://bsc-dataseed.binance.org", "https://bsc-dataseed1.binance.org", "http://prd-bsc-mainnet-rpc.node.ozys.work:8545"],
             confirm: 10
         },
         celo: {
@@ -16,7 +16,7 @@ module.exports = {
             confirm: 10
         },
         eth: {
-            rpc: ["http://prd-eth-mainnet-erpc.node.ozys.work:8545", "https://rpc.ankr.com/eth"],
+            rpc: ["http://prd-eth-mainnet-erpc.node.ozys.work:8545", "https://ethereum-rpc.publicnode.com", "https://eth.drpc.org"],
             beacon: "http://prd-eth-mainnet-brpc.node.ozys.work:8545",
             chain_id: '0x1',
             terminal_total_difficulty: "58750000000000000000000",
@@ -53,7 +53,7 @@ module.exports = {
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
                 chain_id: 8217
             },
-            rpc: ["https://public-en.node.kaia.io", "https://kaia.blockpi.network/v1/rpc/public", "https://1rpc.io/klay"],
+            rpc: ["https://public-en.node.kaia.io", "https://kaia.blockpi.network/v1/rpc/public", "https://klaytn.drpc.org"],
             confirm: 10
         },
         silicon: {
@@ -62,7 +62,7 @@ module.exports = {
             confirm: 10
         },
         matic: {
-            rpc : ["https://polygon-rpc.com", "https://polygon-bor-rpc.publicnode.com", "http://prd-matic-bor-mainnet-rpc.node.ozys.work:8545", "https://rpc.ankr.com/polygon"],
+            rpc : ["https://polygon-rpc.com", "https://polygon-bor-rpc.publicnode.com", "http://prd-matic-bor-mainnet-rpc.node.ozys.work:8545", "https://1rpc.io/matic"],
             chain_id: '0x89',
             confirm: 10
         },
