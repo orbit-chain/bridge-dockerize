@@ -57,7 +57,7 @@ module.exports = {
             confirm: 10
         },
         silicon: {
-            rpc: ["https://rpc.silicon.network", "https://silicon-rpc-seed1.node.ozys.work", "https://silicon-rpc-seed2.node.ozys.work", "https://silicon-rpc-seed3.node.ozys.work", "https://silicon-mainnet.nodeinfra.com"],
+            rpc: ["https://rpc.silicon.network", "https://silicon-mainnet.nodeinfra.com"],
             chain_id: 2355,
             confirm: 10
         },
