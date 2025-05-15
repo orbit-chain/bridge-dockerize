@@ -48,14 +48,19 @@
                 "type": "tuple[]"
             },
             {
+                "internalType": "uint32",
+                "name": "l1InfoTreeLeafCount",
+                "type": "uint32"
+            },
+            {
                 "internalType": "uint64",
                 "name": "maxSequenceTimestamp",
                 "type": "uint64"
             },
             {
-                "internalType": "uint64",
-                "name": "initSequencedBatch",
-                "type": "uint64"
+                "internalType": "bytes32",
+                "name": "expectedFinalAccInputHash",
+                "type": "bytes32"
             },
             {
                 "internalType": "address",
