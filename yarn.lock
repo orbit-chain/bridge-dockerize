@@ -3540,6 +3540,20 @@ ton@^12.0.0:
     ton-crypto "2.1.0"
     tweetnacl "1.0.3"
 
+"tonweb-latest@npm:tonweb@^0.0.66":
+  version "0.0.66"
+  resolved "https://registry.yarnpkg.com/tonweb/-/tonweb-0.0.66.tgz#e9aa1f81ac2c2a9b0ff692294d58b1dfea516fb4"
+  integrity sha512-ntDJU1b/kgMFvOYN09FvhdnAfwnZh8W5sONkUP+P0FQkYRa/027otRxApp5gfxZ9DR+3WTnCQgrsG/EXv8RhEA==
+  dependencies:
+    "@ledgerhq/hw-transport-web-ble" "5.48.0"
+    "@ledgerhq/hw-transport-webhid" "5.48.0"
+    "@ledgerhq/hw-transport-webusb" "5.48.0"
+    bn.js "5.1.1"
+    ethjs-unit "0.1.6"
+    isomorphic-webcrypto "2.3.8"
+    node-fetch "2.6.7"
+    tweetnacl "1.0.3"
+
 tonweb@^0.0.52:
   version "0.0.52"
   resolved "https://registry.yarnpkg.com/tonweb/-/tonweb-0.0.52.tgz#70a70d3d609961775d167815cf0745e344fdca12"
@@ -3942,7 +3956,7 @@ web3-utils@1.8.1, web3-utils@^1.2.1:
     randombytes "^2.1.0"
     utf8 "3.0.0"
 
-web3@^1.0.0-beta.37:
+web3@1.8.1:
   version "1.8.1"
   resolved "https://registry.yarnpkg.com/web3/-/web3-1.8.1.tgz#8ea67215ef5f3a6f6d3381800b527242ea22885a"
   integrity sha512-tAqFsQhGv340C9OgRJIuoScN7f7wa1tUvsnnDUMt9YE6J4gcm7TV2Uwv+KERnzvV+xgdeuULYpsioRRNKrUvoQ==
