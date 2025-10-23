@@ -3,7 +3,7 @@ module.exports = {
     chain_list: [
         'silicon',
         'klaytn',
-        'icon',
+        // 'icon',
         'avax',
         'bsc',
         'matic',

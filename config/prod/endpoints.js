@@ -83,8 +83,8 @@ module.exports = {
     VALIDATOR_MONITOR: {
         ozys: {
             monitor: "https://va.orbitbridge.io/governance/report",
-            orbit: "https://api.bridge.orbitchain.io",
-            validator: "https://api.bridge.orbitchain.io",
+            orbit: "https://api.orbitbridge.io",
+            validator: "https://va.orbitbridge.io",
             bible: "https://open.orbitbridge.io/open",
             interval: 60 * 1000,
         },
