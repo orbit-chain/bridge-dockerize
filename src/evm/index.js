@@ -229,9 +229,9 @@ class EVMValidator {
                         nodeDatas.push(receiptValues);
                         checkTxCnt++;
                     }
-                    if(this.l1) {
-                        if(await this.isFinalized(node, originTxhash)) checkFinalizedCnt++;
-                    }
+                    // if(this.l1) {
+                    //     if(await this.isFinalized(node, originTxhash)) checkFinalizedCnt++;
+                    // }
                 }
 
                 let requireCnt = parseInt(nodes.length/2) + 1;
@@ -239,12 +239,12 @@ class EVMValidator {
                     logger.evm.info(`malicious rpc returns. checkTxCnt:${checkTxCnt}, requireCnt:${requireCnt}`, this.loggerOpt)
                     continue;
                 }
-                if(this.l1) {
-                    if(checkFinalizedCnt < requireCnt){
-                        logger.evm.info(`checkFinalizedCnt:${checkFinalizedCnt}, requireCnt:${requireCnt}`, this.loggerOpt)
-                        continue;
-                    }
-                }
+                // if(this.l1) {
+                //     if(checkFinalizedCnt < requireCnt){
+                //         logger.evm.info(`checkFinalizedCnt:${checkFinalizedCnt}, requireCnt:${requireCnt}`, this.loggerOpt)
+                //         continue;
+                //     }
+                // }
 
                 let data = {
                     fromChain: result.origin_chain,
