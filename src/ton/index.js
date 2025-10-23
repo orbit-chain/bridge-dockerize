@@ -78,10 +78,22 @@ class TONValidator {
         const info = config.info[this.chainLower];
         this.tonMinter = info.CONTRACT_ADDRESS.minter;
 
-        const ton = this.ton = new Ton(info.ENDPOINT);
-        if(!ton) throw 'Invalid Ton Endpoint';
+        const nodes = this.nodes = [];
+        for (let i=0; i<info.ENDPOINT.rpc.length; i++) {
+            let node;
+            try {
+                node = new Ton(info.ENDPOINT.rpc[i], i);
+            } catch (e) {
+                continue;
+            }
+            nodes.push(node);
+        }
+        if (nodes.length < info.ENDPOINT.min_healthy_cnt) {
+            global.monitor.setNodeConnectStatus()
+            throw `Healthy Hosts too low. cur:${nodes.length}, req:${info.ENDPOINT.min_healthy_cnt}`;
+        }
 
-        ton.getTonAccount(this.account.pk).then(account => {
+        nodes[0].getTonAccount(this.account.pk).then(account => {
             if(monitor.address[chainName]) return;
             monitor.address[chainName] = account;
         });
@@ -96,6 +108,24 @@ class TONValidator {
         this.workerStarted = false;
 
         this.startIntervalWorker();
+    }
+
+    async getTonApi(version = undefined) {
+        let pool = this.nodes.slice();
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]]; // Swap elements
+        }
+        for (const node of pool) {
+            if (version && version !== node.version) {
+                continue;
+            }
+            if (!await node.checkRPC()) {
+                continue;
+            }
+            return node;
+        }
+        throw new Error("there is no available ton node");
     }
 
     startIntervalWorker() {
@@ -132,12 +162,16 @@ class TONValidator {
         this.intervalClear(this.intervals.getLockRelay);
 
         try {
-            const response = await api.bible.get("/v1/api/ton/lock-relay");
-            if (response.success !== "success") {
+            let response = await api.orbit.get(`/bridge/relay`, {
+                vault_chain: this.govInfo.chain,
+                origin_chain: this.chainName
+            });
+
+            if (response.status !== "success") {
                 logger.ton.error(`lock-relay api error: ${response}`);
                 return;
             }
-            let info = response.info;
+            let info = response.data;
             if (!Array.isArray(info)) {
                 logger.ton.error('Received data is not array.');
                 return;
@@ -147,19 +181,20 @@ class TONValidator {
             logger.ton.info(`LockRelay list ${info.length === 0 ? 'is empty.' : 'length: ' + info.length.toString()}`);
 
             for (let result of info) {
+                const originTxhash = result.origin_thash;
                 let data = {
                     fromChain: this.chainName.toUpperCase(),
                     toChain: result.toChain,
                     fromAddr: result.fromAddr,
                     toAddr: result.toAddr,
                     token: result.token,
-                    bytes32s: [this.govInfo.id, result.fromThash],
+                    bytes32s: [this.govInfo.id, originTxhash],
                     uints: [result.amount, result.decimals, result.depositId, result.lt], // result.lt?
                     data: result.data || '0x'
                 };
-                
+
                 const tonMinter = this.tonMinter;
-                const ton = this.ton;
+                const ton = await this.getTonApi();
 
                 let txHash = data.bytes32s[1];
                 txHash = Buffer.from(txHash.replace("0x",""), 'hex').toString('base64');
@@ -191,11 +226,11 @@ class TONValidator {
         }
     }
 
-    async validateRelayedData(data) {
+    // private
+    async _validateRelayedData(data, node) {
         const chainIds = this.chainIds;
-        const ton = this.ton;
+        const ton = node;
         const tonMinter = this.tonMinter;
-        const chainName = this.chainName;
         const govInfo = this.govInfo;
         const REQUEST_SWAP = this.requestSwapABI;
 
@@ -211,7 +246,7 @@ class TONValidator {
 
         let tx = await ton.getTransaction(tonMinter, txHash, lt);
         if(!tx || !tx.data || !tx.transaction_id){
-            logger.ton.error(`getTransaction error: ${txHash}, ${lt}`);
+            logger.ton.error(`getTransaction error: ${ton.rpc} ${txHash}, ${lt}`);
             return;
         }
 
@@ -221,7 +256,7 @@ class TONValidator {
             return;
         }
 
-        let description = await ton.parseTransaction(tx.data);
+        let { description, inMessage } = await ton.parseTransaction(tx.data);
         if(!description || !description.computePhase || !description.actionPhase){
             logger.ton.error(`Invalid description: ${txHash}, ${lt}`);
             return;
@@ -344,21 +379,74 @@ class TONValidator {
             return;
         }
 
+        return {
+            ...res,
+            outMsgs: out_msgs,
+            txhash: data.bytes32s[1],
+            fromAddr,
+            toChain,
+            lt,
+        }
+    }
+
+   async validateRelayedData(data) {
+        let res = [];
+        for(let node of this.nodes){
+            let obj = await this._validateRelayedData(data, node);
+            if(!obj || !obj.fromAddr || !obj.amount || !obj.outMsgs){
+                logger.ton.error("Invalid Transaction");
+                continue;
+            }
+            res.push(obj);
+        }
+        if(res.length === 0){
+            logger.ton.error("getParams error");
+            return;
+        }
+
+        let len = res.length;
+        for(let i = 0; i < len; i++){
+            for(let j = i+1; j < len; j++) {
+                if (res[i].opCode === res[j].opCode
+                    && res[i].outMsgs.length === res[j].outMsgs.length
+                    && res[i].fromAddr === res[j].fromAddr
+                    && res[i].amount === res[j].amount
+                    && res[i].toChain === res[j].toChain
+                    && res[i].toAddr === res[j].toAddr
+                    && res[i].token === res[j].token
+                    && res[i].decimal === res[j].decimal
+                    && res[i].depositId === res[j].depositId
+                ) {
+                    res[i].eqCnt = res[i].eqCnt + 1;
+                    res[j].eqCnt = res[j].eqCnt + 1;
+                }
+            }
+        }
+        res.sort((a,b) => { return b.eqCnt - a.eqCnt });
+
+        let maxCnt = res[0].eqCnt;
+        let requireCnt = parseInt(this.nodes.length/2) + 1;
+        if(maxCnt < requireCnt){
+            logger.ton.error("malicious rpc returns.");
+            return;
+        }
+
+        let obj = res[0];
         let params = {
             hubContract: this.orbitHub,
             fromChain: this.chainName,
-            toChain: toChain.toUpperCase(),
-            fromAddr: fromAddr,
-            toAddr: res.toAddr,
-            token: res.token,
-            bytes32s: [govInfo.id, data.bytes32s[1]],
-            uints: [res.amount, res.decimal, res.depositId, lt],
+            toChain: obj.toChain.toUpperCase(),
+            fromAddr: obj.fromAddr,
+            toAddr: obj.toAddr,
+            token: obj.token,
+            bytes32s: [this.govInfo.id, obj.txhash],
+            uints: [obj.amount, obj.decimal, obj.depositId, obj.lt],
             data: "0x"
         }
 
         const toInstance = instances[params.toChain.toLowerCase()];
         if(!toInstance) {
-            logger.ton.error(`${params.toChain} instance is not exist`);
+            logger.ton_layer_1.error(`${params.toChain} instance is not exist`);
             return;
         }
         await toInstance.validateSwap(data, params);
@@ -425,12 +513,12 @@ class TONValidator {
                         }
                     }
                 }
-                
+
                 let ecSig = Britto.signMessage(hash, validator.pk);
                 let edSig = Britto.signEd25519(hash, validator.pk);
                 let sigs = TONValidator.makeSigsWithED(validator.address, ecSig, edSig);
                 sigs[1] = parseInt(sigs[1],16)
-    
+
                 await api.validator.post(`/governance/validate`, {
                     from_chain: data.fromChain,
                     to_chain: data.toChain,
@@ -449,7 +537,7 @@ class TONValidator {
                     ed_r: sigs[4],
                     ed_s: sigs[5]
                 });
-                
+
                 hashMap.set(hash.toString('hex').add0x(), {
                     txHash: hash,
                     timestamp: parseInt(Date.now() / 1000),
@@ -465,7 +553,7 @@ class TONValidator {
     ///////////////////////////////////////////////////////////////
     ///////// Governance Function
     async getTransaction(transactionId, decoder) {
-        const ton = this.ton;
+        const ton = await this.getTonApi(2);
         const govInfo = this.govInfo;
         const info = config.info[this.chainLower];
         const chainName = this.chainName;
@@ -498,7 +586,7 @@ class TONValidator {
     }
 
     async confirmTransaction(transactionId, gasPrice, chainId) {
-        const ton = this.ton;
+        const ton = await this.getTonApi(2);
         const chainName = this.chainName;
         const account = this.account;
         const address = monitor.address[chainName].address;

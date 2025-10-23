@@ -4,6 +4,7 @@ const config = require(ROOT + '/config');
 const Britto = require(ROOT + '/lib/britto');
 const RPCAggregator = require(ROOT + '/lib/rpcAggregator');
 const api = require(ROOT + '/lib/api');
+const res = require('express/lib/response');
 const packer = require('./utils/packer');
 
 const BridgeUtils = require(ROOT + '/lib/bridgeutils');
@@ -194,52 +195,42 @@ class EVMValidator {
         this.intervalClear(this.intervals.getLockRelay);
 
         try {
-            let response = await api.bible.get(`/v1/api/${this.chainLower}/lock-relay`)
-            if (response.success !== "success") {
-                logger.evm.error(`lock-relay api error: ${response}`);
+            let response = await api.orbit.get(`/bridge/relay`, {
+                vault_chain: this.govInfo.chain.replace("_LAYER_1", ""),
+                origin_chain: this.chainName,
+            });
+
+            if (response.status !== "success") {
+                logger.evm.error(`relay api error: ${response}`);
                 return;
             }
 
-            let info = response.info;
+            let info = response.data;
             if (!Array.isArray(info)) {
                 logger.evm.error('Received data is not array.');
                 return;
             }
 
-            logger.evm.info(`LockRelay list ${info.length === 0 ? 'is empty.' : 'length: ' + info.length.toString()}`, this.loggerOpt);
+            logger.evm.info(`Relay list ${info.length === 0 ? 'is empty.' : 'length: ' + info.length.toString()}`, this.loggerOpt);
 
             for (let result of info) {
-                if (result.toChain === "ORBIT") continue;
-                if (this.govInfo.chain.replace("_LAYER_1", "") === result.toChain) result.toChain = this.govInfo.chain;
-
-                let data = {
-                    fromChain: result.fromChain,
-                    toChain: result.toChain,
-                    fromAddr: bridgeUtils.str2hex(result.fromAddr),
-                    toAddr: bridgeUtils.str2hex(result.toAddr),
-                    token: bridgeUtils.str2hex(result.token) || "0x0000000000000000000000000000000000000000",
-                    bytes32s: [this.govInfo.id, result.fromThash],
-                    uints: [result.amount, result.decimals, result.depositId],
-                    data: result.data
-                };
-
-                if (!bridgeUtils.isValidAddress(data.toChain, data.toAddr)) {
-                    logger.evm.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`, this.loggerOpt);
-                    continue;
-                }
-
-                if (data.data && !bridgeUtils.isValidData(data.toChain, data.data)) {
-                    logger.evm.error(`Invalid data ( ${data.toChain}, ${data.data} )`, this.loggerOpt);
-                    continue;
-                }
+                // 진짜 있는 tx인지 가장 먼저 확인
+                const originTxhash = result.origin_thash;
                 const functionSig = (this.govInfo.chain === this.chainName) ? "Deposit" : "SwapRequest";
                 const nodes = await this.rpcAggregator.getNodes();
+
                 let checkTxCnt = 0;
                 let checkFinalizedCnt = 0;
+
+                let nodeDatas = [];
                 for(let node of nodes){
-                    if(await bridgeUtils.checkTransaction(node, data, functionSig)) checkTxCnt++;
+                    let receiptValues = await bridgeUtils.checkTransaction(node, originTxhash, functionSig);
+                    if(receiptValues) {
+                        nodeDatas.push(receiptValues);
+                        checkTxCnt++;
+                    }
                     if(this.l1) {
-                        if(await this.isFinalized(node, data.bytes32s[1])) checkFinalizedCnt++;
+                        if(await this.isFinalized(node, originTxhash)) checkFinalizedCnt++;
                     }
                 }
 
@@ -255,11 +246,27 @@ class EVMValidator {
                     }
                 }
 
-                if (this.chainName === 'KLAYTN' && data.fromAddr.toLowerCase() === "0xdfcb0861d3cb75bb09975dce98c4e152823c1a0b") {
-                    this.logger.info("[GUARD] BLOCK bridge");
+                let data = {
+                    fromChain: result.origin_chain,
+                    toChain: nodeDatas[0].toChain,
+                    fromAddr: bridgeUtils.str2hex(nodeDatas[0].fromAddr),
+                    toAddr: bridgeUtils.str2hex(nodeDatas[0].toAddr),
+                    token: bridgeUtils.str2hex(nodeDatas[0].token) || "0x0000000000000000000000000000000000000000",
+                    bytes32s: [this.govInfo.id, originTxhash],
+                    uints: [nodeDatas[0].amount, nodeDatas[0].decimal, nodeDatas[0].depositId],
+                    data: nodeDatas[0].data
+                };
+
+                if (!bridgeUtils.isValidAddress(data.toChain, data.toAddr)) {
+                    logger.evm.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`, this.loggerOpt);
                     continue;
                 }
 
+                if (data.data && !bridgeUtils.isValidData(data.toChain, data.data)) {
+                    logger.evm.error(`Invalid data ( ${data.toChain}, ${data.data} )`, this.loggerOpt);
+                    continue;
+                }
+                
                 await this.validateRelayedData(data);
             }
         } catch (e) {
@@ -271,40 +278,34 @@ class EVMValidator {
 
     // from chain이 L2인 경우(silicon) L1 block finality 먼저 검증
     async isFinalized(l2, txhash) {
-        let response = await api.bible.get(`/v1/api/l2/finality/${this.chainLower}/${txhash}`)
-        if (!response.success) {
-            logger.evm.error(`L2 finality api error: ${response}`, this.loggerOpt);
+        let receipt = await l2.eth.getTransactionReceipt(txhash);
+        if(!receipt || !receipt.blockNumber) {
+            logger.evm.error(`Transaction receipt not found for txhash: ${txhash}`, this.loggerOpt);
             return;
         }
-        if (!response.isFinalized) {
-            logger.evm.info(`L2 tx is not finalized ${response.batch}: ${txhash}`, this.loggerOpt);
+        let txBatch = await l2.web3.zkevm.getBatchNumberByBlockNumber(receipt.blockNumber);
+        if(!txBatch || !txBatch.batch) {
+            logger.evm.error(`Batch number not found for block number: ${receipt.blockNumber}`, this.loggerOpt);
             return;
-        } else {
-            // bible data와 실제 batch 조회 data 확인
-            let { batchL2Data, sendSequencesTxHash, verifyBatchTxHash } = await l2.web3.zkevm.getBatchByNumber(response.batch);
-            if(sendSequencesTxHash.toLowerCase() !== response.sequenceBatchTx.toLowerCase() || verifyBatchTxHash.toLowerCase() !== response.verifyBatchTx) {
-                logger.evm.error(`Batch tx not matched`, this.loggerOpt);
-                return;
-            }
-
-            // l2 transactionsHash
-            let transactionsHash = l2.web3.utils.keccak256(batchL2Data).toLowerCase();
-            const nodes = await this.l1RpcAggregator.getNodes();
-            let requireCnt = parseInt(nodes.length/2) + 1;
-            let cnt = 0;
-            for(let node of nodes) {
-                if(await this.checkL1Finality(transactionsHash, response.batch, node, sendSequencesTxHash, verifyBatchTxHash)) {
-                    cnt++;
-                }
-            }
-
-            if(cnt < requireCnt){
-                logger.evm.error("malicious L1 rpc returns.", this.loggerOpt);
-                return;
-            }
-
-            return true;
         }
+
+        let { batchL2Data, sendSequencesTxHash, verifyBatchTxHash } = await l2.web3.zkevm.getBatchByNumber(txBatch);
+
+        // l2 transactionsHash
+        let transactionsHash = l2.web3.utils.keccak256(batchL2Data).toLowerCase();
+        const nodes = await this.l1RpcAggregator.getNodes();
+        let requireCnt = parseInt(nodes.length/2) + 1;
+        let cnt = 0;
+        for(let node of nodes) {
+            if(await this.checkL1Finality(transactionsHash, response.batch, node, sendSequencesTxHash, verifyBatchTxHash)) {
+                cnt++;
+            }
+        }
+        if(cnt < requireCnt){
+            logger.evm.error("malicious L1 rpc returns.", this.loggerOpt);
+            return;
+        }
+        return true;
     }
 
     async checkL1Finality(l2TxHash, batch, l1, sendSequencesTxHash, verifyBatchTxHash) {

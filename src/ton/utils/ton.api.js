@@ -1,4 +1,7 @@
 const TonWeb = require("tonweb");
+const TonWebV3 = require("tonweb");
+const HttpProviderV3 = require(`${ROOT}/lib/ton.indexer`).default;
+TonWebV3.HttpProvider = HttpProviderV3;
 const request = require("request-promise");
 
 const nacl = TonWeb.utils.nacl;
@@ -16,17 +19,116 @@ function makeBN(str) {
 }
 
 class TonAPI {
-    constructor(endpoint) {
-        if(!endpoint || !endpoint.rpc) throw "Ton endpoint is missing"
-        if(!process.env.TON_API_KEY) throw "Ton api key is missing"
+    constructor(info, num) {
+        const type = this.type = info.type;
+        const version = this.version = info.version;
 
-        this.rpc = endpoint.rpc;
-        this.apiKey = process.env.TON_API_KEY;
-
-        this.ton = new TonClient({endpoint: this.rpc, apiKey: this.apiKey});
-        this.tonWeb = new TonWeb(new TonWeb.HttpProvider(this.rpc, {apiKey: this.apiKey}));
+        this.num = num;
+        const { endpoint, apiKey, tonWeb, ton } = this[`createProviderBy${type.toUpperCase()}V${version}`]();
+        this.rpc = endpoint;
+        this.apiKey = apiKey;
+        this.tonWeb = tonWeb;
+        this.ton = ton;
 
         this.tonWeb.checkRPCInterval = setInterval(this.checkRPC.bind(this), 1000 * 60);
+    }
+
+    createProviderByTONCENTERV2() {
+        const endpoint = "https://toncenter.com/api/v2/jsonRPC";
+        const apiKey = process.env.TON_API_KEY;
+        if (!apiKey) {
+            throw "TON_API_KEY is missing";
+        }
+        return {
+            endpoint,
+            apiKey,
+            tonWeb: new TonWeb(new TonWeb.HttpProvider(endpoint, {apiKey})),
+            ton: new TonClient({endpoint, apiKey}),
+        }
+    }
+
+    createProviderByTONCENTERV3() {
+        const endpoint = "https://toncenter.com/api/v3";
+        const apiKey = process.env.TON_API_KEY;
+        if (!apiKey) {
+            throw "TON_API_KEY is missing";
+        }
+        return {
+            endpoint,
+            apiKey,
+            tonWeb: new TonWebV3(new TonWebV3.HttpProvider(endpoint, {apiKey})),
+        }
+    }
+
+    createProviderByQUICKNODEV2() {
+        if (!process.env.QUICKNODE_ENDPOINT_NAME) {
+            throw "QUICK_NODE_ENDPOINT_NAME is missing";
+        }
+        if (!process.env.QUICKNODE_API_KEY) {
+            throw "QUICK_NODE_API_KEY is missing";
+        }
+        const endpoint = `${process.env.QUICKNODE_ENDPOINT_NAME}.ton-mainnet.quiknode.pro/${process.env.QUICKNODE_API_KEY}/jsonRPC`;
+        let apiKey;
+        return {
+            endpoint,
+            apiKey,
+            tonWeb: new TonWeb(new TonWeb.HttpProvider(endpoint, {apiKey})),
+            ton: new TonClient({endpoint, apiKey}),
+        }
+    }
+
+    createProviderByCHAINSTACKV2() {
+        if (!process.env.CHAINSTACK_API_KEY) {
+            throw "CHAINSTACK_API_KEY is missing";
+        }
+        const endpoint = `https://ton-mainnet.core.chainstack.com/${process.env.CHAINSTACK_API_KEY}/api/v2/jsonRPC`;
+        let apiKey;
+        return {
+            endpoint,
+            apiKey,
+            tonWeb: new TonWeb(new TonWeb.HttpProvider(endpoint, {apiKey})),
+            ton: new TonClient({endpoint, apiKey}),
+        }
+    }
+
+    createProviderByCHAINSTACKV3() {
+        if (!process.env.CHAINSTACK_API_KEY) {
+            throw "CHAINSTACK_API_KEY is missing";
+        }
+        const endpoint = `https://ton-mainnet.core.chainstack.com/${process.env.CHAINSTACK_API_KEY}/api/v3`;
+        let apiKey;
+        return {
+            endpoint,
+            apiKey,
+            tonWeb: new TonWebV3(new TonWebV3.HttpProvider(endpoint, {apiKey})),
+        }
+    }
+
+    createProviderByGETBLOCKV2() {
+        if (!process.env.GETBLOCK_JSON_RPC_API_KEY) {
+            throw "GETBLOCK_JSON_RPC_API_KEY is missing";
+        }
+        const endpoint = `https://go.getblock.io/${process.env.GETBLOCK_JSON_RPC_API_KEY}`;
+        let apiKey;
+        return {
+            endpoint,
+            apiKey,
+            tonWeb: new TonWeb(new TonWeb.HttpProvider(endpoint, {apiKey})),
+            ton: new TonClient({endpoint, apiKey}),
+        }
+    }
+
+    createProviderByGETBLOCKV3() {
+        if (!process.env.GETBLOCK_INDEXER_V3_API_KEY) {
+            throw "GETBLOCK_INDEXER_V3_API_KEY is missing";
+        }
+        const endpoint = `https://go.getblock.io/${process.env.GETBLOCK_INDEXER_V3_API_KEY}`;
+        let apiKey;
+        return {
+            endpoint,
+            apiKey,
+            tonWeb: new TonWebV3(new TonWebV3.HttpProvider(endpoint, {apiKey})),
+        }
     }
 
     async checkRPC() {
@@ -41,11 +143,12 @@ class TonAPI {
         try {
             let masterInfo = await tonWeb.provider.getMasterchainInfo().catch(e => {});
             if(!masterInfo || !masterInfo.last || !masterInfo.last.seqno) {
-                global.monitor.setNodeConnectStatus("ton", `${rpc}/${apiKey}`, "disconnected");
-                return;
+                global.monitor.setNodeConnectStatus(`ton_${this.num}`, `${rpc}/${apiKey}`, "disconnected");
+                return false;
             }
 
-            global.monitor.setNodeConnectStatus("ton", `${rpc}/${apiKey}`, "connected");
+            global.monitor.setNodeConnectStatus(`ton_${this.num}`, `${rpc}/${apiKey}`, "connected");
+            return true;
         } finally {
             if (!tonWeb.checkRPCInterval) {
                 tonWeb.checkRPCInterval = setInterval(this.checkRPC.bind(this), 1000 * 60);
@@ -84,7 +187,7 @@ class TonAPI {
     async getTransaction(address, hash, lt) {
         let tx;
         try{
-            let res = await this.tonWeb.getTransactions(address, 1, lt, hash, undefined).catch(e => {});
+            let res = await this.tonWeb.getTransactions(address, 1, lt, hash, undefined).catch(e => { logger.ton.error(e) });
             if(!res || res.length !== 1) return;
 
             tx = res[0];
@@ -97,46 +200,40 @@ class TonAPI {
         let masterInfo = await this.tonWeb.provider.getMasterchainInfo().catch(e => {});
         if(!masterInfo || !masterInfo.last || !masterInfo.last.seqno) return;
 
-        let masterSeqno = masterInfo.last.seqno;
-        let blockShards = await this.tonWeb.provider.getBlockShards(masterSeqno).catch(e => {});
-        if(!blockShards || !blockShards.shards) return;
-
-        let blockNumber;
-        for(let shard of blockShards.shards){
-            if(shard.workchain !== 0) continue;
-
-            blockNumber = shard.seqno;
-        }
-
-        return blockNumber;
+        return masterInfo.last.seqno;
     }
 
     async getTransactionBlock(address, lt) {
-        let addrInfo = await this.tonWeb.provider.getAddressInfo(address).catch(e => {});
-        if(!addrInfo || !addrInfo.block_id || !addrInfo.block_id.shard) {
-            logger.ton.error("getAddressInfo error.");
-            return;
+        if (this.version === 2) {
+            let lookupHost = `${this.rpc.replace("/jsonRPC","")}/lookupBlock?workchain=-1&shard=${HttpProviderV3.SHARD_ID_ALL}&lt=${lt}`
+            let res = await request.get(lookupHost).catch(e => {});
+            if(!res) {
+                logger.ton_layer_1.error("lookupBlock error.");
+                return;
+            }
+
+            res = JSON.parse(res);
+            if(!res.ok || !res.result || !res.result.seqno) {
+                logger.ton_layer_1.error("lookupBlock parsing error.");
+                return;
+            }
+            return res.result.seqno;
         }
 
-        let addrShard = addrInfo.block_id.shard;
-        let lookupHost = `${this.rpc.replace("/jsonRPC","")}/lookupBlock?workchain=0&shard=${addrShard}&lt=${lt}`
-        let res = await request.get(lookupHost).catch(e => {});
-        if(!res) {
-            logger.ton.error("lookupBlock error.");
-            return;
+        if (this.version === 3) {
+            const res = await this.tonWeb.provider.getTransactions(address, 1, lt);
+            if(!res || res.length !== 1) {
+                logger.ton_layer_1.error("lookupBlock error.");
+                return;
+            }
+            return res[0].mc_block_seqno;
         }
-
-        res = JSON.parse(res);
-        if(!res.ok || !res.result || !res.result.seqno) {
-            logger.ton.error("lookupBlock parsing error.");
-            return;
-        }
-
-        return res.result.seqno;
     }
 
     async getMultisigData(vault) {
-        let res = await this.tonWeb.provider.call(vault, 'get_multisig_data', []).catch(e => {});
+        let res = await this.tonWeb.provider.call(vault, 'get_multisig_data', []).catch(e => {
+            console.log(e)
+        });
         if(!res || res.exit_code !== 0) return;
 
         const stack = res.stack;
@@ -218,18 +315,27 @@ class TonAPI {
         return config;
     }
 
-    async parseTransaction(data) {
-        let description;
+    async parseTransaction(data, description, inMessage) {
+        // v3 api response conversion to v2 api response
+        if (description && inMessage) {
+            description.computePhase = description.compute_ph;
+            description.computePhase.exitCode = description.computePhase.exit_code;
+            description.actionPhase = description.action;
+            inMessage.body = Cell.fromBoc(Buffer.from(inMessage.message_content.body, 'base64'))[0];
+            return { description, inMessage };
+        }
 
         try {
             let cell = Cell.fromBoc(Buffer.from(data,'base64').toString('hex'))[0].beginParse();
             let res = parseTransaction(0, cell);
+
             description = res.description;
+            inMessage = res.inMessage
         } catch (e) {
-            logger.ton.error(`parseTransaction error`);
+            logger.ton_layer_1.error(`parseTransaction error`);
         }
 
-        return description;
+        return { description, inMessage };
     }
 
     async confirmTransaction(pk, mig, tid) {

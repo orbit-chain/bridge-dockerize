@@ -84,11 +84,10 @@ class Monitor {
         try {
             switch (method) {
                 case "ozys":
-                    ozysReport(data.monitor, this.json());
-                    break;
+                    return ozysReport(data.monitor, this.json());
                 default:
                     console.log(`unknown monitor method offered: ${method}`);
-                    break;
+                    return;
             }
         } catch (e) {}
     }
@@ -98,7 +97,7 @@ class Monitor {
             return;
         }
 
-        chain = Monitor.getChainFullName(chain);    
+        chain = Monitor.getChainFullName(chain);
         if (!chain) {
             return;
         }

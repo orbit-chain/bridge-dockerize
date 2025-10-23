@@ -229,25 +229,45 @@ class XrpBridge extends BridgeUtils {
         return hex;
     }
 
-    getReleaseMemo(govId, swapIndex) {
+    getReleaseMemo(originChain, originThash) {
         let memos = [];
 
         memos.push({
             Memo: {
-                MemoData: this.string2hex(swapIndex.toString()).toUpperCase(),
-                MemoType: this.string2hex('swapIndex').toUpperCase()
+                MemoData: this.string2hex(originChain).toUpperCase(),
+                MemoType: this.string2hex('originChain').toUpperCase()
             }
         });
 
         memos.push({
             Memo: {
-                MemoData: this.string2hex(govId).toUpperCase(),
-                MemoType: this.string2hex('govId').toUpperCase()
+                MemoData: this.string2hex(originThash).toUpperCase(),
+                MemoType: this.string2hex('originThash').toUpperCase()
             }
         });
 
         return memos
     }
+
+    // getReleaseMemo(govId, swapIndex) {
+    //     let memos = [];
+
+    //     memos.push({
+    //         Memo: {
+    //             MemoData: this.string2hex(swapIndex.toString()).toUpperCase(),
+    //             MemoType: this.string2hex('swapIndex').toUpperCase()
+    //         }
+    //     });
+
+    //     memos.push({
+    //         Memo: {
+    //             MemoData: this.string2hex(govId).toUpperCase(),
+    //             MemoType: this.string2hex('govId').toUpperCase()
+    //         }
+    //     });
+
+    //     return memos
+    // }
 
     string2hex(str) {
         var hex = '';

@@ -7,7 +7,8 @@ module.exports = {
         "matic",
         "metadium",
         "ton",
-        "wemix"
+        "wemix",
+        "silicon",
     ],
     bridge_address: {
         avax: {
@@ -47,6 +48,11 @@ module.exports = {
             minter: "0xa70a4c074B93136405100FC6004cc27bDE16f602",
             multisig: "0x8e2cFeb906b293b329d3017eB55faff0EA0C6FF4",
             admin: "0x4eD917b4c9abda373d6CfcDE7Cc62c9b8beca494"
+        },
+        silicon: {
+            minter: "0x2BB9894675C54c44b908E7114493262284bb7D80",
+            multisig: "0xc0Ecc14B1E46182458D8C2f2eaCb0bd46801eB9C",
+            admin: "0x4a2893Ed6CB8e58F51ef65ca2691d5cEF1F6DDC8"
         },
         governance: {
             chain: "METADIUM",

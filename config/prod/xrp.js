@@ -9,10 +9,10 @@ module.exports = {
         "wemix",
         'silicon',
     ],
-    silicon: {
-        xrpBridge: "0x83bca9503D7888F2eFcDF18cCa2E79f8Ba75d17c",
-        addressbook: "0x37CE54AFB91F3645b3e7455Cb4C5028507D6aBeB",
-        multisig: "0xCe303B5740C70fFe4477E0d21E3B35770587F3B1",
+    klaytn: {
+        xrpBridge: "0x0AD185F50fD8cfedaA75b54927dB4fBAd3621E66",
+        addressbook: "0xc32C03617bf18497Ec85Ac5A7fc4e950CA24468B",
+        multisig: "0x468f179Ea82566dC057Ea197Abe1c1a6367f1Cfb",
     },
     // Bridge Addresses
     bridge_address: {

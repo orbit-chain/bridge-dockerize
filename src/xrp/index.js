@@ -76,35 +76,36 @@ class XRPValidator {
         if(monitor.address[chainName]) return;
         monitor.address[chainName] = bridgeUtils.getKeyPair(this.account.pk).address;
 
-        let rpc = config.endpoints.silicon.rpc;
-        if(!Array.isArray(rpc) && typeof rpc !== "string") {
-            throw `Unsupported Silicon Endpoints: ${rpc}, Endpoints must be array or string.`;
-        }
+         // 이제 addressbook, bridge contract는 kaia 위에 있다
+         let rpc = config.endpoints.klaytn.rpc;
+         if(!Array.isArray(rpc) && typeof rpc !== "string") {
+             throw `Unsupported Kaia Endpoints: ${rpc}, Endpoints must be array or string.`;
+         }
 
         rpc = Array.isArray(rpc) ? rpc : [ rpc ]
-        let expandedNode = process.env.SILICON ? JSON.parse(process.env.SILICON) : undefined
+        let expandedNode = process.env.KLAYTN ? JSON.parse(process.env.KLAYTN) : undefined
         if(expandedNode && expandedNode.length > 0) {
             rpc = rpc.concat(expandedNode)
         }
-        const addressBook = this.addressBook = new RPCAggregator("SILICON", config.endpoints.silicon.chain_id);
-        const xrpBridge = this.xrpBridge = new RPCAggregator("SILICON", config.endpoints.silicon.chain_id);
+        const addressBook = this.addressBook = new RPCAggregator("KLAYTN", config.endpoints.klaytn.chain_id);
+        const xrpBridge = this.xrpBridge = new RPCAggregator("KLAYTN", config.endpoints.klaytn.chain_id);
         const multisigABI = Britto.getJSONInterface({filename: 'multisig/Xrp'});
         for (const url of rpc) {
             addressBook.addRpc(url, {
                 name: "xrpAddressBook",
-                address: config.settings.silicon.addressbook,
+                address: config.settings.klaytn.addressbook,
                 abi: Britto.getJSONInterface({filename: 'AddressBook'}),
                 multisig: {
-                    address: config.settings.silicon.multisig,
+                    address: config.settings.klaytn.multisig,
                     abi: multisigABI,
                 }
             });
             xrpBridge.addRpc(url, {
                 name: "xrpBridge",
-                address: config.settings.silicon.xrpBridge,
+                address: config.settings.klaytn.xrpBridge,
                 abi: Britto.getJSONInterface({filename: 'bridge/Xrp'}),
                 multisig: {
-                    address: config.settings.silicon.multisig,
+                    address: config.settings.klaytn.multisig,
                     abi: multisigABI,
                 }
             });
@@ -209,13 +210,16 @@ class XRPValidator {
         this.intervalClear(this.intervals.getLockRelay);
 
         try {
-            let response = await api.bible.get("/v1/api/xrp/lock-relay").catch(e => logger.xrp.error('lock-relay api error: ' + e.message));
-            if (response.success !== "success") {
+            let response = await api.orbit.get(`/bridge/relay`, {
+                vault_chain: this.govInfo.chain,
+                origin_chain: this.chainName
+            });
+            if (response.status !== "success") {
                 logger.xrp.error(`lock-relay api error: ${response}`);
                 return;
             }
 
-            let info = response.info;
+            let info = response.data;
             if (!Array.isArray(info)) {
                 logger.xrp.error('Received data is not array.');
                 return;
@@ -225,26 +229,13 @@ class XRPValidator {
 
             for (let result of info) {
                 let data = {
-                    fromChain: result.fromChain,
-                    toChain: result.toChain,
-                    fromAddr: bridgeUtils.str2hex(result.fromAddr),
-                    toAddr: bridgeUtils.str2hex(result.toAddr),
+                    fromChain: result.origin_chain,
+                    fromAddr: result.origin_address,
                     token: bridgeUtils.str2hex(result.token) || "0x0000000000000000000000000000000000000000",
-                    // relayThash: result.relayThash,
-                    bytes32s: [this.govInfo.id, result.fromThash],
-                    uints: [result.amount, 6],
-                    data: result.data,
+                    bytes32s: [this.govInfo.id, result.origin_thash],
+                    uints: [null, 6],
+                    data: result.data || "0x",
                 };
-
-                if(!bridgeUtils.isValidAddress(data.toChain, data.toAddr)){
-                    logger.xrp.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
-                    continue;
-                }
-
-                if(data.data && !bridgeUtils.isValidData(data.toChain, data.data)){
-                    logger.xrp.error(`Invalid data ( ${data.toChain}, ${data.data} )`);
-                    continue;
-                }
 
                 await this.validateRelayedData(data);
             }
@@ -299,11 +290,6 @@ class XRPValidator {
                 continue;
 
             amount = amount.dadd(balanceChange.value.dmove(6));
-        }
-
-        if (amount !== data.uints[0].toString()) {
-            logger.xrp.error(`validateSwap error: Payment deliveredAmount is different with data.amount. Expected ${amount}, but got ${data.amount}`);
-            return;
         }
 
         if (parseInt(data.uints[1]) !== 6){
@@ -659,7 +645,8 @@ class XRPValidator {
             return;
         }
 
-        let memos = bridgeUtils.getReleaseMemo(govInfo.id, data.dataIndex);
+        let memos = bridgeUtils.getReleaseMemo(swapData.fromChain, res.swapDataArray.bytes32s[1]);
+        // let memos = bridgeUtils.getReleaseMemo(govInfo.id, data.dataIndex);
 
         const toAddr = bridgeUtils.getAddressFromHex(swapData.toAddr);
         const paymentTx = {
@@ -858,7 +845,6 @@ class XRPValidator {
             return;
         }
 
-        // TODO: orbit api에서 검증
         response = await api.orbit.get(`/info/hash-info`, {whash: mySignatureHash})
         if(response.status === "success") {
             if(response.data.validators.length !== 0) {
@@ -944,12 +930,15 @@ class XRPValidator {
 
         try {
             if(!this.addressBook) return
-            const response = await api.bible.get("/v1/api/xrp/tag-relay");
-            if (response.result !== "success") {
+            let response = await api.orbit.get(`/bridge/tag-relay`, {
+                chain: this.govInfo.chain.replace("_LAYER_1",""),
+            });
+
+            if (response.status !== "success") {
                 logger.xrp.error(`tag-relay api error: ${response}`);
                 return;
             }
-            let info = response.info;
+            let info = response.data;
             if (!Array.isArray(info)) {
                 logger.xrp.error('Received data is not array.');
                 return;
