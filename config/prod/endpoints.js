@@ -22,6 +22,14 @@ module.exports = {
             terminal_total_difficulty: "58750000000000000000000",
             confirm: 10
         },
+        icon: {
+            api: 'https://ctz.solidwallet.io/api/v3',
+            rpc: 'https://ctz.solidwallet.io/api/v3',
+            debug: 'https://ctz.solidwallet.io/api/debug/v3',
+            version: 3,
+            nid: 1,
+            confirm: 10
+        },
         klaytn: {
             is_kas: false,
             kas: {

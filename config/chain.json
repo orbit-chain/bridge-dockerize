@@ -7,5 +7,8 @@
   },
   "ton": {
     "src": "src/ton"
+  },
+  "icon": {
+    "src": "src/icon"
   }
 }
