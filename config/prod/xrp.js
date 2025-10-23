@@ -10,7 +10,7 @@ module.exports = {
         'silicon',
     ],
     klaytn: {
-        xrpBridge: "0x83bca9503D7888F2eFcDF18cCa2E79f8Ba75d17c",
+        xrpBridge: "0x0AD185F50fD8cfedaA75b54927dB4fBAd3621E66",
         addressbook: "0xc32C03617bf18497Ec85Ac5A7fc4e950CA24468B",
         multisig: "0x468f179Ea82566dC057Ea197Abe1c1a6367f1Cfb",
     },
