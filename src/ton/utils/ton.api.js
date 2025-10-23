@@ -1,5 +1,5 @@
 const TonWeb = require("tonweb");
-const TonWebV3 = require("tonweb-latest");
+const TonWebV3 = require("tonweb");
 const HttpProviderV3 = require(`${ROOT}/lib/ton.indexer`).default;
 TonWebV3.HttpProvider = HttpProviderV3;
 const request = require("request-promise");

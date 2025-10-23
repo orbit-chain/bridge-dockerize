@@ -2,15 +2,6 @@
   "xrp": {
     "src": "src/xrp"
   },
-  "icon": {
-    "src": "src/icon"
-  },
-  "stacks_layer_1": {
-    "src": "src/stacks_layer_1"
-  },
-  "stacks": {
-    "src": "src/stacks"
-  },
   "ton_layer_1": {
     "src": "src/ton_layer_1"
   },

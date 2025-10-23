@@ -87,27 +87,28 @@ class TONLayer1Validator {
             throw `Healthy Hosts too low. cur:${nodes.length}, req:${info.ENDPOINT.min_healthy_cnt}`;
         }
 
-        let rpc = config.endpoints.silicon.rpc;
+        // 이제 addressbook contract는 kaia 위에 있다
+        let rpc = config.endpoints.klaytn.rpc;
         if(!Array.isArray(rpc) && typeof rpc !== "string") {
-            throw `Unsupported Silicon Endpoints: ${rpc}, Endpoints must be array or string.`;
+            throw `Unsupported Kaia Endpoints: ${rpc}, Endpoints must be array or string.`;
         }
 
         rpc = Array.isArray(rpc) ? rpc : [ rpc ]
-        let expandedNode = process.env.SILICON ? JSON.parse(process.env.SILICON) : undefined
+        let expandedNode = process.env.KLAYTN ? JSON.parse(process.env.KLAYTN) : undefined
         if(expandedNode && expandedNode.length > 0) {
             rpc = rpc.concat(expandedNode)
         }
 
 
         this.multisigABI = Britto.getJSONInterface({filename: 'multisig/Ed25519'});
-        const addressBook = this.addressBook = new RPCAggregator("SILICON", config.endpoints.silicon.chain_id);
+        const addressBook = this.addressBook = new RPCAggregator("KLAYTN", config.endpoints.klaytn.chain_id);
         for (const url of rpc) {
             addressBook.addRpc(url, {
                 name: "tonAddressBook",
-                address: config.settings.silicon.addressbook,
+                address: config.settings.klaytn.addressbook,
                 abi: Britto.getJSONInterface({filename: 'AddressBook'}),
                 multisig: {
-                    address: config.settings.silicon.multisig,
+                    address: config.settings.klaytn.multisig,
                     abi: this.multisigABI,
                 },
                 onconnect: this.setTonAccount.bind(this),
@@ -195,56 +196,39 @@ class TONLayer1Validator {
         this.intervalClear(this.intervals.getLockRelay);
 
         try {
-            const response = await api.bible.get("/v1/api/ton/lock-relay");
-            if (response.success !== "success") {
+            let response = await api.orbit.get(`/bridge/relay`, {
+                vault_chain: this.govInfo.chain.replace("_LAYER_1",""),
+                origin_chain: this.chainName.replace("_LAYER_1","")
+            });
+
+            if (response.status !== "success") {
                 logger.ton_layer_1.error(`lock-relay api error: ${response}`);
                 return;
             }
-            let info = response.info;
+            let info = response.data;
             if (!Array.isArray(info)) {
                 logger.ton_layer_1.error('Received data is not array.');
                 return;
             }
-            info = info.filter(i => parseInt(i.type) === 0);
 
             logger.ton_layer_1.info(`LockRelay list ${info.length === 0 ? 'is empty.' : 'length: ' + info.length.toString()}`);
 
             for (let result of info) {
-                let data = {
-                    fromChain: this.chainName.toUpperCase(),
-                    toChain: result.toChain,
-                    fromAddr: result.fromAddr,
-                    toAddr: result.toAddr,
-                    token: result.token,
-                    bytes32s: [this.govInfo.id, result.fromThash],
-                    uints: [result.amount, result.decimals, result.lt],
-                    data: result.data
-                };
-
                 const ton = await this.getTonApi();
                 const govInfo = this.govInfo;
 
-                let txHash = data.bytes32s[1];
+                let txHash = result.origin_thash;
                 txHash = Buffer.from(txHash.replace("0x",""), 'hex').toString('base64');
-                let lt = data.uints[2];
+                let lt = result.data;
 
+                // tx가 있는지 최소한의 체크
                 let tx = await ton.getTransaction(govInfo.address, txHash, lt);
                 if(!tx){
-                    logger.ton_layer_1.error(`Skip relay ${data.bytes32s[1]}:${data.uints[2]}`);
+                    logger.ton_layer_1.error(`Skip relay ${this.govInfo.id}:${txHash}:${lt}, cannot find transaction`);
                     continue;
                 }
 
-                if(!bridgeUtils.isValidAddress(data.toChain, data.toAddr)){
-                    logger.ton_layer_1.error(`Invalid toAddress ( ${data.toChain}, ${data.toAddr} )`);
-                    continue;
-                }
-
-                if(data.data && !bridgeUtils.isValidData(data.toChain, data.data)){
-                    logger.ton_layer_1.error(`Invalid data ( ${data.toChain}, ${data.data} )`);
-                    continue;
-                }
-
-                await this.validateRelayedData(data);
+                await this.validateRelayedData(result);
             }
         } catch (e) {
             logger.ton_layer_1.error(`lock-relay api error: ${e.message}`);
@@ -254,22 +238,24 @@ class TONLayer1Validator {
     }
 
     // private
+    // ton data 검사
     async _validateRelayedData(data, ton) {
         const chainIds = this.chainIds;
         const chainName = this.chainName;
         const govInfo = this.govInfo;
         const DEPOSIT_TOKEN = this.depositTokenABI;
-
-        if(data.fromChain !== chainName){
+        
+        const fromChain = data.origin_chain + "_LAYER_1";
+        if(fromChain !== chainName){
             logger.ton_layer_1.error(`Invalid request. ${data.fromChain}`);
             return;
         }
 
         let vault = govInfo.address;
-        let txHash = data.bytes32s[1];
+        let txHash = data.origin_thash;
         txHash = Buffer.from(txHash.replace("0x",""), 'hex').toString('base64');
 
-        let lt = data.uints[2];
+        let lt = data.data;;
         if(lt.dcomp(UINT64_MAX) !== -1){
             logger.ton_layer_1.error(`Invalid logical time: ${lt}`);
             return;
@@ -310,7 +296,7 @@ class TONLayer1Validator {
             return;
         }
 
-        let ctx = { logger, txHash, lt, ton, vault };
+        let ctx = { logger, txHash, lt, ton, vault, fromChain };
         let opCode;
         try {
             let msgBody = inMessage.body.beginParse();
@@ -330,7 +316,8 @@ class TONLayer1Validator {
         let token;
         let amount;
         let decimal;
-        if(opCode === "0x00000000"){
+        
+        if(opCode === "0x00000000"){ // deposit
             if(out_msgs && out_msgs.length !== 0){
                 logger.ton_layer_1.error(`Invalid transaction. OutMessage exist: ${txHash}, ${lt}`);
                 return;
@@ -382,7 +369,7 @@ class TONLayer1Validator {
             }
             ctx.vaultInfo = vaultInfo;
         }
-        else if(opCode === "0x7362d09c"){
+        else if(opCode === "0x7362d09c"){ // deposit jetton
             if(!out_msgs || out_msgs.length === 0){
                 logger.ton_layer_1.error(`Invalid transaction. empty out_msgs: ${txHash}, ${lt}`);
                 return;
@@ -590,10 +577,10 @@ class TONLayer1Validator {
         };
     }
 
-    async validateRelayedData(data) {
+    async validateRelayedData(result) {
         let res = [];
         for(let node of this.nodes){
-            let obj = await this._validateRelayedData(data, node);
+            let obj = await this._validateRelayedData(result, node);
             if(!obj || !obj.fromAddr || !obj.amount || !obj.outMsgs){
                 logger.ton_layer_1.error("Invalid Transaction");
                 continue;
@@ -660,7 +647,7 @@ class TONLayer1Validator {
             fromAddr: ctx.fromAddr,
             toAddr: ctx.toAddr,
             token: ctx.token,
-            bytes32s: [this.govInfo.id, data.bytes32s[1]],
+            bytes32s: [this.govInfo.id, result.origin_thash],
             uints: [ctx.amount, ctx.decimal, ctx.lt],
             data: ctx.transfortData
         };
@@ -670,7 +657,7 @@ class TONLayer1Validator {
             logger.ton_layer_1.error(`${params.toChain} instance is not exist`);
             return;
         }
-        await toInstance.validateSwap(data, params);
+        await toInstance.validateSwap(result, params);
     }
 
     async validateSwap(_, params){
@@ -788,12 +775,15 @@ class TONLayer1Validator {
         this.intervalClear(this.intervals.getTagRelay);
 
         try {
-            const response = await api.bible.get("/v1/api/ton/tag-relay");
-            if (response.result !== "success") {
+            let response = await api.orbit.get(`/bridge/tag-relay`, {
+                chain: this.govInfo.chain.replace("_LAYER_1",""),
+            });
+
+            if (response.status !== "success") {
                 logger.ton_layer_1.error(`tag-relay api error: ${response}`);
                 return;
             }
-            let info = response.info;
+            let info = response.data;
             if (!Array.isArray(info)) {
                 logger.ton_layer_1.error('Received data is not array.');
                 return;

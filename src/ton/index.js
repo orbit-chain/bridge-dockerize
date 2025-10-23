@@ -162,12 +162,16 @@ class TONValidator {
         this.intervalClear(this.intervals.getLockRelay);
 
         try {
-            const response = await api.bible.get("/v1/api/ton/lock-relay");
-            if (response.success !== "success") {
+            let response = await api.orbit.get(`/bridge/relay`, {
+                vault_chain: this.govInfo.chain,
+                origin_chain: this.chainName
+            });
+
+            if (response.status !== "success") {
                 logger.ton.error(`lock-relay api error: ${response}`);
                 return;
             }
-            let info = response.info;
+            let info = response.data;
             if (!Array.isArray(info)) {
                 logger.ton.error('Received data is not array.');
                 return;
@@ -177,13 +181,14 @@ class TONValidator {
             logger.ton.info(`LockRelay list ${info.length === 0 ? 'is empty.' : 'length: ' + info.length.toString()}`);
 
             for (let result of info) {
+                const originTxhash = result.origin_thash;
                 let data = {
                     fromChain: this.chainName.toUpperCase(),
                     toChain: result.toChain,
                     fromAddr: result.fromAddr,
                     toAddr: result.toAddr,
                     token: result.token,
-                    bytes32s: [this.govInfo.id, result.fromThash],
+                    bytes32s: [this.govInfo.id, originTxhash],
                     uints: [result.amount, result.decimals, result.depositId, result.lt], // result.lt?
                     data: result.data || '0x'
                 };

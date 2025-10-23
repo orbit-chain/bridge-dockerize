@@ -22,30 +22,6 @@ module.exports = {
             terminal_total_difficulty: "58750000000000000000000",
             confirm: 10
         },
-        faireth: {
-            rpc: "https://rpc.etherfair.org",
-            socket: "wss://rpc.etherfair.org",
-            chain_id: "0x7D44C",
-            confirm: 10
-        },
-        fantom: {
-            rpc: ["https://rpc.ftm.tools", "https://rpc.fantom.network", "https://rpc.ankr.com/fantom"],
-            chain_id: '0xfa',
-            confirm: 10
-        },
-        heco: {
-            rpc : ["https://http-mainnet-node.huobichain.com", "https://http-mainnet.hecochain.com"],
-            chain_id: '0x80',
-            confirm: 10
-        },
-        icon: {
-            api: 'https://ctz.solidwallet.io/api/v3',
-            rpc: 'https://ctz.solidwallet.io/api/v3',
-            debug: 'https://ctz.solidwallet.io/api/debug/v3',
-            version: 3,
-            nid: 1,
-            confirm: 10
-        },
         klaytn: {
             is_kas: false,
             kas: {
@@ -71,22 +47,6 @@ module.exports = {
             socket: "ws://prd-meta-mainnet-ws.node.ozys.work:8545 ",
             confirm: 10
         },
-        oec: {
-            rpc: ["https://exchainrpc.okex.org", "http://prd-oktc-mainnet-rpc.node.ozys.work:8545"],
-            chain_id: 66,
-            confirm: 10
-        },
-        poweth: {
-            rpc: "https://mainnet.ethereumpow.org",
-            socket: "wss://mainnet.ethereumpow.org",
-            chain_id: "0x2711",
-            confirm: 10
-        },
-        stacks: {
-            url: "https://stacks-node-api.mainnet.stacks.co",
-            network: "mainnet",
-            confirm: 10
-        },
         ton: {
             rpc: [
                 {type:"toncenter",version:2},
@@ -106,10 +66,6 @@ module.exports = {
             chain_id: 1111,
             confirm: 10
         },
-        xdai: {
-            rpc: ["https://rpc.gnosischain.com", "https://rpc.ankr.com/gnosis", "https://gnosis-mainnet.public.blastapi.io"],
-            confirm: 10
-        },
         xrp: {
             rpc: "https://s1.ripple.com:51234",
             socket: "wss://s1.ripple.com:443",
@@ -119,8 +75,8 @@ module.exports = {
     VALIDATOR_MONITOR: {
         ozys: {
             monitor: "https://va.orbitbridge.io/governance/report",
-            orbit: "https://api.orbitbridge.io",
-            validator: "https://va.orbitbridge.io",
+            orbit: "https://api.bridge.orbitchain.io",
+            validator: "https://api.bridge.orbitchain.io",
             bible: "https://open.orbitbridge.io/open",
             interval: 60 * 1000,
         },

@@ -9,9 +9,9 @@ module.exports = {
         "ton_layer_1",
         "silicon",
     ],
-    silicon: {
-        addressbook: "0xd0B3ac7326FDf78DEc838451E031cf69933F6faF",
-        multisig: "0x2baF90197b3C034282Dd6cdC29a9902B7f8789A4",
+    klaytn: {
+        addressbook: "0x630731e32A168bb982ED00A7413D6C8e73CBCf40",
+        multisig: "0xd0cE09c46BE109E1269Db17f070cD92d3718D5a4",
     },
     // Bridge Addresses
     bridge_address: {
