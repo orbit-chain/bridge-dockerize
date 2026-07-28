@@ -2,12 +2,12 @@ module.exports = {
     // Node Endpoints
     endpoints : {
         avax: {
-            rpc: ["https://avalanche.drpc.org", "https://avalanche-c-chain-rpc.publicnode.com", "https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc", "https://1rpc.io/avax/c"],
+            rpc: ["https://avalanche.drpc.org", "https://avalanche-c-chain-rpc.publicnode.com", "https://avax.api.pocket.network", "https://1rpc.io/avax/c"],
             chain_id: '0xa86a',
             confirm: 10
         },
         bsc: {
-            rpc : ["https://bsc-dataseed.binance.org", "https://bsc-dataseed1.binance.org", "https://bsc-dataseed-public.bnbchain.org", "https://bsc.drpc.org"],
+            rpc : ["https://bsc-rpc.publicnode.com", "https://bsc.meowrpc.com", "https://rpc.nodeflare.app/bnb/public", "https://bsc.api.pocket.network"],
             confirm: 10
         },
         celo: {
@@ -29,7 +29,7 @@ module.exports = {
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
                 chain_id: 8217
             },
-            rpc: ["https://public-en.node.kaia.io", "https://kaia.blockpi.network/v1/rpc/public", "https://rpc.ankr.com/kaia"],
+            rpc: ["https://public-en.node.kaia.io", "https://klaytn.drpc.org", "https://rpc.ankr.com/kaia"],
             confirm: 10
         },
         silicon: {
@@ -38,13 +38,13 @@ module.exports = {
             confirm: 10
         },
         matic: {
-            rpc : ["https://polygon-rpc.com", "https://polygon-bor-rpc.publicnode.com", "http://prd-matic-bor-mainnet-rpc.node.ozys.work:8545"],
+            rpc : ["https://1rpc.io/matic", "https://polygon-bor-rpc.publicnode.com", "https://polygon.drpc.org"],
             chain_id: '0x89',
             confirm: 10
         },
         metadium: {
             rpc: ["https://api.metadium.com/prod"],
-            socket: "ws://prd-meta-mainnet-ws.node.ozys.work:8545 ",
+            socket: "ws://prd-meta-mainnet-ws.node.ozys.work:8545",
             confirm: 10
         },
         ton: {
