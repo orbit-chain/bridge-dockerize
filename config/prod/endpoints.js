@@ -7,7 +7,7 @@ module.exports = {
             confirm: 10
         },
         bsc: {
-            rpc : ["https://bsc-rpc.publicnode.com", "https://bsc.meowrpc.com", "https://rpc.nodeflare.app/bnb/public", "https://bsc.api.pocket.network"],
+            rpc : ["https://bsc-dataseed.bnbchain.org", "https://bsc-dataseed.nariox.org", "https://bsc-dataseed.defibit.io", "https://bsc.nodereal.io"],
             confirm: 10
         },
         celo: {
