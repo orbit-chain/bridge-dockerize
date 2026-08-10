@@ -29,7 +29,7 @@ module.exports = {
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
                 chain_id: 8217
             },
-            rpc: ["https://kaia.api.pocket.network", "https://rpc.ankr.com/kaia", "https://klaytn.drpc.org"],
+            rpc: ["https://public-en.node.kaia.io", "https://kaia.api.pocket.network", "https://rpc.ankr.com/kaia", "https://klaytn.drpc.org"],
             confirm: 10
         },
         silicon: {

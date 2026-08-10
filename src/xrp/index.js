@@ -360,8 +360,11 @@ class XRPValidator {
                 }
             }
 
-            const validateCount = parseInt(await node.multisig.contract.methods.validateCount(tagHash).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`)));
-            if (validateCount < quorumCnt) {
+            const validateCount = parseInt(await node.multisig.contract.methods.validateCount(tagHash).call().catch(e => {
+                logger.xrp.info(`validateSwap call mig fail. ${e}`);
+                return;
+            }));
+            if (isNaN(validateCount) || validateCount < quorumCnt) {
                 logger.xrp.error(`validateSwap error: tag validatedCount less than vault wanted.`);
                 return;
             }
