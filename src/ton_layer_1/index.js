@@ -552,8 +552,11 @@ class TONLayer1Validator {
         // 이미 정족수를 채워 통과된 태그(validatedHashs)는 validator 구성이 바뀌어도 서명자 대조 없이 통과시킨다 (310000001 ~ 310000006 한정)
         const tagNumber = parseInt(this.tag);
         if (tagNumber >= 310000001 && tagNumber <= 310000006) {
-            const isValidatedHash = await node.multisig.contract.methods.isValidatedHash(tagHash).call().catch(e => logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`));
-            if (isValidatedHash) {
+            const isValidatedHash = await node.multisig.contract.methods.isValidatedHash(tagHash).call().catch(e => {
+                logger.ton_layer_1.info(`validateSwap call mig fail. ${e}`);
+                return false;
+            });
+            if (isValidatedHash === true) {
                 return {
                     toChain,
                     toAddr,

@@ -346,8 +346,11 @@ class XRPValidator {
             // 이미 정족수를 채워 통과된 태그(validatedHashs)는 validator 구성이 바뀌어도 서명자 대조 없이 통과시킨다 (3100000001 ~ 3100000008 한정)
             const tagNumber = parseInt(destinationTag);
             if (tagNumber >= 3100000001 && tagNumber <= 3100000008) {
-                const isValidatedHash = await node.multisig.contract.methods.isValidatedHash(tagHash).call().catch(e => logger.xrp.info(`validateSwap call mig fail. ${e}`));
-                if (isValidatedHash) {
+                const isValidatedHash = await node.multisig.contract.methods.isValidatedHash(tagHash).call().catch(e => {
+                    logger.xrp.info(`validateSwap call mig fail. ${e}`);
+                    return false;
+                });
+                if (isValidatedHash === true) {
                     return {
                         cnt: this.quorumCnt,
                         toChain,
