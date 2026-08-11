@@ -2,7 +2,7 @@ module.exports = {
     // Node Endpoints
     endpoints : {
         avax: {
-            rpc: ["https://avalanche.drpc.org", "https://avalanche-c-chain-rpc.publicnode.com", "https://avax.api.pocket.network", "https://1rpc.io/avax/c"],
+            rpc: ["https://api.avax.network/ext/bc/C/rpc", "https://avalanche-mainnet.gateway.tenderly.co", "https://avalanche.rpc.sentio.xyz"],
             chain_id: '0xa86a',
             confirm: 10
         },
@@ -29,7 +29,7 @@ module.exports = {
                 rpc: "https://node-api.klaytnapi.com/v1/klaytn",
                 chain_id: 8217
             },
-            rpc: ["https://public-en.node.kaia.io", "https://klaytn.drpc.org", "https://rpc.ankr.com/kaia"],
+            rpc: ["https://public-en.node.kaia.io", "https://kaia.api.pocket.network", "https://rpc.ankr.com/kaia", "https://klaytn.drpc.org"],
             confirm: 10
         },
         silicon: {
@@ -38,7 +38,7 @@ module.exports = {
             confirm: 10
         },
         matic: {
-            rpc : ["https://1rpc.io/matic", "https://polygon-bor-rpc.publicnode.com", "https://polygon.drpc.org"],
+            rpc : ["https://api.zan.top/polygon-mainnet", "https://rpc-mainnet.matic.quiknode.pro", "https://polygon.drpc.org"],
             chain_id: '0x89',
             confirm: 10
         },
