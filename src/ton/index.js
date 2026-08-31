@@ -212,10 +212,10 @@ class TONValidator {
         const govInfo = this.govInfo;
         const REQUEST_SWAP = this.requestSwapABI;
 
-        let txHash = data.origin_thash;
+        let txHash = data.origin_thash || data.bytes32s?.[1];
         txHash = Buffer.from(txHash.replace("0x",""), 'hex').toString('base64');
 
-        let lt = data.data;
+        let lt = (data.origin_thash ? data.data : null) || (data.uints && data.uints[3]);
         if(lt.dcomp(UINT64_MAX) !== -1){
             logger.ton.error(`Invalid logical time: ${lt}`);
             return;
@@ -358,7 +358,7 @@ class TONValidator {
         return {
             ...res,
             outMsgs: out_msgs,
-            txhash: data.origin_thash,
+            txhash: data.origin_thash || data.bytes32s?.[1],
             fromAddr,
             toChain,
             lt,
